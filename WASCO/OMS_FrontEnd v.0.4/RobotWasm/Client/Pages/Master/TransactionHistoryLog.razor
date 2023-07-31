@@ -1,0 +1,100 @@
+﻿@page "/Master/TransactionHistoryLog"
+
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared 
+
+<style>
+</style>
+
+@if (!isLoading) {
+
+        <div class="row pt-2">
+            <div class="col-12 pt-2">
+                <h3>@menuCaption</h3>
+            </div>
+        </div>
+
+    <div class="row pt-3">
+        <div class="col-md-4 col-sm-6 col-12">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+            </div>
+        </div>
+    </div>
+
+
+        <div class="row pt-2">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="30"
+                             Navigable="true">
+                <GridToolBarTemplate>
+                    <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                </GridToolBarTemplate>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field=@nameof(y_trans_logs.log_date) Title="วันที่" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                    <GridColumn Field="@nameof(y_trans_logs.log_desc)" Title="กิจกรรม" Width="300px" />
+                    <GridColumn Field="@nameof(y_trans_logs.username)" Title="รหัสผู้ใช้งาน" Width="160px" />
+                    <GridColumn Field="@nameof(y_trans_logs.fullname)" Title="ชื่อผู้ใช้งาน" Width="200px" />
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    } else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<y_trans_logs> DocList = new List<y_trans_logs>();
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        await SetActiveControl();
+        DocList = await _logTranService.ListDoc("edp",SearchText);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "910");
+        menuCaption = menu.Name;
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

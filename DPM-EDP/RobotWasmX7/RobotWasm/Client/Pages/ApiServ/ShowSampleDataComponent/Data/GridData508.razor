@@ -1,0 +1,217 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.Data
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DATA508</h4>
+        <h5>เสี่ยงอุทกภัย</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata"
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.risk_level))" Title="risk_level" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.province))" Title="province" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.amphor))" Title="amphor" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.tumbon))" Title="tumbon" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.type))" Title="type" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.moo_no))" Title="moo_no" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.moo_id))" Title="moo_id" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.moo_name))" Title="moo_name" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.village))" Title="village" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.risk_flood))" Title="risk_flood"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.risk_overflow))" Title="risk_overflow"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.risk_flashflood))" Title="risk_flashflood"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.linklihood_1))" Title="linklihood_1"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.linklihood_2))" Title="linklihood_2"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.linklihood_3))" Title="linklihood_3"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.linklihood_4))" Title="linklihood_4"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.linklihood_10))" Title="linklihood_10"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impact_hardness1))" Title="impact_hardness1"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impact_hardness2))" Title="impact_hardness2"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impact_hardness3))" Title="impact_hardness3"  DisplayFormat="{0:n2}" Width="130px" />
+
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impactall_transport))" Title="impactall_transport" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impactall_common))" Title="impactall_common" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impactall_agriculture))" Title="impactall_agriculture" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.impactall_fishing))" Title="impactall_fishing" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_jan))" Title="monthrisk_jan" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_feb))" Title="monthrisk_feb" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_mar))" Title="monthrisk_mar" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_apr))" Title="monthrisk_apr" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_may))" Title="monthrisk_may" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_jun))" Title="monthrisk_jun" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_jul))" Title="monthrisk_jul" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_aug))" Title="monthrisk_aug" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_sep))" Title="monthrisk_sep" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_oct))" Title="monthrisk_oct" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_nov))" Title="monthrisk_nov" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.monthrisk_dec))" Title="monthrisk_dec" Width="130px"  />
+
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.latitude))" Title="latitude"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.longitude))" Title="longitude"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data508Set.dpm_flood_risk.data_update))" Title="data_update" DisplayFormat="{0:dd/MM/yyyy}" Width="130px" />
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public Data508Set.DocSet data_set { get; set; }
+    public List<Data508Set.dpm_flood_risk> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.rows.Where(o =>
+         (
+             o.province.ToLower().Contains(search)
+             || o.amphor.ToLower().Contains(search)
+             || o.tumbon.ToLower().Contains(search)
+             || o.risk_level.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=data508");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<Data508Set.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                        isLoading = false;
+                return;
+            }
+            data_set = (Data508Set.DocSet)query.Result;
+            ndata = data_set.rows;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

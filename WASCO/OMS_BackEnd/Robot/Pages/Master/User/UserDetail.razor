@@ -1,0 +1,1093 @@
+﻿@page "/Master/User/UserDetail"
+@using Robot.Helper.Hash
+@using System.IO;
+@using Robot.Helper;
+@using static Robot.Data.ML.I_Result;
+@inject MyUserService userService
+<style>
+    .hidden {
+        visibility: hidden;
+        display: none;
+    }
+
+        .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-checkbox:checked, .k-checkbox.k-checked {
+        border-color: #03a9f4;
+        background-color: #03a9f4;
+    }
+
+    .file-input-zone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: crosshair;
+        position: relative;
+        width: 32px;
+        height: 32px;
+        background-image: url('/assets/img/upload_logo.png');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+</style>
+@if (userService.DocSet != null) {
+
+    <div class="row">
+            <div class="col-12">
+
+                <div class="row">
+                    <div class="col-6">
+                        <Breadcrumb Mode="BreadcrumbMode.Auto">
+                       
+                            <BreadcrumbItem>
+                                <BreadcrumbLink To="Master/User/UserList">หน้ารายการ</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbItem Active>
+                                <BreadcrumbLink To="#">แก้ไข</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </Breadcrumb>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="btn-group">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                           @onclick="@btnSave" Class=""
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+                            </TelerikButton>&nbsp;&nbsp;
+                            @if (isShowNew) {
+                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                           @onclick="@NewDoc" Class=""
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                    <i class="fa-solid fa-circle-plus"></i>&nbsp; สร้างใหม่
+                                </TelerikButton>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark">
+                                        <div class="row">
+                                            <div class="col-md-12 text-start">
+                                                <span style="color: white">
+                                                    <i class="fas fa-user-secret fa-2x"></i>
+                                                    <span>
+                                                        @lblTopic
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="row" style="font-size: smaller">
+                                                            <div class="col-md-3">
+                                                                <span>ชื่อผู้ใช้งาน</span>
+                                                                <TelerikTextBox PlaceHolder="" @bind-Value="@Username" Enabled="@username_readonly" />
+                                                            </div>
+
+                                                            <div class="col-md-3">
+                                                                <span>เลขประจำตัวประชาชน 13 หลัก</span>
+                                                                 <TelerikTextBox @bind-Value="@userService.DocSet.User.CitizenId" />
+                                                            </div>
+                                                            @if (isShowDelete) {
+                                                                <div class="col-md-2 pt-4">
+                                                                    <TelerikCheckBox Id="chkIsActive" @bind-Value="@userService.DocSet.User.IsActive"></TelerikCheckBox>
+                                                                    <span style="font-size:large;">ใช้งาน</span>
+                                                                </div>
+                                                            }
+                                                        </div>
+
+                                                        <div class="row pt-1" style="font-size: smaller">
+                                                            <div class="col-md-3">
+                                                                <span>ชื่อ</span> <span style="color: red; font-size: medium;">*</span>
+                                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.FirstName" />
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>นามสกุล</span> <span style="color: red; font-size: medium;">*</span>
+                                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.LastName" />
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>เพศ</span>
+                                                                <TelerikComboBox @bind-Value="@userService.DocSet.User.Gender"
+                                                                                 Data="@ListGender"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-1" style="font-size: smaller">
+                                                            <div class="col-md-3">
+                                                                <span>หน่วยงาน</span>
+                                                                <TelerikComboBox Value="@userService.DocSet.User.DepartmentID"
+                                                                                 Data="@ListAgency"
+                                                                                 ValueChanged="@( (string ag) => ChangeAgency(ag))"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                               
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>ตำแหน่ง</span>
+                                                                <TelerikComboBox @bind-Value="@userService.DocSet.User.PositionID"
+                                                                                 Data="@ListPosition"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>ระดับ</span>
+                                                                <TelerikComboBox @bind-Value="@userService.DocSet.User.JobLevel"
+                                                                                 Data="@ListLevel"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-1" style="font-size: smaller">
+                                                            <div class="col-md-3">
+                                                                <span>ประเภท</span>
+                                                                <TelerikComboBox @bind-Value="@userService.DocSet.User.JobType"
+                                                                                 Data="@ListJobType"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>เริ่มงาน</span>
+                                                                <TelerikDatePicker @bind-Value="@JobStartDate"
+                                                                                   Format="dd/MM/yyyy">
+                                                                </TelerikDatePicker>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <span>พ้นสภาพ</span>
+                                                                <TelerikDatePicker @bind-Value="@JobEndDate" 
+                                                                                   Format="dd/MM/yyyy">
+                                                                </TelerikDatePicker>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark">
+                                        <div class="row" style="color:white">
+                                            <div class="col-md-10"><i class="fas fa-home"></i>&nbsp;<span>ข้อมูลที่อยู่</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row pt-1" style="font-size: smaller;">
+                                            <div class="col-6 ">
+                                                <span>ค้นหาที่อยู่</span>
+                                                <TelerikComboBox Value="@SelectAddr"
+                                                                 Data="@ListAddr"
+                                                                 ScrollMode="@DropDownScrollMode.Virtual"
+                                                                 ValueField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                                                 TextField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                                                 Width="100%" PageSize="10" ItemHeight="35"
+                                                                 ValueChanged="@( (string city) => ValueChangeAddr(city) )"
+                                                                 Filterable="true"
+                                                                 FilterOperator="@StringFilterOperator.Contains">
+                                                    <ComboBoxSettings>
+                                                        <ComboBoxPopupSettings Width="550px" Height="300px"></ComboBoxPopupSettings>
+                                                    </ComboBoxSettings>
+                                                    <HeaderTemplate>
+                                                        <div class="fw-bold py-2">&nbsp;&nbsp; ที่อยู่</div>
+                                                    </HeaderTemplate>
+                                                    <ItemTemplate>
+                                                        <span>@($"{context.FULLADDR}")</span>
+                                                    </ItemTemplate>
+                                                </TelerikComboBox>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <span>เลขที่ (House No.)</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrNo" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span>หมู่/ถนน (Village No. / Road)</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrMoo" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-1" style="font-size: smaller;">
+                                            <div class="col-md-3">
+                                                <span>รหัสไปรษณีย์ (Postal Code)</span>
+                                                 <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrPostCode" Enabled="false" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span>ตำบล/แขวง (Sub-district)</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrTumbon" Enabled="false" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span>เขต/อำเภอ (District / Area)</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrAmphoe" Enabled="false" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span>จังหวัด (Province)</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.AddrProvince" Enabled="false" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-1" style="font-size: smaller;">
+                                            <div class="col-md-3">
+                                                <span>เบอร์โทรศัพท์</span>
+                                                <TelerikTextBox @bind-Value="@Mobile" />
+                                                @*<input type="text" class="form-control form-control-sm text-center font-weight-bold" @bind-value="Mobile"
+                                                       oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');" />*@
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span>อีเมล์</span>
+                                                <TelerikTextBox @bind-Value="@userService.DocSet.User.Email" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-3 @Isdivlogin" style="font-size: smaller;" id="divlogin">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark">
+                                        <div class="row " style="color:white">
+                                            <div class="col-md-12">
+                                                <i class="fas fa-key fa-2x"></i>&nbsp;<span style="font-size:large">การเข้าสู่ระบบ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="btn-group">
+                                                    <TelerikCheckBox Id="chkIsNewUser" Value="@userService.DocSet.User.IsNewUser"></TelerikCheckBox>
+                                                    <span style="font-size:medium;">ต้องเปลียนรหัสผ่านเมื่อ Login ครั้งต่อไป</span>&nbsp;
+                                                    <TelerikCheckBox Id="chkIsProgramUser" Value="@userService.DocSet.User.IsProgramUser"></TelerikCheckBox>
+                                                    <span style="font-size:medium;">สามารถใช้โปรแกรม</span>&nbsp;
+                                                    <div hidden>
+                                                    <TelerikCheckBox Id="chkIsUseTimeStampt" Value="@userService.DocSet.User.UseTimeStamp"  ></TelerikCheckBox>
+                                                    <span style="font-size:medium;">ออกรายงานบันทึกเวลา</span>
+                                                </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 text-end">
+                                                <a @onclick="@lnkResetPassword" style="color:black;" class="btn">
+                                                    <i class="fa fa-key"></i>&nbsp;<span>Reset Password</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2 @IsdivPermission" id="divPermission">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark">
+                                        <div class="row " style="color:white">
+                                            <div class="col-md-6">
+                                                <i class="fas fa-door-open fa-2x"></i> &nbsp;
+                                                <span>สิทธิ์การใช้งาน</span>
+                                            </div>
+                                            <div class="col-md-6 text-right">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body bg-light">
+                                        <div class="row pt-2">
+                                            <div class="col-md-12">
+                                                <div class="card">
+                                                    <div class="card-header" style="background-color: #feca57 !important">
+                                                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleUserGroup = !IsVisibleUserGroup;
+                                                                                })">
+                                                            <span style="color: black">กำหนดสิทธิ์ ตามกลุ่มการใช้งาน</span>
+                                                        </a>
+                                                    </div>
+                                                    <div class="collapse @(IsVisibleUserGroup ? "show" : "")">
+                                                        <div class="card-body bg-white">
+                                                            @foreach (var ug in userService.DocSet.XGroup) {
+                                                                <div class="row">
+                                                                    <div class="col-12">
+                                                                        <TelerikCheckBox @bind-Value="@ug.X"></TelerikCheckBox>
+                                                                            &nbsp;&nbsp;<span>@ug.Name</span>
+                                                                    </div>
+                                                                </div>
+                                                                <hr class="mt-1" />
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-2">
+                                            <div class="col-md-12">
+                                                <div class="card">
+                                                    <div class="card-header" style="background-color: #feca57 !important">
+
+
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleCompany = !IsVisibleCompany;
+                                                                                })">
+                                                                    <span style="color: black">สิทธิ์ในสาขา</span>
+                                                                </a>
+                                                            </div>
+                                                            <div class="col-6 text-end">
+                                                                <a class="w-100 text-decoration-none" @onclick="@(() =>ComCheckUnCheckAll(true) )">
+                                                                    <span style="color: black">เลือกทั้งหมด</span>
+                                                                </a>
+                                                                &nbsp;
+                                                                <a class="w-100 text-decoration-none" @onclick="@(() =>ComCheckUnCheckAll(false) )">
+                                                                    <span style="color: black">ไม่เลือกทั้งหมด</span>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="collapse @(IsVisibleCompany ? "show" : "")">
+                                                        <div class="card-body bg-white pb-1"> 
+                                         
+
+                                                            <div class="card-body bg-white pb-1">
+                                                                @foreach (var a in userService.DocSet.XCompany.Where(o => o.CompanyType == "COMPANY")) {
+                                                                    <div class="row">
+                                                                        <div class="col-12">
+                                                                            <TelerikCheckBox @bind-Value="@a.X"></TelerikCheckBox>
+                                                                            &nbsp;&nbsp;<span>@a.CompanyName</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    @foreach (var c in userService.DocSet.XCompany.Where(o => o.CompanyType == "BRANCH" && o.RCompanyID == a.RCompanyID)) {
+                                                                        <div class="row">
+                                                                               <div class="col-2">
+                                                                        </div>
+                                                                            <div class="col-2">
+                                                                                <TelerikCheckBox Value="@c.X" ValueChanged="@((bool value) => ComCheckedChanged(value, c.CompanyID))"></TelerikCheckBox>
+                                                                            &nbsp;&nbsp;<span>@c.CompanyID</span>
+                                                                            </div>
+                                                                            <div class="col-8">
+                                                                                <span>@c.CompanyName</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <hr class="mt-1" />
+                                                                    }
+                                                                } 
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-2">
+                                            <div class="col-md-12">
+                                                <div class="card">
+                                                    <div class="card-header" style="background-color: #feca57 !important">
+                                                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleRCompany = !IsVisibleRCompany;
+                                                                                })">
+                                                            <span style="color: black">สิทธิ์กลุ่มบริษัท</span>
+                                                        </a>
+                                                    </div>
+                                                    <div class="collapse @(IsVisibleRCompany ? "show" : "")">
+                                                        <div class="card-body bg-white pb-1">
+                                                            @foreach (var rc in userService.DocSet.XRCompany) {
+                                                                <div class="row">
+                                                                    <div class="col-2">
+                                                                        <TelerikCheckBox @bind-Value="@rc.X"></TelerikCheckBox>
+                                                                        &nbsp;&nbsp;<span>@rc.RComID</span>
+                                                                    </div>
+                                                                    <div class="col-10">
+                                                                        <span>@rc.RCompanyName</span>
+                                                                    </div>
+                                                                </div>
+                                                                <hr class="mt-1" />
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-2">
+                                            <div class="col-md-12">
+                                                <div class="card">
+                                                    <div class="card-header" style="background-color: #feca57 !important">
+                                                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleDashboard = !IsVisibleDashboard;
+                                                                                })">
+                                                            <span style="color: black">สิทธิ์ใช้ Dashboard</span>
+                                                        </a>
+
+                                                    </div>
+                                                    <div class="collapse @(IsVisibleDashboard ? "show" : "")">
+                                                        <div class="card-body bg-white pb-1">
+                                                            @foreach (var b in userService.DocSet.XBoard) {
+                                                                <div class="row">
+                                                                    <div class="col-2">
+                                                                        <TelerikCheckBox @bind-Value="@b.X"></TelerikCheckBox>
+                                                                        &nbsp;&nbsp;<span>@b.DashBoardID</span>
+                                                                    </div>
+                                                                    <div class="col-10">
+                                                                        <span>@b.Name</span>
+                                                                    </div>
+                                                                </div>
+                                                                <hr class="mt-1" />
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                    <div class="row pt-2">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #feca57 !important">
+                                                    <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleLoc = !IsVisibleLoc;
+                                                                                })">
+                                                        <span style="color: black">สิทธิ์ใช้ คลัง</span>
+                                                    </a>
+
+                                                </div>
+                                                <div class="collapse @(IsVisibleLoc ? "show" : "")">
+                                                    <div class="card-body bg-white pb-1">
+                                                        @foreach (var loc in userService.DocSet.XLoc) {
+                                                            <div class="row">
+                                                                <div class="col-2">
+                                                                    <TelerikCheckBox @bind-Value="@loc.X"></TelerikCheckBox>
+                                                                    &nbsp;&nbsp;<span>@loc.LocID</span>
+                                                                </div>
+                                                                <div class="col-10">
+                                                                    <span>@loc.Name</span>
+                                                                </div>
+                                                            </div>
+                                                            <hr class="mt-1" />
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                        <div class="row pt-2">
+                                            <div class="col-md-12">
+                                                <div class="card">
+                                                    <div class="card-header" style="background-color: #feca57 !important">
+                                                        <div class="row">
+                                                            <div class="col-12">
+                                                                <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleMenu = !IsVisibleMenu;
+                                                                                })">
+                                                                    <span style="color: black">กำหนดสิทธิ์ ตามเมนู</span>
+                                                                </a>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                    <div class="collapse @(IsVisibleMenu ? "show" : "")">
+                                                        <div class="card-body bg-white pb-1">
+                                                          
+                                                            @foreach (var m in userService.DocSet.XMenu.Where(o => o.MenuTypeID == "MENUGROUP").OrderBy(o => o.MenuGroupSort).ToList()) {
+                                                                <br />
+                                                                <div class="row">
+
+                                                                    <div class="col-12">
+                                                                        <div class="btn-group">
+                                                                            <TelerikCheckBox Class="@(m.NeedOpenPermission ? "" : "hidden")" @bind-Value="@m.IsOpen"></TelerikCheckBox>
+                                                                            &nbsp; <strong>@m.MenuDesc1 </strong>&nbsp;&nbsp;
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <hr class="mt-1" />
+                                                                @foreach (var mm in userService.DocSet.XMenu.Where(o => o.MenuTypeID == "MENU" && o.MenuGroupID == m.MenuGroupID).OrderBy(o => o.MenuSubGroupSort).ToList()) {
+                                                                    <div class="row  pl-4">
+                                                                        <div class="col-4">
+                                                                            <span>@mm.MenuDesc1</span>
+                                                                        </div>
+                                                                        <div class="col-8">
+                                                                            <div class="btn-group">
+                                                                                <TelerikCheckBox @bind-Value="@mm.IsOpen" Class="@(mm.NeedOpenPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionOpenPermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mm.IsCreate" Class="@(mm.NeedCreatePermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionCreatePermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mm.IsEdit" Class="@(mm.NeedEditPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionEditPermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mm.IsDelete" Class="@(mm.NeedDeletePermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionDeletePermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mm.IsPrint" Class="@(mm.NeedPrintPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionPrintPermission </span>&nbsp;&nbsp;
+                                                                               
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                                @foreach (var mmm in userService.DocSet.XMenu.Where(o => o.MenuTypeID == "FUNCTION" && o.MenuGroupID == m.MenuGroupID).OrderBy(o => o.MenuSubGroupSort).ToList()) {
+                                                                    <div class="row  pl-4">
+                                                                        <div class="col-4">
+                                                                            <span>@mmm.MenuDesc1</span>
+                                                                        </div>
+                                                                        <div class="col-8">
+                                                                            <div class="btn-group">
+                                                                                <TelerikCheckBox @bind-Value="@mmm.IsOpen" Class="@(mmm.NeedOpenPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mmm.CaptionOpenPermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mmm.IsCreate" Class="@(mmm.NeedCreatePermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mmm.CaptionCreatePermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mmm.IsEdit" Class="@(mmm.NeedEditPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mmm.CaptionEditPermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mmm.IsDelete" Class="@(mmm.NeedDeletePermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mmm.CaptionDeletePermission </span>&nbsp;&nbsp;
+                                                                                <TelerikCheckBox @bind-Value="@mmm.IsPrint" Class="@(mmm.NeedPrintPermission ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mmm.CaptionPrintPermission </span>&nbsp;&nbsp;
+
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    
+                        <div class="row pt-2 @IsdivSignature" id="divSignature" hidden>
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark">
+                                        <div class="row " style="color:white">
+                                            <div class="col-md-6"> 
+                                                    <i class="fa-solid fa-file-signature fa-2x"></i>&nbsp;
+                                                <span>ลายเซ็นต์</span>
+                                            </div>
+                                            <div class="col-md-6 text-right">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body bg-light">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="input-group mb-3">
+                                                        <div class="file-input-zone">
+                                                            <InputFile OnChange="OnInputFileSignatureChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif">
+                                                            </InputFile>
+
+                                                        </div>
+                                                        <small>อัพโหลดลายเซ็นต์</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @foreach (var f in userService.DocSet.files) {
+                                                <div class="row pt-1">
+                                                    <div class="col-11">
+                                                        <a class="btn btn-link" style="background-color : white; text-decoration:underline;" @onclick="@(() => DownLoadImage(f))">
+                                                            <i class="fas fa-cloud-download-alt"></i>&nbsp; @f.FileName
+                                                        </a>
+                                                    </div>
+                                                    <div class="col-1 text-end">
+                                                        <a class="text-decoration-none" @onclick="@(() => OnDeleteSignature(f))"> <i class="far fa-trash-alt"></i></a>
+                                                    </div>
+                                                </div>
+                                            }
+                                         
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                          
+                    </div>
+                </div>
+
+            </div>
+        </div>
+           }
+  
+<div class="demo-container">
+
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    string menuCaption = "";
+    string menuGroupCaption = ""; 
+    public bool username_readonly { get; set; } = true;
+    public string SearchText { get; set; } = "";
+    public string lblTopic { get; set; } = "ข้อมูลผู้ใช้งาน";
+    public string Mobile { get; set; }
+
+    bool ShowFilterRow = false;
+    string IsdivPermission { get; set; } = "";
+    string IsdivSignature { get; set; } = "";
+    string Isdivlogin { get; set; } = "";
+    string Username { get; set; } = "";
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public bool IsVisibleUserGroup { get; set; } = true;
+    public bool IsVisibleCompany { get; set; } = true;
+    public bool IsVisibleRCompany { get; set; } = true;
+    public bool IsVisibleLoc { get; set; } = true;
+    public bool IsVisibleDashboard { get; set; } = true;
+    public bool IsVisibleMenu { get; set; } = true;
+
+    public DateTime? JobStartDate { get; set; } = DateTime.Now.Date;
+    public DateTime? JobEndDate { get; set; } = DateTime.Now.Date;
+
+    List<MasterTypeLine> ListAgency = new List<MasterTypeLine>(); 
+    List<MasterTypeLine> ListLevel = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListJobType = new List<MasterTypeLine>();
+
+    List<MasterTypeLine> ListGender = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListPosition = new List<MasterTypeLine>();
+
+    IEnumerable<vw_ThaiPostAddress> ListAddr;
+    public string SelectAddr { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await LoadThaiAddr();
+        await Task.Run(LoadData);
+    }
+
+    async Task CheckIsRefresh() {
+        if (userService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(MyUserService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user_login = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                userService.DocSet = userService.GetDocSet(docid, rcom, user_login);
+            } else {
+                userService.DocSet = MyUserService.NewTransaction(rcom);
+                userService.DocSet.User.CreatedBy = user_login;
+            }
+        }
+    }
+
+    async void LoadData() {
+        LoadDropDownList();
+        BindData();
+        isLoading = false;
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    private void SetActiveControl() {
+        CheckPermission();
+    }
+    private void CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9002");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+        var h = userService.DocSet.User;
+        if (h.Username == "") {
+            isShowDelete = false;
+        }
+        if (!login.CanCreate(login.LoginInfo, "9002")) { //9002 User & Permission
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "9002")) {
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "9002")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+
+
+    private void LoadDropDownList() {
+        var h = userService.DocSet.User;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        ListAgency = MasterTypeService.ListType("", "DEPARTMENT", false); 
+        ListLevel = MasterTypeService.ListType("", "JOB LEVEL", false);
+        ListJobType = MasterTypeService.ListType("", "JOB TYPE", false);
+        ListGender = MasterTypeService.ListType("", "GENDER", false);
+        ListPosition = MasterTypeService.ListType("", "JOB POSITION", false);
+    }
+
+    void BindData() {
+        var h = userService.DocSet.User;
+        username_readonly = true;
+        Username = "";
+        if (h.Username != "") {
+            username_readonly = false;
+            Username = h.Username;
+        }
+        Mobile = h.Mobile;
+        JobStartDate = h.JobStartDate == null ? DateTime.Now.Date : h.JobStartDate;
+
+        if (h.Username == "") {
+            IsdivPermission = "hidden";
+            Isdivlogin = "hidden";
+            IsdivSignature = "hidden";
+        } else {
+            IsdivPermission = "";
+            Isdivlogin = "";
+            IsdivSignature = "";
+        }
+        //var isSupperman = LoginService.IsSupperman(LoginService.LoginInfo.CurrentRootCompany.CompanyID, LoginService.LoginInfo.CurrentUser);
+        //if (!isSupperman)
+        //{
+        //    divMenuPermission.Visible = false;
+        //}
+    }
+
+    public async void ChangeAgency(string data) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        if (!string.IsNullOrEmpty(data)) {
+            userService.DocSet.User.DepartmentID = data; 
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async public Task LoadThaiAddr() {
+        ListAddr = await Task.Run(() => AddressService.ListThaiPostAddress());
+    }
+    async Task NewDoc() {
+        var xlogin = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(MyUserService.sessionActiveId);
+        userService.DocSet = MyUserService.NewTransaction(xlogin.CurrentRootCompany.CompanyID);
+        userService.DocSet.User.CreatedBy = xlogin.CurrentUser;
+        LoadData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    #region Save Item
+    bool ValidData() {
+        var h = userService.DocSet.User;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (Username == "") {
+            Errmsg = "Input Username !! ";
+            isvalid = false;
+        }
+        if (h.FirstName == "") {
+            Errmsg = "กรุณาระบุ ชื่อ!! ";
+            isvalid = false;
+        }
+
+        //if (h.LastName == "") {
+        //    Errmsg = "กรุณาระบุ นามสกุล!! ";
+        //    isvalid = false;
+        //}
+
+        if (h.Username == "") {
+            var chkDup = MyUserService.GetUserInfo(h.Username.Trim());
+            if (chkDup != null) {
+                Errmsg = "มีชื่อผู้ใช้ " + h.Username.Trim() + "ในระบบแล้ว!! ";
+                isvalid = false;
+            }
+        }
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    async private Task Save() {
+        var isnew = PrepairDataSave();
+        var u = userService.DocSet.User;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var user_login = login.LoginInfo.CurrentUser;
+        var rs = MyUserService.Save(userService.DocSet, login.LoginInfo);
+        if (rs.Result != "ok") {
+            u.Username = "";
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("", rs.Message1, "error");
+        } else {
+            if (isnew) {
+                await sessionStorage.SetItemAsync(MyUserService.sessionActiveId, u.Username);
+            }
+            userService.DocSet = userService.GetDocSet(userService.DocSet.User.Username, login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser);
+            BindData();
+            isLoading = false;
+              await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("success", "บันทึกสำเร็จ", "success");
+            await InvokeAsync(StateHasChanged);
+        }
+  
+    }
+
+    async void btnSave() {
+        var u = userService.DocSet.User;
+
+        if (!ValidData()) {
+            return;
+        }
+        isLoading = true;
+        await Task.Run(Save);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool PrepairDataSave() {
+        var h = userService.DocSet.User;
+        bool isNew = h.Username == "" ? true : false;
+        if (h.Username == "") {
+            h.Username = Username;
+            h.Password = Hash.hashPassword("MD5", MyUserService.GetDefualtPassword());
+        }
+        h.DefaultCompany = h.DepartmentID;
+        h.Mobile = Mobile;
+        return isNew;
+    }
+
+    public void ValueChangeAddr(string value) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        if (!string.IsNullOrEmpty(value)) {
+            var addrid = value.ToString();
+
+            var data = AddressService.GetViewThaiPostAddress(addrid);
+            if (data != null) {
+                userService.DocSet.User.AddrProvince = data.PROVINCE_NAME;
+                userService.DocSet.User.AddrAmphoe = data.BORDER_NAME;
+                userService.DocSet.User.AddrTumbon = data.DISTRICT_NAME;
+                userService.DocSet.User.AddrPostCode = data.DISTRICT_POSTAL_CODE;
+            }
+        } else {
+            SelectAddr = "";
+        }
+    }
+    #endregion
+
+
+
+    void lnkResetPassword() {
+        var h = userService.DocSet.User;
+        var rs = MyUserService.ResetPassword(h.Username);
+
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            Swal.FireAsync("", "รหัส่ผ่านถูกรีเซ็ตเป็น : " + rs.Message2, "error");
+            return;
+        }
+    }
+
+    void ComCheckedChanged(bool value, string comid) {
+        var com_select = userService.DocSet.XCompany.Where(o => o.CompanyID == comid).FirstOrDefault();
+        com_select.X = value;
+        //var gg = usergroupService.DocSet.XCompany.Where(o => o.CompanyType == "GROUP").ToList();
+        //foreach (var g in gg) {
+        //    g.X = false;
+        //}
+        var chk_com_ingroup = userService.DocSet.XCompany.Where(o => o.CompanyType == "BRANCH" && o.CompnayGroup == com_select.CompnayGroup && o.X == true).ToList();
+        var group = userService.DocSet.XCompany.Where(o => o.CompanyType == "COMPANY" && o.CompnayGroup == com_select.CompnayGroup).FirstOrDefault();
+        if (chk_com_ingroup.Count > 0) {
+            group.X = true;
+        } else {
+            group.X = false;
+        }
+    }
+
+    void ComCheckUnCheckAll(bool ischeck) {
+        foreach (var u in userService.DocSet.XCompany) {
+            u.X = ischeck;
+        }
+    }
+    async Task OnInputFileSignatureChanged(InputFileChangeEventArgs e) {
+        isLoading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1);
+        var h = userService.DocSet.User;
+        if (string.IsNullOrEmpty(h.Username)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            isLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        string user = login.LoginInfo.CurrentUser;
+        try {
+            upload_file = new List<FilesInfo>();
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_UserSignatureAll,rcom, h.CompanyID, h.Username);
+                #region resize image
+                System.Drawing.Image originalImage = System.Drawing.Image.FromStream(ms);
+                string extension = System.IO.Path.GetExtension(file.Name);
+                extension = extension.Replace(".", "");
+                var imgx = ImageService.ResizeImage(originalImage, 500, 500);
+                if (imgx == null) {
+                    isLoading = false;
+                    StateHasChanged();
+                    await Swal.FireAsync("Error", "Resize image fail.", "error");
+                    return;
+                }
+                MemoryStream resize_image_ms = new MemoryStream();
+                if (extension.ToLower() == "jpg" || extension.ToLower() == "jpeg") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                }
+                if (extension.ToLower() == "gif") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Gif);
+                }
+
+                if (extension.ToLower() == "png") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Png);
+                }
+                #endregion
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+            }
+            await Upload("signature");
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isLoading = false;
+        }
+    }
+    async Task OnDeleteSignature(vw_XFilesRef h) {
+        try {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "Warning",
+                    Text = $"ต้องการลบไฟล์ใช่หรือไม่",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+            if (string.IsNullOrEmpty(result.Value)) {
+                return;
+            } 
+            string user = login.LoginInfo.CurrentUser;
+
+
+            isLoading = true;
+            var rr = await Task.Run(() => fileGo.DeleteFile(h.RCompanyID, h.CompanyID, h.DocType, h.DocID, user));
+            if (rr.Result == "ok") {
+                userService.DocSet = MyUserService.RefreshFile(userService.DocSet);
+                InvokeAsync(StateHasChanged);
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "error");
+            }
+
+        } catch {
+        } finally {
+            isLoading = false;
+        }
+    }
+    async Task Upload(string type) {
+        try {
+            var h = userService.DocSet.User;
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            isLoading = true;
+            var login_filego = FileGo.GetFileGoLogin();
+
+            string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var token_filego = FileGo.GetFileGoLogin();
+            var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file,token_filego.JwtToken));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            } else {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail") {
+                    upload_file.Clear();
+                    await Swal.FireAsync("Error", update_result.Message1, "error");
+                } else {
+                    //ShowMessage(true, "Upload Success");
+
+                    var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+                    var rr = FileGo.SaveXFileRef(xfile_ref);
+                    var rrr = await Task.Run(() => fileGo.DeleteOldFileAfterSave(rcom, h.CompanyID, FileGo.Type_CompanyProfile, h.CompanyID, user));
+                    if (type == "profile") {
+                        //await loadProfile();
+                    }
+                    if (type == "signature") {
+                        userService.DocSet = MyUserService.RefreshFile(userService.DocSet);
+                    }
+
+                }
+            }
+        } catch {
+        } finally {
+            isLoading = false;
+        }
+    }
+    async Task DownLoadImage(vw_XFilesRef h) {
+        try {
+            string file_url = FileGo.GetFileUrl(h.FileID);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+}

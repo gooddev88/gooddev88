@@ -1,0 +1,67 @@
+﻿@using Robot.Pages.ApiDoc.SamleFactory.DPMPortal
+
+
+@switch (apiID) {
+    case "DPM003":
+        <GridDPM003></GridDPM003>
+        break;
+    case "DPM004":
+        <GridDPM004></GridDPM004>
+        break;
+    case "DPM005":
+        <GridDPM005></GridDPM005>
+        break;
+    case "DPM006":
+        <GridDPM006></GridDPM006>
+        break;
+    case "DPM008":
+        <GridDPM008></GridDPM008>
+        break;
+    case "DPM009":
+        <GridDPM009></GridDPM009>
+        break;
+    case "DPM010":
+        <GridDPM010></GridDPM010>
+        break;
+    case "DPM011":
+        <GridDPM011></GridDPM011>
+        break;
+    case "DPM012":
+        <GridDPM012></GridDPM012>
+        break;
+    case "DPM013":
+        <GridDPM013></GridDPM013>
+        break;
+    case "DPM014":
+        <GridDPM014></GridDPM014>
+        break;
+    case "DPM015":
+        <GridDPM015></GridDPM015>
+        break;
+    case "DPM016":
+        <GridDPM016></GridDPM016>
+        break;
+   case "DPM017":
+        <GridDPM017></GridDPM017>
+        break;
+    case "DPM018":
+        <GridDPM018></GridDPM018>
+        break;
+    case "EST006":
+        <GridEST006></GridEST006>
+        break;
+    case "EST007":
+        <GridEST007></GridEST007>
+        break;
+    case "EST008":
+        <GridEST008></GridEST008>
+        break;
+    case "NRD001":
+        <GridNRD001></GridNRD001>
+        break;
+    default:
+        break;
+}
+@code {
+    [Parameter] public string apiID { get; set; }
+}

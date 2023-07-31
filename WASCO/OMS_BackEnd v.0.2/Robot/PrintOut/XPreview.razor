@@ -1,0 +1,137 @@
+﻿@page "/XPreview/{reportname}/{docid}" 
+ 
+@using Robot.PrintOut
+@using Microsoft.AspNetCore.Hosting;
+@using Robot.Data.DA.Login 
+@using Robot.Data.DA.Master
+@using Robot.Data.DA.Quotation
+
+@inject IHostingEnvironment hostingEnvironment
+@inject LogInService login
+@inject QuotationService quotationService
+
+<link rel="stylesheet" href="_content/DevExpress.Blazor/dx-blazor.css">
+<link rel="stylesheet" href="_content/DevExpress.Blazor.Reporting.Viewer/css/dx-blazor-reporting-components.css">
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+            @if (Report != null)
+            {
+                <div class="pb-4">
+                <DxReportViewer Id="Viewer" @ref="reportViewer" Report="Report">
+                </DxReportViewer>
+                </div>
+            }
+                        @if (Report2 != null)
+            {
+                <div class="pb-4">
+                <DxReportViewer Id="Viewer" @ref="reportViewer" Report="Report2">
+                </DxReportViewer>
+                </div>
+            }
+                        @if (Report3 != null)
+            {
+                <div class="pb-4">
+                <DxReportViewer Id="Viewer" @ref="reportViewer" Report="Report3">
+                </DxReportViewer>
+                </div>
+            }
+                        @if (Report4 != null)
+            {
+                <div class="pb-4">
+                <DxReportViewer Id="Viewer" @ref="reportViewer" Report="Report4">
+                </DxReportViewer>
+                </div>
+            }    
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter]
+    public string reportname { get; set; }
+
+    [Parameter]
+    public string docid { get; set; }
+
+    //DxReportViewer reportViewer { get; set; }
+    //XtraReport Report { get; set; }
+    //XtraReport Report2 { get; set; }
+    //XtraReport Report3 { get; set; }
+    //XtraReport Report4 { get; set; }
+
+    private List<CompanyInfo> coms;
+
+    bool isLoading = true;
+
+    public List<ReportS> reports = new List<ReportS>();
+    public class ReportS 
+    {
+        //public XtraReport Report { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(LoadData);
+        BindData();
+    }
+
+
+    public async void LoadData() {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        int i = 1;
+
+        //if (reportname == "a") {
+        //    using (GAEntities db = new GAEntities()) {
+        //        coms = db.CompanyInfo.ToList();
+        //    }
+        //    Report = new PrintOut.AReport();
+        //    Report.DataSource = coms;
+        //}
+
+        if (reportname == "Quotation")
+        {
+
+            //Report = new PrintOut.Quotation(rcom,com,docid,"Quotation","copy");
+        }
+
+        if (reportname == "INVGA01") //อินวอยซ์ขายสินค้า
+        {
+            List<int> idinv_list = new List<int> { 1, 2 ,3,4};
+
+            
+            await InvokeAsync(StateHasChanged);
+        }
+
+        isLoading = false;
+    }
+
+    public void BindData()
+    {
+        LoadData();
+    }
+
+
+    private string GetWebRootPath() {
+        string webRootPath = hostingEnvironment.WebRootPath;
+        string contentRootPath = hostingEnvironment.ContentRootPath;
+
+        string path = webRootPath;
+        return path;
+    }
+
+}

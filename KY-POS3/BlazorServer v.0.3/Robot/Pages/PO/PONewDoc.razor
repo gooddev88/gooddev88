@@ -1,0 +1,94 @@
+﻿@page "/PO/PONewDoc/{menu}"
+
+@using Robot.POS.DA;
+@using Telerik.Blazor.Components.Upload;
+@using static Robot.Data.DA.CompanyService;
+@using static Robot.POS.DA.POS_POService;
+
+@inject POS_POService POS_poService
+
+
+
+<div class="row pt-3">
+    <div class="col-10 mx-auto text-start">
+        <h2>
+            เลือกสาขา
+        </h2>
+    </div>
+</div>
+
+<div class="row pt-3">
+    <div class="col-md-10 mx-auto">
+        @foreach (var l in DocList) {
+            <div class="row pb-2 ">
+                <div class="col-md-12">
+                    <div class="card" style="background-color:#c7c7c7;">
+                        <div class="card-body">
+                            <a class="btn p-0 w-100" Width="100%" @onclick="@(() => GoToPOSPO(l))">
+                                <div class="row">
+                                    <div class="col-md-12 text-left">
+                                        <div class="row">
+                                            <div class="col-md-1 text-center">
+                                                <span style="color: lightseagreen; font-size: large">
+                                                    <i class="fas fa-star fa-2x"></i>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-11 text-start">
+                                                <span style="color: black; font-size: x-large"> @l.CompanyID </span><br />
+                                                <span style="color: gray; font-size: large"> @l.Name </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public string menu { get; set; } = "";
+
+    bool isLoading = true;
+    List<CompanyInfoList> DocList = new List<CompanyInfoList>();
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        DocList = CompanyService.ListCompanyInfoUIC(login.LoginInfo, "BRANCH", false);
+
+        isLoading = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    async void GoToPOSPO(CompanyInfoList select_data) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+
+
+        isLoading = true;
+        await sessionStorage.RemoveItemAsync(POS_POService.sessionActiveId);
+        POS_poService.DocSet = POS_POService.NewTransaction("PO", rcom, user);
+        POS_poService.DocSet.head.CreatedBy = user;
+        POS_poService.DocSet.head.ComID = select_data.CompanyID;
+        POS_poService.DocSet.head.VendorID = select_data.CompanyID;
+        POS_poService.DocSet.head.VendorName = select_data.Name;
+        await sessionStorage.SetItemAsync(POS_POService.sessionDocType,"PO");
+        //PODetail.txtpoid = "";
+        nav.NavigateTo($"PO/PODetail/{menu}", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

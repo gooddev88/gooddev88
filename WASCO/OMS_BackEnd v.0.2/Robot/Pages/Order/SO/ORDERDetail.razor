@@ -1,0 +1,535 @@
+﻿@page "/Order/SO/OrderDetail"
+
+@using System.Text.Json
+@using System.Text
+
+@using Blazorise
+@using Robot.Data.DA.Document;
+@using RobotWasm.Shared.Data.GaDB
+@using static Robot.Data.ML.I_Result;
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .badge-open-line {
+        background-color: #a3caf3;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-success-line {
+        background-color: #b4eda0;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-pending-line {
+        background-color: #ffebb6;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-lost-line {
+        background-color: pink;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">รายละเอียดการสั่งสินค้า</span></div>
+        </div>
+    </a>
+
+</div>
+
+@if (_soService.DocSet != null) {
+        <div class="row pt-2">
+            <div class="col-md-10 mx-auto">
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body pt-1">
+                                <div class="row  pt-2">
+                                @if (!string.IsNullOrEmpty(_soService.DocSet.Head.OrdID)) {
+                                    @*         <div class="col-md-6 col-sm-12 col-12 pt-2">
+                            <div class="d-inline-flex"><span style="font-size:medium;">เอกสาร @_soService.DocSet.Head.OrdID</span></div>
+                            </div>*@
+                                            <div class="col-8">
+                                                <div class="d-flex flex-row bd-highlight mb-0">
+                                                    <div class="d-inline-flex"><span style="font-size:medium;">เอกสาร @_soService.DocSet.Head.OrdID</span></div>
+                                                    <a @onclick="OnDeleteDoc">
+                                                        &nbsp;
+                                                        <i class="fa-solid fa-trash-can" style="color:black"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                        @if (_soService.DocSet.Head.Status == "OPEN") {
+                                                        <span class="badge badge-open-line"><i style="color:cornflowerblue;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                        } else if (_soService.DocSet.Head.Status == "WAIT") {
+                                                        <span class="badge badge-pending-line"><i style="color:darkorange;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                        } else {
+                                                        <span class="badge badge-success-line"><i style="color:green;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                        }
+                                            </div>
+                                }
+                                    <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                        <span>ลูกค้า</span>
+                                        <a class="p-0 text-decoration-none" @onclick="@GoSelectCustomer">
+                                            <div class="d-inline-block"><span style="font-size:medium;">@(_soService.DocSet.Head.CustID == "" ? "กดเลือกลูกค้า" : _soService.DocSet.Head.CustName)</span></div>
+                                        </a>
+                                    </div>
+                                    <div class="row pt-2">
+                                        <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                            <div class="d-inline-flex">วันที่</div>
+                                            <div class="d-inline-block">
+                                                <TelerikDatePicker @bind-Value="@_soService.DocSet.Head.OrdDate"
+                                                           Format="dd/MM/yyyy" FillMode="@Outline">
+                                                </TelerikDatePicker>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-block"><span style="font-size:small;">จำนวน &nbsp; <b> @_soService.DocSet.Head.Qty.ToString("n0")</b> &nbsp; ชิ้น  &nbsp;</span></div>
+                                                <div class="d-inline-block"><span style="font-size:small;">ยอดรวม  &nbsp;<b> @_soService.DocSet.Head.NetTotalAmtIncVat.ToString("n2")</b> &nbsp; บาท  &nbsp;</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-block"><span style="font-size:small;">ส่วนลด &nbsp;<b> @_soService.DocSet.Head.ItemDiscAmtIncVat.ToString("n2")</b> &nbsp; บาท  &nbsp;</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-block"><span style="font-size:small;">Salesman &nbsp; <b> @_soService.DocSet.Head.SalesName</b></span></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-block"><span style="font-size:small;">สถานะที่ &nbsp; <b> @_soService.DocSet.Head.Remark2</b></span></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="d-inline-flex">หมายเหตุ</div>
+                                        <div class="d-inline-block w-100">
+                                            <TelerikTextArea @bind-Value="@_soService.DocSet.Head.Remark1" FillMode="@Outline"
+                                                             AutoSize="true" />
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+
+                                <div class="row pt-1">
+                                    <div class="col-md-12">
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                               @onclick="@(() => OnSave())" Class="w-100"
+                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                            บันทึก
+                                        </TelerikButton>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row pt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5 class="d-inline-block">รายการสินค้า</h5>
+                                      
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+
+                                    @if (_soService.DocSet.Line.Count > 0) {
+                                                <TelerikListView Data="@_soService.DocSet.Line" Pageable="true" Page="1" PageSize="10">
+                                                    <Template>
+
+                                                        <div class="row pt-1">
+                                                            <div class="col-9"> 
+                                                                <a class="p-0 text-decoration-none text-dark" @onclick="() => EditLineItem(context)">
+                                                                    <div class="row">
+                                                                        <div class="col-4">
+                                                                            <img class="m-auto" src="@context.ImageUrl"
+                                                                         style="width: 100%;object-fit: cover;width:100%;height:auto; " />
+                                                                        </div>
+                                                                        <div class="col-8 text-start">
+                                                                            <div>
+                                                                                <strong style="font-size:medium;">@context.ItemName</strong>
+                                                                            </div>
+
+                                                                            <span class="small">จำนวน <b>@context.Qty.ToString("n0")</b> ชิ้น</span>
+                                                                            <span class="small">ราคา <b>@context.PriceIncVat.ToString("n2")</b> บาท</span>
+                                                                            <br />
+                                                                            <span class="small">รวมทั้งหมด <b>@context.TotalAmtIncVat.ToString("n2")</b> ชิ้น</span><br>
+                                                                    @if (context.DiscAmtIncVat > 0) {
+                                                                                    <span class="small" style="color:red;">ส่วนลด <b> @context.DiscAmtIncVat.ToString("n0")</b> บาท &nbsp; </span>
+                                                                                    <span class="small" style="color:red;"> / <b> @context.Qty.ToString("n0")</b>  @context.Unit &nbsp; </span>
+                                                                        @if (context.DiscApproveDate == null) {
+                                                                                            <i class="fa-solid fa-clock" style="color:orange"></i>
+                                                                        } else {
+                                                                                            <i class="fa-solid fa-circle-check" style="color:green"></i>
+                                                                        }
+
+                                                                    }
+                                                                    &nbsp;
+                                                                    @if (context.Status=="REJECT") {
+                                                                        <span class="badge rounded-pill bg-danger">@context.Status</span>
+                                                                    } else if (context.Status == "WAIT") {
+                                                                        <span class="badge rounded-pill bg-warning">@context.Status</span>
+                                                                    }
+                                                                    else {
+                                                                        <span class="badge rounded-pill bg-success">@context.Status</span>
+                                                                    }
+                                                                </div>    
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                            <div class="col-23 text-end pr-4">
+                                                           @if (context.Status=="WAIT") {
+                                                            <div class="btn-group" role="group" aria-label="Basic example"> 
+                                                           
+                                                    <button class="btn btn-success" @onclick="@(() => OnChangeApprove(@context))">อนุมัติ</button>
+                                                            <button class="btn btn-danger" @onclick="@(() => OnChangeReject(@context))">ยกเลิก</button>
+                                                            </div>
+                                                } 
+                                                            </div>
+
+
+                                                        </div>
+                                                        <hr class="my-3" />
+                                                    </Template>
+                                                </TelerikListView>
+                                    } else {
+                                                <div class="row">
+                                                    <div class="col-6 mx-auto">
+                                                        <img src="/img/no_data.jpg" style="width: 100%;" />
+                                                        <div class="text-center">ไม่พบเอกสาร</div>
+                                                    </div>
+                                                </div>
+                                    }
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+}
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadDropDown());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+        var userfullname = login.LoginInfo.CurrentUserInfo.FullName;
+        if (_soService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(SOService.SessionActive_SOID);
+
+            if (!string.IsNullOrEmpty(docid)) {
+                _soService.DocSet = await Task.Run(() => SOService.GetDocSet(docid, rcom, com));
+            } else {
+                _soService.DocSet = await Task.Run(() => SOService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                _soService.DocSet.Head.BrandID = await sessionStorage.GetItemAsync<string>(SOService.SessionActive_BrandID);
+                try {
+                    var lat = await sessionStorage.GetItemAsync<string>(SOService.SessionLat);
+                    var lon = await sessionStorage.GetItemAsync<string>(SOService.SessionLon);
+                    _soService.DocSet.Head.Lat = Convert.ToDecimal(lat);
+                    _soService.DocSet.Head.Lon = Convert.ToDecimal(lon);
+                } catch (Exception ex) {
+                    var e = ex.Message;
+                }
+
+                _soService.DocSet.Head.Remark2 = await sessionStorage.GetItemAsync<string>(SOService.SessionArea);
+            }
+        }
+    }
+    async Task OnDeleteDoc() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        var h = _soService.DocSet.Head;
+        var user = login.LoginInfo.CurrentUser;
+        var rdel = await Task.Run(() => SOService.DeleteDoc(h.OrdID, h.RComID, h.ComID, user));
+        if (rdel.Result == "ok") {
+            GoBack();
+        } else {
+            await Swal.FireAsync("Warning", rdel.Message1, "info");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnDeleteItem(vw_OSOLine select_data) {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบสินค้า",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        _soService.DocSet = await Task.Run(() => SOService.DeleteLine(select_data.LineNum, _soService.DocSet));
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadDropDown() {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LoginInfo, "5001");
+        //var Permissionmenu = login.LoginInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    async Task OnSelectBrand(vw_MasterTypeLine select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(SOService.SessionActive_BrandID, select_data.ValueTXT);
+        //await sessionStorage.RemoveItemAsync(SOService.SessionActive_PosID);
+        isLoading = false;
+        nav.NavigateTo($"Order/OrderDetail", false);
+    }
+
+
+    void GoSelectCustomer() {
+        if (_soService.DocSet.Line.Count == 0 && _soService.DocSet.Head.CustID == "") {
+            nav.NavigateTo("Order/SelectCustomer");
+            return;
+        }
+        if (_soService.DocSet.Line.Count > 0) {
+            Swal.FireAsync("Warning", "ลบรายการสินค้าก่อนเปลี่ยนลูกค้า", "warning");
+            return;
+        }
+    }
+
+    void AddProduct() {
+        if (_soService.DocSet.Head.CustID == "") {
+            Swal.FireAsync("Warning", "เลือกลูกค้าก่อนเลือกสินค้า", "warning");
+            return;
+        }
+        SOService.ClearPendingLot(_soService.DocSet);
+        nav.NavigateTo("Order/SelectProduct");
+    }
+
+    void EditLineItem(vw_OSOLine select_data) {
+        //SOService.ClearPendingLot(_soService.DocSet);
+        //_soService.DocSet.LineActive = _soService.DocSet.Line.Where(o => o.LineNum == select_data.LineNum).FirstOrDefault();
+        //nav.NavigateTo("Order/ProductInOrder");
+    }
+
+
+
+
+
+    bool ValidData() {
+        bool isvalid = true;
+        string Errmsg = "";
+        var h = _soService.DocSet.Head;
+        if (string.IsNullOrEmpty(h.CustID)) {
+            Errmsg = "ระบุ ลูกค้า";
+            Swal.FireAsync("", Errmsg, "error");
+            return false;
+        }
+
+        //if (string.IsNullOrEmpty(h.to_user_id)) {
+        //    Errmsg = "ระบุ ผู้รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.from_loc)) {
+        //    Errmsg = "ระบุ สถานที่ส่ง";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.to_loc)) {
+        //    Errmsg = "ระบุ สถานที่รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (!isvalid) {
+        //    Swal.FireAsync("", Errmsg, "error");
+        //}
+        return isvalid;
+    }
+
+    protected async Task<bool> PrepairDataSave() {
+        var doc = _soService.DocSet;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var h = _soService.DocSet.Head;
+        bool isnew = h.OrdID == "" ? true : false;
+        if (string.IsNullOrEmpty(h.OrdID)) {
+            h.OrdID = (await Task.Run(() => IDRuunerService.GetNewIDV2(h.DocTypeID, rcom, com, h.OrdDate, false, "th")))[1];
+        } else {
+            h.ModifiedBy = login.LoginInfo.CurrentUser;
+        }
+        return isnew;
+    }
+    public async void OnChangeApprove(vw_OSOLine select_data) {
+        if (!ValidData()) {
+            return;
+        }
+        try {
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            _soService.DocSet.LineActive = _soService.DocSet.Line.Where(o => o.LineNum == select_data.LineNum).FirstOrDefault();
+            var line_v = _soService.DocSet.LineActive;
+            line_v.DiscApproveDate = DateTime.Now.Date;
+            line_v.Status = "OK";
+            isLoading = true;
+
+            _soService.DocSet = SOService.CalDocSet(_soService.DocSet);
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+    public async void OnChangeReject(vw_OSOLine select_data) {
+        if (!ValidData()) {
+            return;
+        }
+        try {
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            _soService.DocSet.LineActive = _soService.DocSet.Line.Where(o => o.LineNum == select_data.LineNum).FirstOrDefault();
+            var line_v = _soService.DocSet.LineActive;
+            line_v.DiscApproveDate = DateTime.Now.Date;
+            line_v.Status = "REJECT";
+            isLoading = true;
+
+            _soService.DocSet = SOService.CalDocSet(_soService.DocSet);
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        try {
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var h = _soService.DocSet.Head;
+            isLoading = true;
+            _soService.DocSet = SOService.CalDocSet(_soService.DocSet);
+            var isnew = await Task.Run(() => PrepairDataSave());
+            I_BasicResult s_result = new I_BasicResult();
+            if (isnew) {
+                s_result = await Task.Run(() => SOService.SaveSO(_soService.DocSet, "insert"));
+            } else {
+                s_result = await Task.Run(() => SOService.SaveSO(_soService.DocSet, "update"));
+            }
+            if (s_result.Result == "ok") {
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+                await sessionStorage.SetItemAsync(SOService.SessionActive_SOID, h.OrdID);
+                _soService.DocSet = await Task.Run(() => SOService.GetDocSet(h.OrdID, rcom, com));
+                await Swal.FireAsync("Success", "บันทึกสำเร็จ", "success");
+            } else {
+                h.OrdID = "";
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+                await Swal.FireAsync("Error", s_result.Message1, "error");
+            }
+
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Order/SO/OrderList");
+    }
+}

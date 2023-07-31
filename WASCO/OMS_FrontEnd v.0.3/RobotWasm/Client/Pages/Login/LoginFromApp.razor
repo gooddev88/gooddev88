@@ -1,0 +1,65 @@
+﻿ 
+@page "/Login/LoginFromApp/{reqid}"
+
+@using RobotWasm.Shared.Data.ML.Login
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@inject LoginService login
+
+
+@if (isLoading) {
+    <div class="demo-container">
+        <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="Loading"
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public string reqid { get; set; }
+    LogInCrossAppReq reqInfo = new LogInCrossAppReq();
+    bool isLoading = true;
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+
+        //  await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => OnLogin());
+    }
+
+
+    async Task OnLogin() {
+
+        reqInfo = await Task.Run(()=> login.GetCrossAppReq(reqid));
+        if (reqInfo == null) {
+            isLoading = false;
+            nav.NavigateTo($"Login", false);
+        } else {
+            LoginRequest n = new LoginRequest { UserName = reqInfo.Username, Password = "silent", Apps = "OMS", RememberMe = true };
+            var lgoin_data = await Task.Run(() => login.DoLogin(n));
+            var result = await Task.Run(() => _filego.LoginApiFileGo());
+       
+            isLoading = false;
+            await sessionStorage.SetItemAsync(Globals.SessionComeFrom, reqInfo.ForwardToUrl);
+            switch (reqInfo.ForwardToUrl) {
+                case "555":
+                    nav.NavigateTo("/");
+                    break;
+                case "621": 
+                    nav.NavigateTo("Order/OrderList");//621 ออเดอร์
+                    break;
+                default:
+                    break;
+            }
+             
+       }
+    }
+
+
+
+}

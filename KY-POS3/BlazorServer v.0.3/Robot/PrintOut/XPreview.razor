@@ -1,0 +1,56 @@
+﻿ 
+ 
+@using Robot.PrintOut  
+
+  @*<div class="row">
+    <div class="col-md-12 text-start">
+        @PrintUrl
+    </div>
+</div>
+ 
+<div class="row">
+    <div class="col-md-12 text-center">
+        <iframe src=@PrintUrl frameborder="1" style="overflow:hidden;overflow-x:hidden;overflow-y:hidden;height:80%;width:80%;position:absolute;top:0%;left:0px;right:0px;bottom:0px" height="80%" width="80%"></iframe>
+    </div>
+</div>*@
+ <iframe src=@PrintUrl  height="100%" width="100%" frameborder="0"></iframe>
+
+@code {
+
+    [Parameter]
+    public string printid { get; set; }
+
+    string PrintUrl { get; set; } = "";
+
+    bool isLoading = false ; 
+
+    //protected override async Task OnInitializedAsync() {
+    //    //PrintUrl = nav.BaseUri + "/print/" + $"/Viewer/Accy/Viewer.aspx?id={printid}";
+    //    //PrintUrl =  LinkService. GetLinkInfo("printmaster").AppLink + $"/Viewer/Accy/Viewer.aspx?id={printid}";
+    //    PrintUrl =  Globals.ApiPrintMasterBaseUrl + $"/Viewer/Accy/Viewer?id={printid}";
+    //}
+
+    protected override void OnParametersSet()
+    {
+        PrintUrl =  Globals.ApiPrintMasterBaseUrl + $"/Viewer/KyPos/Viewer.aspx?id={printid}&export={"1"}";
+     
+    }
+
+
+    //private string GetWebRootPath() {
+    //    string webRootPath = hostingEnvironment.WebRootPath;
+    //    string contentRootPath = hostingEnvironment.ContentRootPath;
+        
+    //    string path = contentRootPath;
+    //    return path;
+    //}
+    //    private string GetWebRootPath(string subfolder)
+    //{
+    //    @nav.BaseUri
+    //    string webRootPath = hostingEnvironment.WebRootPath;
+    //    string contentRootPath = hostingEnvironment.ContentRootPath;
+
+    //    string path = webRootPath + @"\" + subfolder;
+    //    return path;
+    //}
+}

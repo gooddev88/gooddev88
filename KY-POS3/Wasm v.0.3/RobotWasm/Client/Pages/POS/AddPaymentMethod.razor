@@ -1,0 +1,276 @@
+﻿@page "/POS/AddPaymentMethod"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ชำระเงิน</span></div>
+        </div>
+    </a>
+</div>
+
+@if (_posService.DocSet.Head.ShipToLocID == "") {
+    <div class="row pt-2">
+        <div class="col-md-10 col-sm-10 col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+
+                            <div class="row pb-2">
+                                <div class="col-12">
+                                    <label>จ่ายโดย</label>
+                                    <TelerikDropDownList Value="@SelectTenderType"
+                                                     Data="@Tenders"
+                                                     TextField="@nameof(SelectOption.Description)"
+                                                     ValueField="@nameof(SelectOption.Value)"
+                                                     ValueChanged="@( (string v) => SelectedItemChanged(v))"
+                                                     Filterable="true"
+                                                     Size="@ThemeConstants.DropDownList.Size.Large"
+                                                     FilterOperator="@StringFilterOperator.Contains"
+                                                     Width="100%">
+                                    </TelerikDropDownList>
+                                </div>
+                            </div>
+
+                            <div class="row pb-2">
+                                <div class="col-12">
+                                    <label>ยอดรวม </label>
+                                    <TelerikTextBox @bind-Value="@txttotal_pay" Class="text-end pe-2"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" Enabled=false />
+                                </div>
+                            </div>
+
+                            <div class="row pb-2">
+                                <div class="col-12">
+                                    <label>คงเหลือ </label>
+                                    <TelerikTextBox @bind-Value="@txtremain_pay" Class="text-end pe-2"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" Enabled=false />
+                                </div>
+                            </div>
+
+                            <div class="row pb-1">
+                                <div class="col-12">
+                                    <label>จำนวนเงิน </label>
+                                    <TelerikTextBox @bind-Value="@txtpayamt" Class="text-end pe-2"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" Enabled=true />
+                                </div>
+                            </div>
+
+                            <div class="row pt-3">
+                                <div class="col-12">
+                                    <TelerikButton Class="w-100" ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)" @onclick="@OnAddPayment"
+                                               Size="@(ThemeConstants.Button.Size.Large)">
+                                        เพิ่ม
+                                    </TelerikButton>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@foreach (var l in _posService.DocSet.Payment.Where(o => o.IsLineActive == true)) {
+    <div class="card mt-1" style="border-radius: 0.5rem;">
+        <div class="card-body p-2">
+
+            <div class="row">
+                <div class="col-10 text-start">
+                    <strong style="font-size:medium;">@l.PaymentTypeName @l.PayAmt.ToString("n2") ฿</strong><br />
+                    <span style="font-size:small">เสร็จแล้ว @l.GetAmt.ToString("n2") ฿</span><br />
+                    <span style="font-size:small">ทอน @l.ChangeAmt.ToString("n2") ฿</span>
+                </div>
+                <div class="col-2 pt-2">
+                    <div class="text-center float-end ps-0">
+                        <a class="btn text-danger p-0" @onclick="@(() => OnRemovPayment(l))">
+                            <i class="fas fa-minus-circle" style="font-size:1.5rem"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@if (_posService.DocSet.Payment.Where(o => o.IsLineActive == true).Count() > 0) {
+    <div class="row pt-4">
+        <div class="col-12">
+            <TelerikButton Class="w-100" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" @onclick="@OnSubmitPayment"
+                       Size="@(ThemeConstants.Button.Size.Large)">
+                บันทึกจ่าย
+            </TelerikButton>
+        </div>
+    </div>
+}
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    public string SelectTenderType { get; set; } = "CASH";
+
+    public string txttotal_pay { get; set; }
+    public string txtremain_pay { get; set; }
+    public string txtpayamt { get; set; } = "0";
+
+    List<SelectOption> Tenders = new List<SelectOption>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            string com = login.LogInInfo.CurrentCompany.CompanyID;
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POS/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (_posService.Menu.Count() == 0) {
+                _posService.Menu = await Task.Run(() => _posService.ListMenuItem(_posService.DocSet.Head.RComID, _posService.DocSet.Head.ComID, _posService.DocSet.Head.ShipToUsePrice));
+            } else {
+                foreach (var l in _posService.DocSet.Line) {
+                    if (_posService.Menu != null) {
+                        var iInfo = _posService.Menu.Where(o => o.ItemID == l.ItemID).FirstOrDefault();
+                        if (iInfo != null) {
+                            l.ImageUrl = iInfo.ImageUrl;
+                            l.ImageSource = iInfo.ImageUrl;
+                        }
+                    }
+                }
+            }
+
+            if (_posService.ItemCate.Count() == 0) {
+                _posService.ItemCate = await Task.Run(() => _posService.ListItemCate(_posService.DocSet.Head.RComID));
+            }
+
+            if (_posService.Tenders.Count() == 0) {
+                _posService.Tenders = ListTenderType();
+            }
+
+        }
+    }
+
+    async void LoadData() {
+        DisplayCalAmt();
+
+        Tenders = POSFuncService.ListTenderType();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void DisplayCalAmt() {
+        decimal PayAmt_line = _posService.DocSet.Payment.Sum(o => o.PayAmt);
+        txttotal_pay = _posService.DocSet.Head.NetTotalAmt.ToString("n2");
+        txtremain_pay = (_posService.DocSet.Head.NetTotalAmt - PayAmt_line).ToString("n2");
+    }
+
+    void SelectedItemChanged(string key) {
+        var data = Tenders.Where(o => o.Value == key).FirstOrDefault();
+        if (data == null) {
+            return;
+        }
+        try {
+            SelectTenderType = data.Value;
+            DisplayCalAmt();
+            if (data.Value == "CASH") {
+                //txtpayamt = txtremain_pay;
+            } else {
+                txtpayamt = txtremain_pay;
+            }
+        } catch (Exception ex) {
+        } finally {
+
+        }
+    }
+
+    async void OnAddPayment() {
+        decimal payamt = 0;
+        decimal.TryParse(txtpayamt, out payamt);
+
+        if (payamt == 0) {
+            await Swal.FireAsync("Warning", "ระบุเงินที่ต้องจ่าย", "info");
+            return;
+        }
+        _posService.DocSet = POSFuncService.AddPayment(_posService.DocSet, SelectTenderType, payamt);
+        DisplayCalAmt();
+        txtpayamt = "0";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnSubmitPayment() {
+        var h = _posService.DocSet.Head;
+        _posService.DocSet = CalDocSet(_posService.DocSet);
+        var diff = h.NetTotalAfterRound - h.PayTotalAmt;
+
+        if (diff > 0) {
+            await Swal.FireAsync("Warning", "ชำระราคาสินค้าไม่ครบ", "info");
+            return;
+        }
+        //if (diff < 0) {
+        //    if (!IsOverPayable(_posService.DocSet)) {
+        //        await Swal.FireAsync("Warning", "ชำระราคาสินค้าเกินจำนวน", "info");
+        //        return;
+        //    }
+        //}
+        if (_posService.DocSet.Payment.Count == 0) {
+            await Swal.FireAsync("Warning", "ยังไม่ชำระเงิน", "info");
+            return;
+        }
+
+        _posService.DocSet.Head.Status = "CLOSED";
+
+        _posService.DocSet.Head.ModifiedBy = login.LogInInfo.CurrentUser;
+        var rb = await _posService.SavePos(_posService.DocSet, "update");
+        if (rb.Result == "fail") {
+            await Swal.FireAsync("Error", rb.Message1.ToString(), "error");
+            return;
+        } else {
+            _posService.DocSet.Head.INVID = rb.Message2;
+            await Swal.FireAsync("Success", "บันทึกสำเร็จ", "success");
+            //LoadData();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnRemovPayment(POS_SalePayment data) {
+        _posService.DocSet = POSFuncService.RemovePayment(_posService.DocSet, data.PaymentType);
+        DisplayCalAmt();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POS/POSSaleDetail");
+    }
+}

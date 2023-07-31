@@ -1,0 +1,249 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.DPMBaord.CIMS
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>IDP</h4>
+        <h5>ข้อมูลแผนพัฒนาบุคลากร รายบุคคล (IDP)</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+ 
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata" 
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="false" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(IDP.DataRow.dataid))" Title="dataid" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.division_name_plan))" Title="division_name_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.sub_division_name_plan))" Title="sub_division_name_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.group_name_plan))" Title="group_name_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_budget_yr))" Title="plan_budget_yr" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.fk_table_7791))" Title="fk_table_7791" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_title_plan))" Title="pers_title_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_full_name_plan))" Title="pers_full_name_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_pid_plan))" Title="pers_pid_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_pos_plan))" Title="pers_pos_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_level_plan))" Title="pers_level_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.pers_pos_name_plan))" Title="pers_pos_name_plan" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_type))" Title="plan_type" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_priority))" Title="plan_priority" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level1))" Title="plan_ktype_level1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level21))" Title="plan_ktype_level21" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level22))" Title="plan_ktype_level22" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level23))" Title="plan_ktype_level23" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level31))" Title="plan_ktype_level31" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level32))" Title="plan_ktype_level32" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level33))" Title="plan_ktype_level33" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level34))" Title="plan_ktype_level34" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level341))" Title="plan_ktype_level341" Width="150px" />
+
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level342))" Title="plan_ktype_level342" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level343))" Title="plan_ktype_level343" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level344))" Title="plan_ktype_level344" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level35))" Title="plan_ktype_level35" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level351))" Title="plan_ktype_level351" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level352))" Title="plan_ktype_level352" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ktype_level353))" Title="plan_ktype_level353" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_stype))" Title="plan_stype" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ctype_level1))" Title="plan_ctype_level1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ctype_level21))" Title="plan_ctype_level21" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ctype_level22))" Title="plan_ctype_level22" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_ctype_level23))" Title="plan_ctype_level23" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_details))" Title="plan_details" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_expect))" Title="plan_expect" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.tmp_expect))" Title="tmp_expect" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_1))" Title="plan_target_1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_2))" Title="plan_target_2" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_3))" Title="plan_target_3" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_4))" Title="plan_target_4" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_5))" Title="plan_target_5" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_6))" Title="plan_target_6" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_target_etc))" Title="plan_target_etc" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_apply_1))" Title="plan_apply_1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_apply_2))" Title="plan_apply_2" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_apply_etc))" Title="plan_apply_etc" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_method))" Title="plan_method" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_cost))" Title="plan_cost" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_time_q1))" Title="plan_time_q1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_time_q2))" Title="plan_time_q2" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_time_q3))" Title="plan_time_q3" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_time_q4))" Title="plan_time_q4" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_attach_file64))" Title="plan_attach_file64" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_attach_filename))" Title="plan_attach_filename" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_appraisal))" Title="plan_appraisal" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case1))" Title="plan_completed_case1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case2))" Title="plan_completed_case2" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case3))" Title="plan_completed_case3" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case4))" Title="plan_completed_case4" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case5))" Title="plan_completed_case5" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_case6))" Title="plan_completed_case6" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_completed_etc))" Title="plan_completed_etc" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_case1))" Title="plan_not_completed_case1" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_case2))" Title="plan_not_completed_case2" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_case3))" Title="plan_not_completed_case3" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_case4))" Title="plan_not_completed_case4" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_case5))" Title="plan_not_completed_case5" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_not_completed_etc))" Title="plan_not_completed_etc" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_eval_by))" Title="plan_eval_by" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_eval_pos))" Title="plan_eval_pos" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.plan_eval_time))" Title="plan_eval_time" Width="150px" />
+                            <GridColumn Field="@(nameof(IDP.DataRow.entrydate))" Title="entrydate" DisplayFormat="{0:dd/MM/yyyy}" Width="150px" />
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public List<IDP.DataRow> data_set { get; set; }
+    public List<IDP.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.Where(o =>
+         (
+            o.division_name_plan.ToLower().Contains(search)
+            || o.sub_division_name_plan.ToLower().Contains(search)
+            || o.pers_full_name_plan.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=IDP");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<List<IDP.DataRow>>(url));
+            if (query.StatusCode != "OK") {
+                return;
+            }
+            data_set = (List<IDP.DataRow>)query.Result;
+            ndata = data_set;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

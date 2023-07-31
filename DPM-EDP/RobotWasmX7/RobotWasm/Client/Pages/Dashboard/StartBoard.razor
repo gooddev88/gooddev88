@@ -1,0 +1,122 @@
+﻿@page "/Dashboard/StartBoard"
+
+@using RobotWasm.Client.Data.DA.Tableau
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.ThMap
+
+<style>
+    .embed-container {
+        position: relative;
+        padding-bottom: 70.75%;
+        height: 0;
+        overflow: hidden;
+    }
+
+        .embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+    .caption1 {
+        font-size: 1.6rem;
+        display: block;
+    }
+
+    .caption2 {
+        font-size: 1.4rem;
+        display: block;
+    }
+</style>
+
+
+
+
+<ScrollMenu type="standard"></ScrollMenu>
+@if (!isLoading) {
+
+
+    <div class="embed-container">
+        @*<iframe src="@board_url" frameborder="0" allowfullscreen=""
+    scrolling="auto"
+    webkitallowfullscreen="true" mozallowfullscreen="true" oallowfullscreen="true"
+    msallowfullscreen="true"></iframe>
+    *@
+        <object data="@board_url"
+            style="width:100%;height:100vh;"
+            type="text/html">
+        </object>
+
+        @*<embed type="text/html" src="@board_url" width="400" height="400">*@
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12 text-end">
+            <a @onclick="@ReloadPage" class="btn btn-link text-decoration-none">
+                <i class="fas fa-redo"></i>&nbsp;อัพเดทเว็บไซต์
+            </a>
+        </div>
+    </div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    private string board_url = "";
+
+
+    protected override async Task OnInitializedAsync() {
+        //isLoading = true;
+        ////await Task.Run(() => login.CheckLogin());
+        //board_url = await Task.Run(() => _tableauService.GetBoardUrl("q_flood"));
+        //isLoading = false;
+        //await InvokeAsync(StateHasChanged);
+  await    Task.Run(()=>  LoadBoard());
+    }
+    async Task LoadBoard() {
+        try {
+            isLoading = true;
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            var res = await Http.GetAsync($"api/Board/GetDefaultBoard");
+            var default_board = JsonSerializer.Deserialize<vw_board_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            //if (default_board == null) {
+            //    board_url = await Task.Run(() => _tableauService.GetBoardUrl("q_flood"));
+            //}else {
+            //    board_url = await Task.Run(() => _tableauService.GetBoardUrl(default_board.board_id));
+            //}
+
+
+               if (default_board == null) {
+                //board_url = await Task.Run(() => _tableauService.GetBoardUrl("q_flood"));
+                string url = $"DPMBoard/ExclusiveBoard/Redirect/q_flood";
+                nav.NavigateTo(url);
+            
+                await InvokeAsync(StateHasChanged);
+            }else {
+                //board_url = await Task.Run(() => _tableauService.GetBoardUrl(default_board.board_id));
+                string url = $"DPMBoard/ExclusiveBoard/Redirect/{default_board.board_id}";
+                nav.NavigateTo(url);
+           
+            }
+         
+        } catch (Exception ex) {
+            var x = ex.Message;
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected void ReloadPage()
+    {
+        jsRuntime.InvokeVoidAsync("window.location.reload");
+    }
+
+}

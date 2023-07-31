@@ -1,0 +1,163 @@
+﻿@page "/PublishDocument/ShowPublishList/{cateid}"
+
+@using RobotWasm.Client.Pages.PublishDocument
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.DocHead
+@using RobotWasm.Shared.Data.ML.Shared
+<style>
+</style>
+
+<TopMenu cate="@cateid"></TopMenu>
+
+@if (!isLoading)
+{
+<div class="row pt-3">
+    <div class="col-12 text-center">
+        <h3>@CateName</h3>
+    </div>
+</div>
+
+    @if (_docmentService.ListDocSet != null)
+    {
+        <div class="row pt-3">
+            <div class="col-lg-8 col-md-10 col-sm-11 col-12 mx-auto">
+                @foreach (var l in _docmentService.ListDocSet.ListHead)
+                {
+                    <div class="row pt-2">
+                        <div class="col-2 text-end pe-0">
+                            <img src="img/dpmlogo_circle.png" class="rounded-circle" alt="" style="width:40px;height:auto;">
+                        </div>
+                        <div class="col-10">
+                            <div class="row pb-3 pt-2">
+                                <div class="col-8">
+                                    <a @onclick="@(() => { l.IsVisible = !l.IsVisible; })">
+                                        <b>@l.doc_desc</b>
+                                    </a>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <i class="fa-solid fa-calendar-day"></i>
+                                    <span style="font-size:small;">@Convert.ToDateTime(l.publish_date).ToString("dd/MM/yyyy")</span>
+                                </div>
+                            </div>
+                            @if (l.IsVisible)
+                            {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <p>@l.doc_remark</p>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (!l.IsVisible)
+                            {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <hr class="my-2" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (l.IsVisible)
+                    {
+                        @if (_docmentService.ListDocSet.files.Where(o => o.doc_id == l.doc_id).Count() > 0)
+                        {
+                            <div class="row pt-2 pb-3">
+                                <div class="col-2 text-end pe-0">
+                                    <img src="img/documents.png" class="rounded-circle" alt="" style="width:40px;height:auto;">
+                                </div>
+                                <div class="col-10 pt-2">
+                                    <b>เอกสารดาวน์โหลด</b>
+                                </div>
+
+                                <div class="row pt-3">
+                                    @foreach (var a in _docmentService.ListDocSet.files.Where(o => o.doc_id == l.doc_id).OrderByDescending(o => o.id))
+                                    {
+                                        <div class="col-2 text-end pe-0">
+                                            <span class="text-danger"><i class="fa-solid fa-file-arrow-down fa-lg"></i></span>
+                                        </div>
+                                        <div class="col-10">
+                                            <div class="row pb-3">
+                                                <div class="col-12">
+                                                    <a @onclick="@(() => DownloadFIle(a.file_id))">
+                                                        <span class="text-dark">@a.filename</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    }
+
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    [Parameter] public string cateid { get; set; }
+    bool isLoading = false;
+
+    string CateName = "";
+    private bool isShowAll = false;
+
+    I_DocHeadFiterSet Filter = PublishDocumentService.NewFilterSet();
+    List<vw_doc_head> DocList = new List<vw_doc_head>();
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadGrdLisDocumentHeadDoc);
+        await Task.Run(LoadData);
+    }
+
+    async Task LoadData()
+    {
+        Filter.Cate = cateid;
+        var cate = await _docCateService.GetDocCate(cateid);
+        CateName = cate.cate_name;
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadGrdLisDocumentHeadDoc()
+    {
+        _docmentService.ListDocSet = await Task.Run(() => _docmentService.GetLisDocumentHeadDoc(cateid));
+    }
+
+    async void SearchAction()
+    {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void DownloadFIle(string file_id)
+    {
+        try
+        {
+            string file_url = await _filego.GetFileUrlPostgres(file_id);
+            if (!string.IsNullOrEmpty(file_url))
+            {
+                nav.NavigateTo(file_url, true);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+}

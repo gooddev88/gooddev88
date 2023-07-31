@@ -1,0 +1,1844 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Odbc;
+using System.Data.OleDb;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DBF {
+    public class JOB_IS_BS : JobInvoice {
+        public string DOCSTAT { get; set; }
+    }
+    public partial class JobInvoice {
+        public string JobNo { get; set; }
+        public string IS_No { get; set; }
+        public Nullable<int> IS_LineNum { get; set; }
+        public Nullable<System.DateTime> IS_Date { get; set; }
+        public Nullable<System.DateTime> IS_InterfaceDate { get; set; }
+        public string BS_No { get; set; }
+        public Nullable<System.DateTime> BS_Date { get; set; }
+        public string Source_Target { get; set; }
+        public Nullable<bool> IsActive { get; set; }
+    }
+    public class STMAS {
+        public string STKCOD { get; set; }//ItemId
+        public string STKDES { get; set; }//Name
+        public string STDES2 { get; set; }//Name2
+        public string STKGRP { get; set; }//ItemGroup
+        public string STKTYP { get; set; }// ItemType
+        public string QUCOD { get; set; }//Unit
+        public string VATCOD { get; set; }//VatType
+        public string CREBY { get; set; }//CreatedBy
+        public DateTime? CREDAT { get; set; }	//CreatedDate
+        public string USERID { get; set; }	//ModifiedBy
+        public DateTime? CHGDAT { get; set; }	//ModifiedDate		
+        public bool IsActive { get; set; }
+    }
+
+    public class ARMAS {
+        public string CUSCOD { get; set; }//CustomerId
+        public string PRENAM { get; set; }//Name1
+        public string CUSNAM { get; set; }//Name1
+        public string CUSNAM2 { get; set; }//Name2
+        public string TAXID { get; set; }//TaxId
+        public int PAYTRM { get; set; }//PaymentTerm
+        public string SLMCOD { get; set; }//SalesManCode
+        public string CREBY { get; set; }//CreatedBy
+        public DateTime? CREDAT { get; set; }	//CreatedDate
+        public string USERID { get; set; }	//ModifiedBy
+        public DateTime? CHGDAT { get; set; }	//ModifiedDate		
+        public bool IsActive { get; set; }
+    }
+
+    public class APMAS {
+        public string SUPCOD { get; set; }//VendorId
+        public string SUPTYP { get; set; }//VendorType
+        public string PRENAM { get; set; }//Name1
+        public string SUPNAM { get; set; }//Name1
+        public string ACCNUM { get; set; }//AccNumber
+        public string CREBY { get; set; }//CreatedBy
+        public DateTime? CREDAT { get; set; }	//CreatedDate
+        public string USERID { get; set; }	//ModifiedBy
+        public DateTime? CHGDAT { get; set; }	//ModifiedDate		
+        public bool IsActive { get; set; }
+    }
+    public static class ExpressDataHelper {
+        public static DataTable TestQuery() {
+            List<Customers> result = new List<Customers>();
+            string query = "select distinct stkcod from stcrd where docnum like 'IS%' and stkcod like 'IA%'";
+            DataTable datalist = GetDataFromFPQuery(query);
+            return datalist;
+        }
+        public static List<Items> GetExpressItemMaster() {
+            List<Items> result = new List<Items>();
+            string query = "select * from stmas";
+            DataTable datalist = GetDataFromFPQuery(query);
+            result = ExItemToList(datalist);
+            return result;
+        }
+
+        public static List<Customers> GetExpressCustomerMaster() {
+            List<Customers> result = new List<Customers>();
+            string query = "select * from armas";
+            DataTable datalist = GetDataFromFPQuery(query);
+            result = ExCustomerToList(datalist);
+            return result;
+        }
+        public static List<Vendors> GetExpressVendorMaster() {
+            List<Vendors> result = new List<Vendors>();
+            string query = "select * from apmas";
+            DataTable datalist = GetDataFromFPQuery(query);
+            result = ExVendorToList(datalist);
+            return result;
+        }
+        public static List<JobDetail> GetExpressAdvance() {
+            List<JobDetail> result = new List<JobDetail>();
+            string dateBegin = DateHelper.Convert2StringEngYearMMddyyyy(DateTime.Now.Date.AddDays(-180));
+            string dateEnd = DateHelper.Convert2StringEngYearMMddyyyy(DateTime.Now.Date);
+            DateTime startUserDate = new DateTime(2018, 1, 1);
+            string dateStartUse = DateHelper.Convert2StringEngYearMMddyyyy(startUserDate);
+
+            string query = "select stcrd.docnum,artrnrm.remark ,stcrd.stkcod,stcrd.stkdes,stcrd.netval, aptrn.docdat "
+                + "from stcrd inner join aptrn on stcrd.docnum = aptrn.docnum "
+                + "left join artrnrm on stcrd.docnum=artrnrm.docnum  "
+                + "where stcrd.docnum like 'CC%' and artrnrm.seqnum = '@6' and NOT EMPTY(aptrn.APPROVE) "
+                + "and aptrn.docstat <>'C' "
+                + "and aptrn.docdat between {" + dateBegin + "} and {" + dateEnd + "} "
+                + "and aptrn.docdat >=  {" + dateStartUse + "}";
+
+
+            //+ "and aptrn.docdat between {12/26/2017" + "} and {"  + "12/26/2017}";
+            DataTable datalist = GetDataFromFPQuery(query);
+            result = ExAdvanceToList(datalist);
+            return result;
+        }
+
+        public static List<JOB_IS_BS> GetBackBSnumber() {
+            List<JOB_IS_BS> result = new List<JOB_IS_BS>();
+            string dateBegin = DateHelper.Convert2StringEngYearMMddyyyy(DateTime.Now.Date.AddDays(-180));
+            string dateEnd = DateHelper.Convert2StringEngYearMMddyyyy(DateTime.Now.Date);
+            DateTime startUserDate = new DateTime(2018, 1, 1);
+            string dateStartUse = DateHelper.Convert2StringEngYearMMddyyyy(startUserDate);
+            string query = "select docnum,bilnum,docstat "
+                + "from artrn "
+                //+ "where bilnum like 'BS%' "
+                + "where docnum like 'IS%' "
+                + "and docdat between {" + dateBegin + "} and {" + dateEnd + "} "
+                + "and docdat >=  {" + dateStartUse + "}";
+
+
+            //+ "and aptrn.docdat between {12/26/2017" + "} and {"  + "12/26/2017}";
+            DataTable datalist = GetDataFromFPQuery(query);
+            result = ExIS_VS_BSToList(datalist);
+            return result;
+        }
+        public static string GetNextIS_ID() {
+            string firstTimeId = "";
+            string prefixSearch = GenPreFixYearMonth("IS");
+            string query = "select top 1 docnum from artrn where docnum like '" + prefixSearch + "%' order by docnum desc";
+            DataTable datalist = GetDataFromFPQuery(query);
+
+            foreach (DataRow row in datalist.Rows) {
+                firstTimeId = row["docnum"].ToString().Replace(" ", "");
+            }
+            bool noDupId = true;
+            if (firstTimeId == "") {
+                firstTimeId = prefixSearch;
+            }
+            string forLoopId = GenID(firstTimeId, "0000");
+            do {
+
+                string query2 = "select top 1 docnum from artrn where docnum = '" + forLoopId + "' order by docnum desc ";
+                DataTable datalist2 = GetDataFromFPQuery(query2);
+                if (datalist2.Rows.Count == 0) {//เลขที่ IS ที่ Gen ยังไม่มีในระบบ Express 
+
+                    using (MyEntities entities = new MyEntities()) {
+                        // หาต่อว่าในตาราง Job Invoice มีเลข IS นี้แล้วหรือยัง
+                        var checkInJobInvoice = entities.JobInvoice.Where(o => o.IS_No == forLoopId).FirstOrDefault();
+                        if (checkInJobInvoice == null) {//และยังไม่มีเลข IS นี้ในตาราง JobInvoice ด้วย
+                            noDupId = false;
+                        } else {//มีใน IS นี้ในตาราง Job Invoice แล้ว
+                            forLoopId = GenID(forLoopId, "0000");
+                        }
+                    }
+
+                } else {//เลขที่ IS ที่ Gen มีในระบบ Express แล้ว
+                    forLoopId = GenID(forLoopId, "0000");
+                }
+            } while (noDupId);
+            return forLoopId;
+        }
+        public static string GetNextAV_ID() {
+            string firstTimeId = "";
+            string prefixSearch = GenPreFixYearMonth("CC");
+            string query = "select top 1 docnum from aptrn where docnum like '" + prefixSearch + "%' order by docnum desc";
+            DataTable datalist = GetDataFromFPQuery(query);
+
+            foreach (DataRow row in datalist.Rows) {
+                firstTimeId = row["docnum"].ToString().Replace(" ", "");
+            }
+            bool noDupId = true;
+            if (firstTimeId == "") {
+                firstTimeId = prefixSearch;
+            }
+            string forLoopId = GenID(firstTimeId, "000");
+            do {
+
+                string query2 = "select top 1 docnum from aptrn where docnum = '" + forLoopId + "' order by docnum desc ";
+                DataTable datalist2 = GetDataFromFPQuery(query2);
+                if (datalist2.Rows.Count == 0) {//เลขที่ gen ได้ใหม่ยังไม่มีในระบบ
+                    noDupId = false;
+                } else {//เลขที่ gen ได้ใหม่มีในระบบแล้ว
+                    forLoopId = GenID(forLoopId, "000");
+                }
+
+            } while (noDupId);
+            return forLoopId;
+        }
+
+
+        public static string GenID(string id, string runingDigit) {
+            //IS =Runing 4 DIGIT
+            //Advance=Runing 3 DIGIT
+            string returnID = "";
+
+            string prefix = id.Substring(0, 2);
+            string f_year = id.Substring(2, 2);
+            string f_month = id.Substring(4, 2);
+            string f_running = id.Substring(6, id.Length - 6);
+            if (f_running == "") {
+                f_running = "0";
+            }
+
+            string s_year = DateHelper.Convert2ThaiYear(DateTime.Now.Date).ToString().Substring(2, 2);
+            if (prefix == "CC") {
+                s_year = DateHelper.Convert2ThaiYear(DateTime.Now.Date).ToString().Substring(2, 2);
+            }
+            string s_month = DateTime.Now.Month.ToString("00");
+            bool needResetRunning = false;
+            if (Convert.ToInt32(f_year) != Convert.ToInt32(s_year)) {
+                needResetRunning = true;
+            }
+            if (Convert.ToInt32(f_month) != Convert.ToInt32(s_month)) {
+                needResetRunning = true;
+            }
+            if (needResetRunning) {
+                returnID = prefix + s_year + s_month + 1.ToString(runingDigit);
+            } else {
+                returnID = prefix + f_year + f_month + (Convert.ToInt32(f_running) + 1).ToString(runingDigit);
+            }
+            return returnID;
+        }
+
+        public static string GenPreFixYearMonth(string prefix) {
+            string returnID = "";
+            string s_year = DateHelper.Convert2ThaiYear(DateTime.Now.Date).ToString().Substring(2, 2);
+            string s_month = DateTime.Now.Month.ToString("00");
+            returnID = prefix + s_year + s_month;
+            return returnID;
+        }
+        public static string UpdateItemMasterTable() {
+            string result = "";
+            try {
+                using (MyEntities entities = new MyEntities()) {
+                    //entities.Database.ExecuteSqlCommand("TRUNCATE TABLE Items");
+                    var del = entities.Items.Where(o => o.DataSoruce == "express").ToList();
+                    entities.Items.RemoveRange(del);
+
+                    entities.Items.AddRange(GetExpressItemMaster());
+                    entities.SaveChanges();
+                }
+            } catch (Exception ex) {
+                result = ex.Message;
+            }
+            return result;
+        }
+
+        public static string UpdateCustomerMasterTable() {
+            string result = "";
+            try {
+                using (MyEntities entities = new MyEntities()) {
+                    //entities.Database.ExecuteSqlCommand("TRUNCATE TABLE Customers");
+                    var del = entities.Customers.Where(o => o.DataSoruce == "express").ToList();
+                    entities.Customers.RemoveRange(del);
+
+                    entities.Customers.AddRange(GetExpressCustomerMaster());
+                    entities.SaveChanges();
+                }
+            } catch (Exception ex) {
+                result = ex.Message;
+            }
+            return result;
+        }
+
+        public static string UpdateVendorMasterTable() {
+            string result = "";
+            try {
+                using (MyEntities entities = new MyEntities()) {
+                    entities.Database.ExecuteSqlCommand("TRUNCATE TABLE Vendors");
+                    entities.Vendors.AddRange(GetExpressVendorMaster());
+                    entities.SaveChanges();
+                }
+            } catch (Exception ex) {
+                result = ex.Message;
+            }
+            return result;
+        }
+
+        public static List<Items> ExItemToList(DataTable ItemsList) {
+            List<Items> result = new List<Items>();
+            foreach (DataRow row in ItemsList.Rows) {
+                Items i = new Items();
+                i.ItemId = row["STKCOD"].ToString().Replace(" ", "");
+                i.ExternalCode = "";
+                i.Name = row["STKDES"].ToString().Replace(" ", "");
+                i.Name2 = row["STKDES2"].ToString().Replace(" ", "");
+                i.ItemGroup = row["STKGRP"].ToString().Replace(" ", "");
+                //i.ItemType = row["STKTYP"].ToString().Replace(" ", "");
+                i.ItemType = "99";//express Item
+                i.Unit = row["QUCOD"].ToString().Replace(" ", "");
+                i.VatType = row["VATCOD"].ToString().Replace(" ", "");
+                i.ImportDate = DateTime.Now;
+                i.CreatedBy = row["CREBY"].ToString().Replace(" ", "");
+                i.DataSoruce = "express";
+                i.Remark = row["REMARK"].ToString().Replace(" ", "");
+                if (i.Remark.Length <= 10) {
+                    i.ExternalCode = i.Remark;
+                }
+                if (row["CREDAT"] != null) {
+                    i.CreatedDate = Convert.ToDateTime(row["CREDAT"]);
+                }
+                i.ModifiedBy = row["USERID"].ToString().Replace(" ", "");
+                if (row["CHGDAT"] != null) {
+                    i.ModifiedDate = Convert.ToDateTime(row["CHGDAT"]);
+                }
+                i.IsActive = true;
+                result.Add(i);
+            }
+
+
+            return result;
+        }
+        public static List<Customers> ExCustomerToList(DataTable CustomersList) {
+            List<Customers> result = new List<Customers>();
+            foreach (DataRow row in CustomersList.Rows) {
+                Customers i = new Customers();
+                i.CustomerId = row["CUSCOD"].ToString().Replace(" ", "");
+                i.ExternalCode = "";
+                i.Name1 = row["PRENAM"].ToString().Replace(" ", "") + row["CUSNAM"].ToString().Replace(" ", "");
+                i.Name2 = row["CUSNAM2"].ToString().Replace(" ", "");
+                i.TaxId = row["TAXID"].ToString().Replace(" ", "");
+                i.DataSoruce = "express";
+                i.Remark = "";
+                i.BillingRemark = "";
+                i.IsMergeIS = false;
+                i.PaymentTerm = Convert.ToInt32(row["PAYTRM"]);
+                i.SalesManCode = row["SLMCOD"].ToString().Replace(" ", "");
+                i.ImportDate = DateTime.Now;
+                i.CreatedBy = row["CREBY"].ToString().Replace(" ", "");
+                i.InterfaceFlagStatus = "";
+                if (row["CREDAT"] != null) {
+                    i.CreatedDate = Convert.ToDateTime(row["CREDAT"]);
+                }
+                i.ModifiedBy = row["USERID"].ToString().Replace(" ", "");
+                if (row["CHGDAT"] != null) {
+                    i.ModifiedDate = Convert.ToDateTime(row["CHGDAT"]);
+                }
+                i.IsActive = true;
+                result.Add(i);
+            }
+            return result;
+        }
+
+        public static List<Vendors> ExVendorToList(DataTable VendorList) {
+            List<Vendors> result = new List<Vendors>();
+            foreach (DataRow row in VendorList.Rows) {
+                Vendors i = new Vendors();
+                i.VendorId = row["SUPCOD"].ToString().Replace(" ", "");
+                i.VendorExternalId = "";
+                i.VendorType = row["SUPTYP"].ToString().Replace(" ", "");
+                i.AccNumber = row["ACCNUM"].ToString().Replace(" ", "");
+                i.Name1 = row["PRENAM"].ToString().Replace(" ", "") + row["SUPNAM"].ToString().Replace(" ", "");
+                i.Name2 = "";
+                i.CreatedBy = row["CREBY"].ToString().Replace(" ", "");
+                if (row["CREDAT"] != null) {
+                    i.CreatedDate = Convert.ToDateTime(row["CREDAT"]);
+                }
+                i.ModifiedBy = row["USERID"].ToString().Replace(" ", "");
+                if (row["CHGDAT"] != null) {
+                    i.ModifiedDate = Convert.ToDateTime(row["CHGDAT"]);
+                }
+                i.IsActive = true;
+                result.Add(i);
+            }
+            return result;
+        }
+
+        public static List<JobDetail> ExAdvanceToList(DataTable VendorList) {
+            List<JobDetail> result = new List<JobDetail>();
+            foreach (DataRow row in VendorList.Rows) {
+                JobDetail i = new JobDetail();
+                i.JobNo = row["remark"].ToString().Replace(" ", "");
+                i.LineNum = 0;
+                i.Type = "IA";
+                i.JobDate = Convert.ToDateTime(row["docdat"]);
+                i.JV_No = row["docnum"].ToString().Replace(" ", "");
+                i.ItemId = row["stkcod"].ToString().Replace(" ", "");
+                i.ItemName = row["stkdes"].ToString().Replace(" ", "");
+                i.QoPrice = 0;
+                i.QoPrice = 1;
+                i.QoPrice2 = 0;
+                i.QoIsContractPrice = false;
+                i.Qty = 1;
+                i.TotalPrice = Convert.ToDecimal(row["netval"]);
+                i.VatRate = 0;
+                i.IsActive = true;
+                result.Add(i);
+            }
+            return result;
+        }
+
+        public static List<JOB_IS_BS> ExIS_VS_BSToList(DataTable input) {
+            List<JOB_IS_BS> result = new List<JOB_IS_BS>();
+            foreach (DataRow row in input.Rows) {
+                JOB_IS_BS i = new JOB_IS_BS();
+                i.IS_No = row["docnum"].ToString().Replace(" ", "");
+                i.DOCSTAT = row["docstat"].ToString().Replace(" ", "");
+                i.BS_No = row["bilnum"].ToString().Replace(" ", "");
+                if (i.IS_No != "") {
+                    result.Add(i);
+                }
+            }
+            return result;
+        }
+
+        public static DataTable GetDataFromFPQuery(string mySQL) {
+         
+            DataTable YourResultSet = new DataTable();
+            try {
+                OleDbConnection yourConnectionHandler = new OleDbConnection(GetExpressPath());
+
+                // if including the full dbc (database container) reference, just tack that on
+                //      OleDbConnection yourConnectionHandler = new OleDbConnection(
+                //          "Provider=VFPOLEDB.1;Data Source=C:\\SomePath\\NameOfYour.dbc;" );
+
+                // Open the connection, and if open successfully, you can try to query it
+                yourConnectionHandler.Open();
+                if (yourConnectionHandler.State == ConnectionState.Open) {
+                    OleDbCommand MyQuery = new OleDbCommand(mySQL, yourConnectionHandler);
+                    OleDbDataAdapter DA = new OleDbDataAdapter(MyQuery);
+                    DA.Fill(YourResultSet);
+                    yourConnectionHandler.Close();
+                }
+            } catch (Exception ex) {
+                throw ex;
+            }
+            return YourResultSet;
+        }
+
+
+        public static string GetExpressPath() {
+            string result = "";
+            using (MyEntities entities = new MyEntities()) {
+                result = entities.ProgramConstant.Where(o => o.ConstantId == "expresspath").FirstOrDefault().Value;
+                result = @"Provider=VFPOLEDB.1;Data Source=" + result;
+            }
+            return result;
+        }
+
+        public static string InsertAR_Group(sp_GenInterfaceIS_Head_Group_Result header, List<sp_GenInterfaceIS_Line_Group_Result> detail) {
+            //Code เดียวกับ InsertAR_Individual
+            string error = "";
+            OleDbConnection yourConnectionHandler = new OleDbConnection(GetExpressPath());
+            yourConnectionHandler.Open();
+            if (yourConnectionHandler.State == ConnectionState.Open) {
+                try {
+                    //ARTRN **********************************************************************
+                    string strInsert =
+                                  "insert into ARTRN ( "
+                                  + "RECTYP,"
+                                  + "DOCNUM,"
+                                  + "DOCDAT,"
+                                  + "POSTGL,"
+                                  + "SONUM,"
+                                  + "CNTYP,"
+                                  + "DEPCOD,"
+                                  + "FLGVAT,"
+                                  + "SLMCOD,"
+                                  + "CUSCOD,"
+                                  + "SHIPTO,"
+                                  + "YOUREF,"
+                                  + "AREACOD,"
+                                  + "PAYTRM,"
+                                  + "DUEDAT,"
+                                  + "BILNUM,"
+                                  + "NXTSEQ,"
+                                  + "AMOUNT,"
+                                  + "DISC,"
+                                  + "DISCAMT,"
+                                  + "AFTDISC,"
+                                  + "ADVNUM,"
+                                  + "ADVAMT,"
+                                  + "TOTAL,"
+                                  + "AMTRAT0,"
+                                  + "VATRAT,"
+                                  + "VATAMT,"
+                                  + "NETAMT,"
+                                  + "NETVAL,"
+                                  + "RCVAMT,"
+                                  + "REMAMT,"
+                                  + "COMAMT,"
+                                  + "CMPLAPP,"
+                                  + "CMPLDAT,"
+                                  + "DOCSTAT,"
+                                  + "CSHRCV,"
+                                  + "CHQRCV,"
+                                  + "INTRCV,"
+                                  + "BEFTAX,"
+                                  + "TAXRAT,"
+                                  + "TAXCOND,"
+                                  + "TAX,"
+                                  + "IVCAMT,"
+                                  + "CHQPAS,"
+                                  + "VATDAT,"
+                                  + "VATPRD,"
+                                  + "VATLATE,"
+                                  + "SRV_VATTYP,"
+                                  + "DLVBY,"
+                                  + "RESERVE,"
+                                  + "USERID,"
+                                  + "CHGDAT,"
+                                  + "USERPRN,"
+                                  + "PRNDAT,"
+                                  + "PRNCNT,"
+                                  + "PRNTIM,"
+                                  + "AUTHID,"
+                                  + "APPROVE,"
+                                  + "BILLTO,"
+                                  + "ORGNUM"
+
+                                  + " ) values ( "
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?"
+
+
+                                   + "  )";
+                    OleDbCommand cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    cmd3.Parameters.Add("@RECTYP", OdbcType.Text).Value = header.RECTYP;    //RECTYP
+                    cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;    //DOCNUM
+                    cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = header.DOCDAT;    //DOCDAT
+                    cmd3.Parameters.Add("@POSTGL", OdbcType.Text).Value = header.POSTGL;    //POSTGL
+                    cmd3.Parameters.Add("@SONUM", OdbcType.Text).Value = header.SONUM;    //SONUM
+                    cmd3.Parameters.Add("@CNTYP", OdbcType.Text).Value = header.CNTYP;    //CNTYP
+                    cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = header.DEPCOD;    //DEPCOD
+                    cmd3.Parameters.Add("@FLGVAT", OdbcType.Text).Value = header.FLGVAT;    //FLGVAT
+                    cmd3.Parameters.Add("@SLMCOD", OdbcType.Text).Value = header.SLMCOD;    //SLMCOD
+                    cmd3.Parameters.Add("@CUSCOD", OdbcType.Text).Value = header.CUSCOD;    //CUSCOD
+                    cmd3.Parameters.Add("@SHIPTO", OdbcType.Text).Value = header.SHIPTO;    //SHIPTO
+                    cmd3.Parameters.Add("@YOUREF", OdbcType.Text).Value = header.YOUREF;    //YOUREF
+                    cmd3.Parameters.Add("@AREACOD", OdbcType.Text).Value = header.AREACOD;    //AREACOD
+                    cmd3.Parameters.Add("@PAYTRM", OdbcType.SmallInt).Value = header.PAYTRM;    //PAYTRM
+                    cmd3.Parameters.Add("@DUEDAT", OdbcType.Date).Value = header.DUEDAT;    //DUEDAT
+                    cmd3.Parameters.Add("@BILNUM", OdbcType.Text).Value = header.BILNUM;    //BILNUM
+                    cmd3.Parameters.Add("@NXTSEQ", OdbcType.Text).Value = header.NXTSEQ;    //NXTSEQ
+                    cmd3.Parameters.Add("@AMOUNT", OdbcType.Decimal).Value = header.AMOUNT;    //AMOUNT
+                    cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = header.DISC;    //DISC
+                    cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = header.DISCAMT;    //DISCAMT
+                    cmd3.Parameters.Add("@AFTDISC", OdbcType.Decimal).Value = header.AFTDISC;    //AFTDISC
+                    cmd3.Parameters.Add("@ADVNUM", OdbcType.Text).Value = header.ADVNUM;    //ADVNUM
+                    cmd3.Parameters.Add("@ADVAMT", OdbcType.Decimal).Value = header.ADVAMT;    //ADVAMT
+                    cmd3.Parameters.Add("@TOTAL", OdbcType.Decimal).Value = header.TOTAL;    //TOTAL
+                    cmd3.Parameters.Add("@AMTRAT0", OdbcType.Decimal).Value = header.AMTRATO;    //AMTRAT0
+                    cmd3.Parameters.Add("@VATRAT", OdbcType.Decimal).Value = header.VATRAT;    //VATRAT
+                    cmd3.Parameters.Add("@VATAMT", OdbcType.Decimal).Value = header.VATAMT;    //VATAMT
+                    cmd3.Parameters.Add("@NETAMT", OdbcType.Decimal).Value = header.NETAMT;    //NETAMT
+                    cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = header.NETVAL;    //NETVAL
+                    cmd3.Parameters.Add("@RCVAMT", OdbcType.Decimal).Value = header.RCVAMT;    //RCVAMT
+                    cmd3.Parameters.Add("@REMAMT", OdbcType.Decimal).Value = header.REMAMT;    //REMAMT
+                    cmd3.Parameters.Add("@COMAMT", OdbcType.Decimal).Value = header.COMAMT;    //COMAMT
+                    cmd3.Parameters.Add("@CMPLAPP", OdbcType.Text).Value = header.CMPLAPP;    //CMPLAPP
+                    //cmd3.Parameters.Add("@CMPLDAT", OdbcType.Date).Value = DateTime.Now.Date;    //CMPLDAT
+                    cmd3.Parameters.Add("@DOCSTAT", OdbcType.Text).Value = header.DOCSTAT;    //DOCSTAT
+                    cmd3.Parameters.Add("@CSHRCV", OdbcType.Decimal).Value = header.CSHRCV;    //CSHRCV
+                    cmd3.Parameters.Add("@CHQRCV", OdbcType.Decimal).Value = header.CHQRCV;    //CHQRCV
+                    cmd3.Parameters.Add("@INTRCV", OdbcType.Decimal).Value = header.INTRCV;    //INTRCV
+                    cmd3.Parameters.Add("@BEFTAX", OdbcType.Decimal).Value = header.BEFTAX;    //BEFTAX
+                    cmd3.Parameters.Add("@TAXRAT", OdbcType.Decimal).Value = header.TAXRAT;    //TAXRAT
+                    cmd3.Parameters.Add("@TAXCOND", OdbcType.Text).Value = header.TAXCOND;    //TAXCOND
+                    cmd3.Parameters.Add("@TAX", OdbcType.Decimal).Value = header.TAX;    //TAX
+                    cmd3.Parameters.Add("@IVCAMT", OdbcType.Decimal).Value = header.IVCAMT;    //IVCAMT
+                    cmd3.Parameters.Add("@CHQPAS", OdbcType.Decimal).Value = header.CHQPAS;    //CHQPAS
+                    //cmd3.Parameters.Add("@VATDAT", OdbcType.Date).Value = header.VATDAT;    //VATDAT
+                    //cmd3.Parameters.Add("@VATPRD", OdbcType.Date).Value = header.VATPRD;    //VATPRD
+                    cmd3.Parameters.Add("@VATLATE", OdbcType.Text).Value = header.VATLATE;    //VATLATE
+                    cmd3.Parameters.Add("@SRV_VATTYP", OdbcType.Text).Value = header.SRV_VATTYP;    //SRV_VATTYP
+                    cmd3.Parameters.Add("@DLVBY", OdbcType.Text).Value = header.DLVBY;    //DLVBY
+                    //cmd3.Parameters.Add("@RESERVE", OdbcType.Date).Value = DateTime.Now.Date;    //RESERVE
+                    cmd3.Parameters.Add("@USERID", OdbcType.Text).Value = header.USERID;    //USERID
+                    cmd3.Parameters.Add("@CHGDAT", OdbcType.Date).Value = header.CHGDAT;    //CHGDAT
+                    cmd3.Parameters.Add("@USERPRN", OdbcType.Text).Value = header.USERPRN;    //USERPRN
+                    //cmd3.Parameters.Add("@PRNDAT", OdbcType.Date).Value = DateTime.Now.Date;    //PRNDAT
+                    cmd3.Parameters.Add("@PRNCNT", OdbcType.SmallInt).Value = header.PRNCNT;    //PRNCNT
+                    cmd3.Parameters.Add("@PRNTIM", OdbcType.Text).Value = header.PRNTIM;    //PRNTIM
+                    cmd3.Parameters.Add("@AUTHID", OdbcType.Text).Value = header.AUTHID;    //AUTHID
+                    //cmd3.Parameters.Add("@APPROVE", OdbcType.Date).Value = DateTime.Now.Date;    //APPROVE
+                    cmd3.Parameters.Add("@BILLTO", OdbcType.Text).Value = header.BILLTO;    //BILLTO
+                    cmd3.Parameters.Add("@ORGNUM", OdbcType.Int).Value = header.ORGNUM;    //ORGNUM"
+
+
+                    cmd3.ExecuteNonQuery();
+
+
+                    //STCRD **********************************************************************
+                    foreach (var d in detail) {
+
+                        strInsert =
+                                                    "insert into STCRD ( "
+                                                        + "STKCOD,"
+                                                        + "LOCCOD,"
+                                                        + "DOCNUM,"
+                                                        + "SEQNUM,"
+                                                        + "DOCDAT,"
+                                                        + "RDOCNUM,"
+                                                        + "REFNUM,"
+                                                        + "DEPCOD,"
+                                                        + "POSOPR,"
+                                                        + "FREE,"
+                                                        + "VATCOD,"
+                                                        + "PEOPLE,"
+                                                        + "SLMCOD,"
+                                                        + "FLAG,"
+                                                        + "TRNQTY,"
+                                                        + "TQUCOD,"
+                                                        + "TFACTOR,"
+                                                        + "UNITPR,"
+                                                        + "DISC,"
+                                                        + "DISCAMT,"
+                                                        + "TRNVAL,"
+                                                        + "PHYBAL,"
+                                                        + "RETSTK,"
+                                                        + "XTRNQTY,"
+                                                        + "XUNITPR,"
+                                                        + "XTRNVAL,"
+                                                        + "XSALVAL,"
+                                                        + "NETVAL,"
+                                                        + "MLOTNUM,"
+                                                        + "MREMBAL,"
+                                                        + "MREMVAL,"
+                                                        + "BALCHG,"
+                                                        + "VALCHG,"
+                                                        + "LOTBAL,"
+                                                        + "LOTVAL,"
+                                                        + "LUNITPR,"
+                                                        + "PSTKCOD,"
+                                                        + "ACCNUMDR,"
+                                                        + "ACCNUMCR,"
+                                                        + "STKDES,"
+                                                        + "PACKING,"
+                                                        + "JOBCOD,"
+                                                        + "PHASE,"
+                                                        + "COSCOD,"
+                                                        + "REIMBURSE"
+
+
+                                                    + " ) values ( "
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?"
+                                                     + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@STKCOD", OdbcType.Text).Value = d.STKCOD;   //STKCOD
+                        cmd3.Parameters.Add("@LOCCOD", OdbcType.Text).Value = d.LOCCOD;   //LOCCOD
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = d.DOCNUM;   //DOCNUM
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = d.SEQNUM;   //SEQNUM
+                        cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = d.DOCDAT;   //DOCDAT
+                        cmd3.Parameters.Add("@RDOCNUM", OdbcType.Text).Value = d.RDOCNUM;   //RDOCNUM
+                        cmd3.Parameters.Add("@REFNUM", OdbcType.Text).Value = d.REFNUM;   //REFNUM
+                        cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = d.DEPCOD;   //DEPCOD
+                        cmd3.Parameters.Add("@POSOPR", OdbcType.Text).Value = d.POSOPR;   //POSOPR
+                        cmd3.Parameters.Add("@FREE", OdbcType.Text).Value = d.FREE;   //FREE
+                        cmd3.Parameters.Add("@VATCOD", OdbcType.Text).Value = d.VATCOD;   //VATCOD
+                        cmd3.Parameters.Add("@PEOPLE", OdbcType.Text).Value = d.PEOPLE;   //PEOPLE
+                        cmd3.Parameters.Add("@SLMCOD", OdbcType.Text).Value = d.SLMCOD;   //SLMCOD
+                        cmd3.Parameters.Add("@FLAG", OdbcType.Text).Value = d.FLAG;   //FLAG
+                        cmd3.Parameters.Add("@TRNQTY", OdbcType.Decimal).Value = d.TRNQTY;   //TRNQTY
+                        cmd3.Parameters.Add("@TQUCOD", OdbcType.Text).Value = d.TQUCOD;   //TQUCOD
+                        cmd3.Parameters.Add("@TFACTOR", OdbcType.Decimal).Value = d.TFACTOR;   //TFACTOR
+                        cmd3.Parameters.Add("@UNITPR", OdbcType.Decimal).Value = d.UNITPR;   //UNITPR
+                        cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = d.DISC;   //DISC
+                        cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = d.DISCAMT;   //DISCAMT
+                        cmd3.Parameters.Add("@TRNVAL", OdbcType.Decimal).Value = d.TRNVAL;   //TRNVAL
+                        cmd3.Parameters.Add("@PHYBAL", OdbcType.Decimal).Value = d.PHYVAL;   //PHYBAL
+                        cmd3.Parameters.Add("@RETSTK", OdbcType.Text).Value = d.RETSTK;   //RETSTK
+                        cmd3.Parameters.Add("@XTRNQTY", OdbcType.Decimal).Value = d.XTRNQTY;   //XTRNQTY
+                        cmd3.Parameters.Add("@XUNITPR", OdbcType.Decimal).Value = d.XUNITPR;   //XUNITPR
+                        cmd3.Parameters.Add("@XTRNVAL", OdbcType.Decimal).Value = d.XTRNVAL;   //XTRNVAL
+                        cmd3.Parameters.Add("@XSALVAL", OdbcType.Decimal).Value = d.XSALVAL;   //XSALVAL
+                        cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = d.NETVAL;   //NETVAL
+                        cmd3.Parameters.Add("@MLOTNUM", OdbcType.Text).Value = d.MLOTNUM;   //MLOTNUM
+                        cmd3.Parameters.Add("@MREMBAL", OdbcType.Decimal).Value = d.MREMBAL;   //MREMBAL
+                        cmd3.Parameters.Add("@MREMVAL", OdbcType.Decimal).Value = d.MREMVAL;   //MREMVAL
+                        cmd3.Parameters.Add("@BALCHG", OdbcType.Decimal).Value = d.BALCHG;   //BALCHG
+                        cmd3.Parameters.Add("@VALCHG", OdbcType.Decimal).Value = d.VALCHG;   //VALCHG
+                        cmd3.Parameters.Add("@LOTBAL", OdbcType.Decimal).Value = d.LOTBAL;   //LOTBAL
+                        cmd3.Parameters.Add("@LOTVAL", OdbcType.Decimal).Value = d.LOTVAL;   //LOTVAL
+                        cmd3.Parameters.Add("@LUNITPR", OdbcType.Decimal).Value = d.LUNITPR;   //LUNITPR
+                        cmd3.Parameters.Add("@PSTKCOD", OdbcType.Text).Value = d.PSTKCOD;   //PSTKCOD
+                        cmd3.Parameters.Add("@ACCNUMDR", OdbcType.Text).Value = d.ACCNUMDR;   //ACCNUMDR
+                        cmd3.Parameters.Add("@ACCNUMCR", OdbcType.Text).Value = d.ACCNUMCR;   //ACCNUMCR
+                        cmd3.Parameters.Add("@STKDES", OdbcType.Text).Value = d.STKDES;   //STKDES
+                        cmd3.Parameters.Add("@PACKING", OdbcType.Text).Value = d.PACKING;   //PACKING
+                        cmd3.Parameters.Add("@JOBCOD", OdbcType.Text).Value = d.JOBCOD;   //JOBCOD
+                        cmd3.Parameters.Add("@PHASE", OdbcType.Text).Value = d.PHASE;   //PHASE
+                        cmd3.Parameters.Add("@COSCOD", OdbcType.Text).Value = d.COSCOD;   //COSCOD
+                        cmd3.Parameters.Add("@REIMBURSE", OdbcType.Text).Value = d.REIMBURSE;   //REIMBURSE"
+
+
+                        cmd3.ExecuteNonQuery();
+                    }
+
+
+                    //ARTRNRM **********************************************************************
+                    //@1 = DecNo ,@2 = Invno ,@6 = Jobno
+                    for (int i = 1; i <= 6; i++) {
+                        string Seqnum = "@" + i.ToString();
+                        string remark = "";
+                        if (i == 1) {
+                            remark = header.Job_DecNo;
+                        }
+                        if (i == 2) {
+                            remark = header.Job_InvNo;
+                        }
+                        if (i == 6) {
+                            remark = header.JobNo;
+                        }
+                        strInsert =
+                                                   "insert into ARTRNRM ( "
+                                                       + "DOCNUM,"
+                                                       + "SEQNUM,"
+                                                       + "REMARK"
+
+                                                   + " ) values ( "
+                                                       + "?,"
+                                                       + "?,"
+                                                       + "?"
+                                                    + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = Seqnum;
+                        cmd3.Parameters.Add("@REMARK", OdbcType.Text).Value = remark;
+                        cmd3.ExecuteNonQuery();
+                    }
+                    yourConnectionHandler.Close();
+                } catch (Exception ex) {
+                    yourConnectionHandler.Close();
+                    error = ex.Message;
+
+                }
+            }
+            return error;
+        }
+        public static string InsertAR_Individual(sp_GenInterfaceIS_Head_Individual_Result header, List<sp_GenInterfaceIS_Line_Individual_Result> detail) {
+            //Code เดียวกับ InsertAR_Individual
+            string error = "";
+            OleDbConnection yourConnectionHandler = new OleDbConnection(GetExpressPath());
+            yourConnectionHandler.Open();
+            if (yourConnectionHandler.State == ConnectionState.Open) {
+                try {
+                    //ARTRN **********************************************************************
+                    string strInsert =
+                                  "insert into ARTRN ( "
+                                  + "RECTYP,"
+                                  + "DOCNUM,"
+                                  + "DOCDAT,"
+                                  + "POSTGL,"
+                                  + "SONUM,"
+                                  + "CNTYP,"
+                                  + "DEPCOD,"
+                                  + "FLGVAT,"
+                                  + "SLMCOD,"
+                                  + "CUSCOD,"
+                                  + "SHIPTO,"
+                                  + "YOUREF,"
+                                  + "AREACOD,"
+                                  + "PAYTRM,"
+                                  + "DUEDAT,"
+                                  + "BILNUM,"
+                                  + "NXTSEQ,"
+                                  + "AMOUNT,"
+                                  + "DISC,"
+                                  + "DISCAMT,"
+                                  + "AFTDISC,"
+                                  + "ADVNUM,"
+                                  + "ADVAMT,"
+                                  + "TOTAL,"
+                                  + "AMTRAT0,"
+                                  + "VATRAT,"
+                                  + "VATAMT,"
+                                  + "NETAMT,"
+                                  + "NETVAL,"
+                                  + "RCVAMT,"
+                                  + "REMAMT,"
+                                  + "COMAMT,"
+                                  + "CMPLAPP,"
+                                  + "CMPLDAT,"
+                                  + "DOCSTAT,"
+                                  + "CSHRCV,"
+                                  + "CHQRCV,"
+                                  + "INTRCV,"
+                                  + "BEFTAX,"
+                                  + "TAXRAT,"
+                                  + "TAXCOND,"
+                                  + "TAX,"
+                                  + "IVCAMT,"
+                                  + "CHQPAS,"
+                                  + "VATDAT,"
+                                  + "VATPRD,"
+                                  + "VATLATE,"
+                                  + "SRV_VATTYP,"
+                                  + "DLVBY,"
+                                  + "RESERVE,"
+                                  + "USERID,"
+                                  + "CHGDAT,"
+                                  + "USERPRN,"
+                                  + "PRNDAT,"
+                                  + "PRNCNT,"
+                                  + "PRNTIM,"
+                                  + "AUTHID,"
+                                  + "APPROVE,"
+                                  + "BILLTO,"
+                                  + "ORGNUM"
+
+                                  + " ) values ( "
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?,"
+                                   + "?,"
+                                   + "({}),"
+                                   + "?,"
+                                   + "?"
+
+
+                                   + "  )";
+                    OleDbCommand cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    cmd3.Parameters.Add("@RECTYP", OdbcType.Text).Value = header.RECTYP;    //RECTYP
+                    cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;    //DOCNUM
+                    cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = header.DOCDAT;    //DOCDAT
+                    cmd3.Parameters.Add("@POSTGL", OdbcType.Text).Value = header.POSTGL;    //POSTGL
+                    cmd3.Parameters.Add("@SONUM", OdbcType.Text).Value = header.SONUM;    //SONUM
+                    cmd3.Parameters.Add("@CNTYP", OdbcType.Text).Value = header.CNTYP;    //CNTYP
+                    cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = header.DEPCOD;    //DEPCOD
+                    cmd3.Parameters.Add("@FLGVAT", OdbcType.Text).Value = header.FLGVAT;    //FLGVAT
+                    cmd3.Parameters.Add("@SLMCOD", OdbcType.Text).Value = header.SLMCOD;    //SLMCOD
+                    cmd3.Parameters.Add("@CUSCOD", OdbcType.Text).Value = header.CUSCOD;    //CUSCOD
+                    cmd3.Parameters.Add("@SHIPTO", OdbcType.Text).Value = header.SHIPTO;    //SHIPTO
+                    cmd3.Parameters.Add("@YOUREF", OdbcType.Text).Value = header.YOUREF;    //YOUREF
+                    cmd3.Parameters.Add("@AREACOD", OdbcType.Text).Value = header.AREACOD;    //AREACOD
+                    cmd3.Parameters.Add("@PAYTRM", OdbcType.SmallInt).Value = header.PAYTRM;    //PAYTRM
+                    cmd3.Parameters.Add("@DUEDAT", OdbcType.Date).Value = header.DUEDAT;    //DUEDAT
+                    cmd3.Parameters.Add("@BILNUM", OdbcType.Text).Value = header.BILNUM;    //BILNUM
+                    cmd3.Parameters.Add("@NXTSEQ", OdbcType.Text).Value = header.NXTSEQ;    //NXTSEQ
+                    cmd3.Parameters.Add("@AMOUNT", OdbcType.Decimal).Value = header.AMOUNT;    //AMOUNT
+                    cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = header.DISC;    //DISC
+                    cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = header.DISCAMT;    //DISCAMT
+                    cmd3.Parameters.Add("@AFTDISC", OdbcType.Decimal).Value = header.AFTDISC;    //AFTDISC
+                    cmd3.Parameters.Add("@ADVNUM", OdbcType.Text).Value = header.ADVNUM;    //ADVNUM
+                    cmd3.Parameters.Add("@ADVAMT", OdbcType.Decimal).Value = header.ADVAMT;    //ADVAMT
+                    cmd3.Parameters.Add("@TOTAL", OdbcType.Decimal).Value = header.TOTAL;    //TOTAL
+                    cmd3.Parameters.Add("@AMTRAT0", OdbcType.Decimal).Value = header.AMTRATO;    //AMTRAT0
+                    cmd3.Parameters.Add("@VATRAT", OdbcType.Decimal).Value = header.VATRAT;    //VATRAT
+                    cmd3.Parameters.Add("@VATAMT", OdbcType.Decimal).Value = header.VATAMT;    //VATAMT
+                    cmd3.Parameters.Add("@NETAMT", OdbcType.Decimal).Value = header.NETAMT;    //NETAMT
+                    cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = header.NETVAL;    //NETVAL
+                    cmd3.Parameters.Add("@RCVAMT", OdbcType.Decimal).Value = header.RCVAMT;    //RCVAMT
+                    cmd3.Parameters.Add("@REMAMT", OdbcType.Decimal).Value = header.REMAMT;    //REMAMT
+                    cmd3.Parameters.Add("@COMAMT", OdbcType.Decimal).Value = header.COMAMT;    //COMAMT
+                    cmd3.Parameters.Add("@CMPLAPP", OdbcType.Text).Value = header.CMPLAPP;    //CMPLAPP
+                    //cmd3.Parameters.Add("@CMPLDAT", OdbcType.Date).Value = DateTime.Now.Date;    //CMPLDAT
+                    cmd3.Parameters.Add("@DOCSTAT", OdbcType.Text).Value = header.DOCSTAT;    //DOCSTAT
+                    cmd3.Parameters.Add("@CSHRCV", OdbcType.Decimal).Value = header.CSHRCV;    //CSHRCV
+                    cmd3.Parameters.Add("@CHQRCV", OdbcType.Decimal).Value = header.CHQRCV;    //CHQRCV
+                    cmd3.Parameters.Add("@INTRCV", OdbcType.Decimal).Value = header.INTRCV;    //INTRCV
+                    cmd3.Parameters.Add("@BEFTAX", OdbcType.Decimal).Value = header.BEFTAX;    //BEFTAX
+                    cmd3.Parameters.Add("@TAXRAT", OdbcType.Decimal).Value = header.TAXRAT;    //TAXRAT
+                    cmd3.Parameters.Add("@TAXCOND", OdbcType.Text).Value = header.TAXCOND;    //TAXCOND
+                    cmd3.Parameters.Add("@TAX", OdbcType.Decimal).Value = header.TAX;    //TAX
+                    cmd3.Parameters.Add("@IVCAMT", OdbcType.Decimal).Value = header.IVCAMT;    //IVCAMT
+                    cmd3.Parameters.Add("@CHQPAS", OdbcType.Decimal).Value = header.CHQPAS;    //CHQPAS
+                    //cmd3.Parameters.Add("@VATDAT", OdbcType.Date).Value = header.VATDAT;    //VATDAT
+                    //cmd3.Parameters.Add("@VATPRD", OdbcType.Date).Value = header.VATPRD;    //VATPRD
+                    cmd3.Parameters.Add("@VATLATE", OdbcType.Text).Value = header.VATLATE;    //VATLATE
+                    cmd3.Parameters.Add("@SRV_VATTYP", OdbcType.Text).Value = header.SRV_VATTYP;    //SRV_VATTYP
+                    cmd3.Parameters.Add("@DLVBY", OdbcType.Text).Value = header.DLVBY;    //DLVBY
+                    //cmd3.Parameters.Add("@RESERVE", OdbcType.Date).Value = DateTime.Now.Date;    //RESERVE
+                    cmd3.Parameters.Add("@USERID", OdbcType.Text).Value = header.USERID;    //USERID
+                    cmd3.Parameters.Add("@CHGDAT", OdbcType.Date).Value = header.CHGDAT;    //CHGDAT
+                    cmd3.Parameters.Add("@USERPRN", OdbcType.Text).Value = header.USERPRN;    //USERPRN
+                    //cmd3.Parameters.Add("@PRNDAT", OdbcType.Date).Value = DateTime.Now.Date;    //PRNDAT
+                    cmd3.Parameters.Add("@PRNCNT", OdbcType.SmallInt).Value = header.PRNCNT;    //PRNCNT
+                    cmd3.Parameters.Add("@PRNTIM", OdbcType.Text).Value = header.PRNTIM;    //PRNTIM
+                    cmd3.Parameters.Add("@AUTHID", OdbcType.Text).Value = header.AUTHID;    //AUTHID
+                    //cmd3.Parameters.Add("@APPROVE", OdbcType.Date).Value = DateTime.Now.Date;    //APPROVE
+                    cmd3.Parameters.Add("@BILLTO", OdbcType.Text).Value = header.BILLTO;    //BILLTO
+                    cmd3.Parameters.Add("@ORGNUM", OdbcType.Int).Value = header.ORGNUM;    //ORGNUM"
+
+
+                    cmd3.ExecuteNonQuery();
+
+
+                    //STCRD **********************************************************************
+                    foreach (var d in detail) {
+
+                        strInsert =
+                                                    "insert into STCRD ( "
+                                                        + "STKCOD,"
+                                                        + "LOCCOD,"
+                                                        + "DOCNUM,"
+                                                        + "SEQNUM,"
+                                                        + "DOCDAT,"
+                                                        + "RDOCNUM,"
+                                                        + "REFNUM,"
+                                                        + "DEPCOD,"
+                                                        + "POSOPR,"
+                                                        + "FREE,"
+                                                        + "VATCOD,"
+                                                        + "PEOPLE,"
+                                                        + "SLMCOD,"
+                                                        + "FLAG,"
+                                                        + "TRNQTY,"
+                                                        + "TQUCOD,"
+                                                        + "TFACTOR,"
+                                                        + "UNITPR,"
+                                                        + "DISC,"
+                                                        + "DISCAMT,"
+                                                        + "TRNVAL,"
+                                                        + "PHYBAL,"
+                                                        + "RETSTK,"
+                                                        + "XTRNQTY,"
+                                                        + "XUNITPR,"
+                                                        + "XTRNVAL,"
+                                                        + "XSALVAL,"
+                                                        + "NETVAL,"
+                                                        + "MLOTNUM,"
+                                                        + "MREMBAL,"
+                                                        + "MREMVAL,"
+                                                        + "BALCHG,"
+                                                        + "VALCHG,"
+                                                        + "LOTBAL,"
+                                                        + "LOTVAL,"
+                                                        + "LUNITPR,"
+                                                        + "PSTKCOD,"
+                                                        + "ACCNUMDR,"
+                                                        + "ACCNUMCR,"
+                                                        + "STKDES,"
+                                                        + "PACKING,"
+                                                        + "JOBCOD,"
+                                                        + "PHASE,"
+                                                        + "COSCOD,"
+                                                        + "REIMBURSE"
+
+
+                                                    + " ) values ( "
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?"
+                                                     + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@STKCOD", OdbcType.Text).Value = d.STKCOD;   //STKCOD
+                        cmd3.Parameters.Add("@LOCCOD", OdbcType.Text).Value = d.LOCCOD;   //LOCCOD
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = d.DOCNUM;   //DOCNUM
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = d.SEQNUM;   //SEQNUM
+                        cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = d.DOCDAT;   //DOCDAT
+                        cmd3.Parameters.Add("@RDOCNUM", OdbcType.Text).Value = d.RDOCNUM;   //RDOCNUM
+                        cmd3.Parameters.Add("@REFNUM", OdbcType.Text).Value = d.REFNUM;   //REFNUM
+                        cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = d.DEPCOD;   //DEPCOD
+                        cmd3.Parameters.Add("@POSOPR", OdbcType.Text).Value = d.POSOPR;   //POSOPR
+                        cmd3.Parameters.Add("@FREE", OdbcType.Text).Value = d.FREE;   //FREE
+                        cmd3.Parameters.Add("@VATCOD", OdbcType.Text).Value = d.VATCOD;   //VATCOD
+                        cmd3.Parameters.Add("@PEOPLE", OdbcType.Text).Value = d.PEOPLE;   //PEOPLE
+                        cmd3.Parameters.Add("@SLMCOD", OdbcType.Text).Value = d.SLMCOD;   //SLMCOD
+                        cmd3.Parameters.Add("@FLAG", OdbcType.Text).Value = d.FLAG;   //FLAG
+                        cmd3.Parameters.Add("@TRNQTY", OdbcType.Decimal).Value = d.TRNQTY;   //TRNQTY
+                        cmd3.Parameters.Add("@TQUCOD", OdbcType.Text).Value = d.TQUCOD;   //TQUCOD
+                        cmd3.Parameters.Add("@TFACTOR", OdbcType.Decimal).Value = d.TFACTOR;   //TFACTOR
+                        cmd3.Parameters.Add("@UNITPR", OdbcType.Decimal).Value = d.UNITPR;   //UNITPR
+                        cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = d.DISC;   //DISC
+                        cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = d.DISCAMT;   //DISCAMT
+                        cmd3.Parameters.Add("@TRNVAL", OdbcType.Decimal).Value = d.TRNVAL;   //TRNVAL
+                        cmd3.Parameters.Add("@PHYBAL", OdbcType.Decimal).Value = d.PHYVAL;   //PHYBAL
+                        cmd3.Parameters.Add("@RETSTK", OdbcType.Text).Value = d.RETSTK;   //RETSTK
+                        cmd3.Parameters.Add("@XTRNQTY", OdbcType.Decimal).Value = d.XTRNQTY;   //XTRNQTY
+                        cmd3.Parameters.Add("@XUNITPR", OdbcType.Decimal).Value = d.XUNITPR;   //XUNITPR
+                        cmd3.Parameters.Add("@XTRNVAL", OdbcType.Decimal).Value = d.XTRNVAL;   //XTRNVAL
+                        cmd3.Parameters.Add("@XSALVAL", OdbcType.Decimal).Value = d.XSALVAL;   //XSALVAL
+                        cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = d.NETVAL;   //NETVAL
+                        cmd3.Parameters.Add("@MLOTNUM", OdbcType.Text).Value = d.MLOTNUM;   //MLOTNUM
+                        cmd3.Parameters.Add("@MREMBAL", OdbcType.Decimal).Value = d.MREMBAL;   //MREMBAL
+                        cmd3.Parameters.Add("@MREMVAL", OdbcType.Decimal).Value = d.MREMVAL;   //MREMVAL
+                        cmd3.Parameters.Add("@BALCHG", OdbcType.Decimal).Value = d.BALCHG;   //BALCHG
+                        cmd3.Parameters.Add("@VALCHG", OdbcType.Decimal).Value = d.VALCHG;   //VALCHG
+                        cmd3.Parameters.Add("@LOTBAL", OdbcType.Decimal).Value = d.LOTBAL;   //LOTBAL
+                        cmd3.Parameters.Add("@LOTVAL", OdbcType.Decimal).Value = d.LOTVAL;   //LOTVAL
+                        cmd3.Parameters.Add("@LUNITPR", OdbcType.Decimal).Value = d.LUNITPR;   //LUNITPR
+                        cmd3.Parameters.Add("@PSTKCOD", OdbcType.Text).Value = d.PSTKCOD;   //PSTKCOD
+                        cmd3.Parameters.Add("@ACCNUMDR", OdbcType.Text).Value = d.ACCNUMDR;   //ACCNUMDR
+                        cmd3.Parameters.Add("@ACCNUMCR", OdbcType.Text).Value = d.ACCNUMCR;   //ACCNUMCR
+                        cmd3.Parameters.Add("@STKDES", OdbcType.Text).Value = d.STKDES;   //STKDES
+                        cmd3.Parameters.Add("@PACKING", OdbcType.Text).Value = d.PACKING;   //PACKING
+                        cmd3.Parameters.Add("@JOBCOD", OdbcType.Text).Value = d.JOBCOD;   //JOBCOD
+                        cmd3.Parameters.Add("@PHASE", OdbcType.Text).Value = d.PHASE;   //PHASE
+                        cmd3.Parameters.Add("@COSCOD", OdbcType.Text).Value = d.COSCOD;   //COSCOD
+                        cmd3.Parameters.Add("@REIMBURSE", OdbcType.Text).Value = d.REIMBURSE;   //REIMBURSE"
+
+
+                        cmd3.ExecuteNonQuery();
+                    }
+
+
+                    //ARTRNRM **********************************************************************
+                    //@1 = DecNo ,@2 = Invno ,@6 = Jobno
+                    for (int i = 1; i <= 6; i++) {
+                        string Seqnum = "@" + i.ToString();
+                        string remark = "";
+                        if (i == 1) {
+                            remark = header.Job_DecNo;
+                        }
+                        if (i == 2) {
+                            remark = header.Job_InvNo;
+                        }
+                        if (i == 6) {
+                            remark = header.JobNo;
+                        }
+                        strInsert =
+                                                   "insert into ARTRNRM ( "
+                                                       + "DOCNUM,"
+                                                       + "SEQNUM,"
+                                                       + "REMARK"
+
+                                                   + " ) values ( "
+                                                       + "?,"
+                                                       + "?,"
+                                                       + "?"
+                                                    + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = Seqnum;
+                        cmd3.Parameters.Add("@REMARK", OdbcType.Text).Value = remark;
+                        cmd3.ExecuteNonQuery();
+                    }
+                    yourConnectionHandler.Close();
+                } catch (Exception ex) {
+                    yourConnectionHandler.Close();
+                    error = ex.Message;
+
+                }
+            }
+            return error;
+        }
+        public static string InsertAP(sp_GenInterfaceAdvance_Head_Result header, List<sp_GenInterfaceAdvance_Line_Result> detail) {
+            string error = "";
+            string approveDate = "({}),";
+            if (header.IsForceCloseAdvance) {
+                approveDate = "?,";
+            }
+            OleDbConnection yourConnectionHandler = new OleDbConnection(GetExpressPath());
+            yourConnectionHandler.Open();
+            if (yourConnectionHandler.State == ConnectionState.Open) {
+                try {
+
+                    //APTRN **********************************************************************
+                    string strInsert =
+                                  "insert into APTRN ( "
+                                    + "RECTYP,"
+                                    + "DOCNUM,"
+                                    + "DOCDAT,"
+                                    + "REFNUM,"
+                                    + "VATPRD,"
+                                    + "VATLATE,"
+                                    + "VATTYP,"
+                                    + "POSTGL,"
+                                    + "PONUM,"
+                                    + "DNTYP,"
+                                    + "DEPCOD,"
+                                    + "FLGVAT,"
+                                    + "SUPCOD,"
+                                    + "SHIPTO,"
+                                    + "YOUREF,"
+                                    + "PAYTRM,"
+                                    + "DUEDAT,"
+                                    + "BILNUM,"
+                                    + "DLVBY,"
+                                    + "NXTSEQ,"
+                                    + "AMOUNT,"
+                                    + "DISC,"
+                                    + "DISCAMT,"
+                                    + "AFTDISC,"
+                                    + "ADVNUM,"
+                                    + "ADVAMT,"
+                                    + "TOTAL,"
+                                    + "AMTRAT0,"
+                                    + "VATRAT,"
+                                    + "VATAMT,"
+                                    + "NETAMT,"
+                                    + "NETVAL,"
+                                    + "PAYAMT,"
+                                    + "REMAMT,"
+                                    + "CMPLAPP,"
+                                    + "CMPLDAT,"
+                                    + "DOCSTAT,"
+                                    + "CSHPAY,"
+                                    + "CHQPAY,"
+                                    + "INTPAY,"
+                                    + "TAX,"
+                                    + "RCVAMT,"
+                                    + "CHQPAS,"
+                                    + "VATDAT,"
+                                    + "SRV_VATTYP,"
+                                    + "PVATPRORAT,"
+                                    + "PVAT_RF,"
+                                    + "PVAT_NRF,"
+                                    + "USERID,"
+                                    + "CHGDAT,"
+                                    + "USERPRN,"
+                                    + "PRNDAT,"
+                                    + "PRNCNT,"
+                                    + "PRNTIM,"
+                                    + "AUTHID,"
+                                    + "APPROVE,"
+                                    + "BILLBE,"
+                                    + "ORGNUM"
+
+
+                                  + " ) values ( "
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + "({}),"
+                                    + "?,"
+                                    + "?,"
+                                    + "?,"
+                                    + approveDate
+                                    + "?,"
+                                    + "?"
+
+
+                                   + "  )";
+                    OleDbCommand cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    cmd3.Parameters.Add("@RECTYP", OdbcType.Text).Value = header.RECTYP;
+                    cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;
+                    cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = header.DOCDAT;
+                    cmd3.Parameters.Add("@REFNUM", OdbcType.Text).Value = header.REFNUM;
+                    cmd3.Parameters.Add("@VATPRD", OdbcType.Date).Value = header.VATPRD;
+                    cmd3.Parameters.Add("@VATLATE", OdbcType.Text).Value = header.VATLATE;
+                    cmd3.Parameters.Add("@VATTYP", OdbcType.Text).Value = header.VATTYP;
+                    cmd3.Parameters.Add("@POSTGL", OdbcType.Text).Value = header.POSTGL;
+                    cmd3.Parameters.Add("@PONUM", OdbcType.Text).Value = header.PONUM;
+                    cmd3.Parameters.Add("@DNTYP", OdbcType.Text).Value = header.DNTYPE;
+                    cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = header.DEPCOD;
+                    cmd3.Parameters.Add("@FLGVAT", OdbcType.Text).Value = header.FLGVAT;
+                    cmd3.Parameters.Add("@SUPCOD", OdbcType.Text).Value = header.SUPCOD;
+                    cmd3.Parameters.Add("@SHIPTO", OdbcType.Text).Value = header.SHIPTO;
+                    cmd3.Parameters.Add("@YOUREF", OdbcType.Text).Value = header.YOUREF;
+                    cmd3.Parameters.Add("@PAYTRM", OdbcType.SmallInt).Value = header.PAYTRM;
+                    cmd3.Parameters.Add("@DUEDAT", OdbcType.Date).Value = header.DUEDAT;
+                    cmd3.Parameters.Add("@BILNUM", OdbcType.Text).Value = header.BILNUM;
+                    cmd3.Parameters.Add("@DLVBY", OdbcType.Text).Value = header.DLVBY;
+                    cmd3.Parameters.Add("@NXTSEQ", OdbcType.Text).Value = header.NXTSEQ;
+                    cmd3.Parameters.Add("@AMOUNT", OdbcType.Decimal).Value = header.AMOUNT;
+                    cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = header.DISC;
+                    cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = header.DISCAMT;
+                    cmd3.Parameters.Add("@AFTDISC", OdbcType.Decimal).Value = header.AFTDISC;
+                    cmd3.Parameters.Add("@ADVNUM", OdbcType.Text).Value = header.ADVNUM;
+                    cmd3.Parameters.Add("@ADVAMT", OdbcType.Decimal).Value = header.ADVAMT;
+                    cmd3.Parameters.Add("@TOTAL", OdbcType.Decimal).Value = header.TOTAL;
+                    cmd3.Parameters.Add("@AMTRAT0", OdbcType.Decimal).Value = header.AMTRAT0;
+                    cmd3.Parameters.Add("@VATRAT", OdbcType.Decimal).Value = header.VATRAT;
+                    cmd3.Parameters.Add("@VATAMT", OdbcType.Decimal).Value = header.VATAMT;
+                    cmd3.Parameters.Add("@NETAMT", OdbcType.Decimal).Value = header.NETAMT;
+                    cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = header.NETVAT;
+                    cmd3.Parameters.Add("@PAYAMT", OdbcType.Decimal).Value = header.PAYAMT;
+                    cmd3.Parameters.Add("@REMAMT", OdbcType.Decimal).Value = header.REMAMT;
+                    cmd3.Parameters.Add("@CMPLAPP", OdbcType.Text).Value = header.CMPLAPP;
+                    cmd3.Parameters.Add("@CMPLDAT", OdbcType.Date).Value = header.CMPDAT;
+                    cmd3.Parameters.Add("@DOCSTAT", OdbcType.Text).Value = header.DOCSTAT;
+                    cmd3.Parameters.Add("@CSHPAY", OdbcType.Decimal).Value = header.CSHPAY;
+                    cmd3.Parameters.Add("@CHQPAY", OdbcType.Decimal).Value = header.CHQPAY;
+                    cmd3.Parameters.Add("@INTPAY", OdbcType.Decimal).Value = header.INTPAY;
+                    cmd3.Parameters.Add("@TAX", OdbcType.Decimal).Value = header.TAX;
+                    cmd3.Parameters.Add("@RCVAMT", OdbcType.Decimal).Value = header.RCVAMT;
+                    cmd3.Parameters.Add("@CHQPAS", OdbcType.Decimal).Value = header.CHQPAS;
+                    cmd3.Parameters.Add("@VATDAT", OdbcType.Date).Value = header.VATDAT;
+                    cmd3.Parameters.Add("@SRV_VATTYP", OdbcType.Text).Value = header.SRV_VATTYP;
+                    cmd3.Parameters.Add("@PVATPRORAT", OdbcType.Text).Value = header.PVATPRORAT;
+                    cmd3.Parameters.Add("@PVAT_RF", OdbcType.Decimal).Value = header.PVAT_RF;
+                    cmd3.Parameters.Add("@PVAT_NRF", OdbcType.Decimal).Value = header.PVAT_NRF;
+                    cmd3.Parameters.Add("@USERID", OdbcType.Text).Value = header.USERID;
+                    cmd3.Parameters.Add("@CHGDAT", OdbcType.Date).Value = header.CHGDAT;
+                    cmd3.Parameters.Add("@USERPRN", OdbcType.Text).Value = header.USERPRN;
+                    //cmd3.Parameters.Add("@PRNDAT", OdbcType.Date).Value = header.PRNDAT;
+                    cmd3.Parameters.Add("@PRNCNT", OdbcType.SmallInt).Value = header.PRNCNT;
+                    cmd3.Parameters.Add("@PRNTIM", OdbcType.Text).Value = header.PRNTIM;
+                    cmd3.Parameters.Add("@AUTHID", OdbcType.Text).Value = header.AUTHID;
+                    if (header.IsForceCloseAdvance) {
+                        cmd3.Parameters.Add("@APPROVE", OdbcType.Date).Value = header.APPROVE;
+                    }
+                    cmd3.Parameters.Add("@BILLBE", OdbcType.Text).Value = header.BILLBE;
+                    cmd3.Parameters.Add("@ORGNUM", OdbcType.Int).Value = header.ORGNUM;
+
+
+
+                    cmd3.ExecuteNonQuery();
+
+
+                    //STCRD **********************************************************************
+                    foreach (var d in detail) {
+
+                        strInsert =
+                                                    "insert into STCRD ( "
+                                                        + "STKCOD,"
+                                                        + "LOCCOD,"
+                                                        + "DOCNUM,"
+                                                        + "SEQNUM,"
+                                                        + "DOCDAT,"
+                                                        + "RDOCNUM,"
+                                                        + "REFNUM,"
+                                                        + "DEPCOD,"
+                                                        + "POSOPR,"
+                                                        + "FREE,"
+                                                        + "VATCOD,"
+                                                        + "PEOPLE,"
+                                                        + "SLMCOD,"
+                                                        + "FLAG,"
+                                                        + "TRNQTY,"
+                                                        + "TQUCOD,"
+                                                        + "TFACTOR,"
+                                                        + "UNITPR,"
+                                                        + "DISC,"
+                                                        + "DISCAMT,"
+                                                        + "TRNVAL,"
+                                                        + "PHYBAL,"
+                                                        + "RETSTK,"
+                                                        + "XTRNQTY,"
+                                                        + "XUNITPR,"
+                                                        + "XTRNVAL,"
+                                                        + "XSALVAL,"
+                                                        + "NETVAL,"
+                                                        + "MLOTNUM,"
+                                                        + "MREMBAL,"
+                                                        + "MREMVAL,"
+                                                        + "BALCHG,"
+                                                        + "VALCHG,"
+                                                        + "LOTBAL,"
+                                                        + "LOTVAL,"
+                                                        + "LUNITPR,"
+                                                        + "PSTKCOD,"
+                                                        + "ACCNUMDR,"
+                                                        + "ACCNUMCR,"
+                                                        + "STKDES,"
+                                                        + "PACKING,"
+                                                        + "JOBCOD,"
+                                                        + "PHASE,"
+                                                        + "COSCOD,"
+                                                        + "REIMBURSE"
+
+
+                                                    + " ) values ( "
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?,"
+                                                        + "?"
+                                                     + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@STKCOD", OdbcType.Text).Value = d.STKCOD;   //STKCOD
+                        cmd3.Parameters.Add("@LOCCOD", OdbcType.Text).Value = d.LOCCOD;   //LOCCOD
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = d.DOCNUM;   //DOCNUM
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = d.SEQNUM;   //SEQNUM
+                        cmd3.Parameters.Add("@DOCDAT", OdbcType.Date).Value = d.DOCDAT;   //DOCDAT
+                        cmd3.Parameters.Add("@RDOCNUM", OdbcType.Text).Value = d.RDOCNUM;   //RDOCNUM
+                        cmd3.Parameters.Add("@REFNUM", OdbcType.Text).Value = d.REFNUM;   //REFNUM
+                        cmd3.Parameters.Add("@DEPCOD", OdbcType.Text).Value = d.DEPCOD;   //DEPCOD
+                        cmd3.Parameters.Add("@POSOPR", OdbcType.Text).Value = d.POSOPR;   //POSOPR
+                        cmd3.Parameters.Add("@FREE", OdbcType.Text).Value = d.FREE;   //FREE
+                        cmd3.Parameters.Add("@VATCOD", OdbcType.Text).Value = d.VATCOD;   //VATCOD
+                        cmd3.Parameters.Add("@PEOPLE", OdbcType.Text).Value = d.PEOPLE;   //PEOPLE
+                        cmd3.Parameters.Add("@SLMCOD", OdbcType.Text).Value = d.SLMCOD;   //SLMCOD
+                        cmd3.Parameters.Add("@FLAG", OdbcType.Text).Value = d.FLAG;   //FLAG
+                        cmd3.Parameters.Add("@TRNQTY", OdbcType.Decimal).Value = d.TRNQTY;   //TRNQTY
+                        cmd3.Parameters.Add("@TQUCOD", OdbcType.Text).Value = d.TQUCOD;   //TQUCOD
+                        cmd3.Parameters.Add("@TFACTOR", OdbcType.Decimal).Value = d.TFACTOR;   //TFACTOR
+                        cmd3.Parameters.Add("@UNITPR", OdbcType.Decimal).Value = d.UNITPR;   //UNITPR
+                        cmd3.Parameters.Add("@DISC", OdbcType.Text).Value = d.DISC;   //DISC
+                        cmd3.Parameters.Add("@DISCAMT", OdbcType.Decimal).Value = d.DISCAMT;   //DISCAMT
+                        cmd3.Parameters.Add("@TRNVAL", OdbcType.Decimal).Value = d.TRNVAL;   //TRNVAL
+                        cmd3.Parameters.Add("@PHYBAL", OdbcType.Decimal).Value = d.PHYVAL;   //PHYBAL
+                        cmd3.Parameters.Add("@RETSTK", OdbcType.Text).Value = d.RETSTK;   //RETSTK
+                        cmd3.Parameters.Add("@XTRNQTY", OdbcType.Decimal).Value = d.XTRNQTY;   //XTRNQTY
+                        cmd3.Parameters.Add("@XUNITPR", OdbcType.Decimal).Value = d.XUNITPR;   //XUNITPR
+                        cmd3.Parameters.Add("@XTRNVAL", OdbcType.Decimal).Value = d.XTRNVAL;   //XTRNVAL
+                        cmd3.Parameters.Add("@XSALVAL", OdbcType.Decimal).Value = d.XSALVAL;   //XSALVAL
+                        cmd3.Parameters.Add("@NETVAL", OdbcType.Decimal).Value = d.NETVAL;   //NETVAL
+                        cmd3.Parameters.Add("@MLOTNUM", OdbcType.Text).Value = d.MLOTNUM;   //MLOTNUM
+                        cmd3.Parameters.Add("@MREMBAL", OdbcType.Decimal).Value = d.MREMBAL;   //MREMBAL
+                        cmd3.Parameters.Add("@MREMVAL", OdbcType.Decimal).Value = d.MREMVAL;   //MREMVAL
+                        cmd3.Parameters.Add("@BALCHG", OdbcType.Decimal).Value = d.BALCHG;   //BALCHG
+                        cmd3.Parameters.Add("@VALCHG", OdbcType.Decimal).Value = d.VALCHG;   //VALCHG
+                        cmd3.Parameters.Add("@LOTBAL", OdbcType.Decimal).Value = d.LOTBAL;   //LOTBAL
+                        cmd3.Parameters.Add("@LOTVAL", OdbcType.Decimal).Value = d.LOTVAL;   //LOTVAL
+                        cmd3.Parameters.Add("@LUNITPR", OdbcType.Decimal).Value = d.LUNITPR;   //LUNITPR
+                        cmd3.Parameters.Add("@PSTKCOD", OdbcType.Text).Value = d.PSTKCOD;   //PSTKCOD
+                        cmd3.Parameters.Add("@ACCNUMDR", OdbcType.Text).Value = d.ACCNUMDR;   //ACCNUMDR
+                        cmd3.Parameters.Add("@ACCNUMCR", OdbcType.Text).Value = d.ACCNUMCR;   //ACCNUMCR
+                        cmd3.Parameters.Add("@STKDES", OdbcType.Text).Value = d.STKDES;   //STKDES
+                        cmd3.Parameters.Add("@PACKING", OdbcType.Text).Value = d.PACKING;   //PACKING
+                        cmd3.Parameters.Add("@JOBCOD", OdbcType.Text).Value = d.JOBCOD;   //JOBCOD
+                        cmd3.Parameters.Add("@PHASE", OdbcType.Text).Value = d.PHASE;   //PHASE
+                        cmd3.Parameters.Add("@COSCOD", OdbcType.Text).Value = d.COSCOD;   //COSCOD
+                        cmd3.Parameters.Add("@REIMBURSE", OdbcType.Text).Value = d.REIMBURSE;   //REIMBURSE"
+
+
+                        cmd3.ExecuteNonQuery();
+                    }
+
+                    //ARTRNRM **********************************************************************
+                    //@1 = DecNo ,@2 = Invno ,@6 = Jobno
+                    for (int i = 1; i <= 6; i++) {
+                        string Seqnum = "@" + i.ToString();
+                        string remark = "";
+                        if (i == 1) {
+                            remark = header.Job_DecNo;
+                        }
+                        if (i == 2) {
+                            remark = header.Job_InvNo;
+                        }
+                        if (i == 6) {
+                            remark = header.JobNo;
+                        }
+                        strInsert =
+                                                   "insert into ARTRNRM ( "
+                                                       + "DOCNUM,"
+                                                       + "SEQNUM,"
+                                                       + "REMARK"
+
+                                                   + " ) values ( "
+                                                       + "?,"
+                                                       + "?,"
+                                                       + "?"
+                                                    + "  )";
+                        cmd3 = new OleDbCommand(strInsert, yourConnectionHandler);
+                        cmd3.Parameters.Add("@DOCNUM", OdbcType.Text).Value = header.DOCNUM;
+                        cmd3.Parameters.Add("@SEQNUM", OdbcType.Text).Value = Seqnum;
+                        cmd3.Parameters.Add("@REMARK", OdbcType.Text).Value = remark;
+                        cmd3.ExecuteNonQuery();
+                    }
+                    yourConnectionHandler.Close();
+
+                    #region GL Mode
+                    ////GLJNL **********************************************************************
+                    //strInsert =
+                    //              "insert into GLJNL ( "
+                    //                + "JNLTYP,"
+                    //                + "BATCH,"
+                    //                + "VOUDAT,"
+                    //                + "VOUCHER,"
+                    //                + "REFNUM,"
+                    //                + "SRCJNL,"
+                    //                + "DESCRP,"
+                    //                + "REVERSE,"
+                    //                + "TRNSTAT,"
+                    //                + "DOCSTAT,"
+                    //                + "CREBY,"
+                    //                + "CREDAT,"
+                    //                + "USERID,"
+                    //                + "CHGDAT,"
+                    //                + "POSTID,"
+                    //                + "POSDAT,"
+                    //                + "USERPRN,"
+                    //                + "PRNDAT,"
+                    //                + "PRNCNT,"
+                    //                + "PRNTIM,"
+                    //                + "AUTHID,"
+                    //                + "APPROVE"
+
+
+
+                    //              + " ) values ( "
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?"
+
+
+                    //               + "  )";
+                    //OleDbCommand cmd4 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    //cmd4.Parameters.Add("@JNLTYP", OdbcType.Text).Value = "01";
+                    //cmd4.Parameters.Add("@BATCH", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@VOUDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd4.Parameters.Add("@VOUCHER", OdbcType.Text).Value = "CC1910004";
+                    //cmd4.Parameters.Add("@REFNUM", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@SRCJNL", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@DESCRP", OdbcType.Text).Value = "คชจ.อื่น ๆ     นายวีรวัฒน์  อภัยนอก";
+                    //cmd4.Parameters.Add("@REVERSE", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@TRNSTAT", OdbcType.Text).Value = "P";
+                    //cmd4.Parameters.Add("@DOCSTAT", OdbcType.Text).Value = "N";
+                    //cmd4.Parameters.Add("@CREBY", OdbcType.Text).Value = "BIT9";
+                    //cmd4.Parameters.Add("@CREDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd4.Parameters.Add("@USERID", OdbcType.Text).Value = "BIT9";
+                    //cmd4.Parameters.Add("@CHGDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd4.Parameters.Add("@POSTID", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@POSDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd4.Parameters.Add("@USERPRN", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@PRNDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd4.Parameters.Add("@PRNCNT", OdbcType.SmallInt).Value = 0;
+                    //cmd4.Parameters.Add("@PRNTIM", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@AUTHID", OdbcType.Text).Value = "";
+                    //cmd4.Parameters.Add("@APPROVE", OdbcType.Date).Value = DateTime.Now.Date;
+
+                    //cmd4.ExecuteNonQuery();
+
+                    ////GLJNLIT **********************************************************************
+                    //strInsert =
+                    //             "insert into GLJNLIT ( "
+                    //                + "VOUCHER,"
+                    //                + "SEQIT,"
+                    //                + "VOUDAT,"
+                    //                + "ACCNUM,"
+                    //                + "DEPCOD,"
+                    //                + "JOBCOD,"
+                    //                + "PHASE,"
+                    //                + "COSCOD,"
+                    //                + "DESCRP,"
+                    //                + "TRNTYP,"
+                    //                + "AMOUNT,"
+                    //                + "CHGDAT,"
+                    //                + "CHGTIM,"
+                    //                + "ADJUST,"
+                    //                + "CHGACCFROM"
+
+                    //             + " ) values ( "
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?"
+
+                    //              + "  )";
+                    //OleDbCommand cmd5 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    //cmd5.Parameters.Add("@VOUCHER", OdbcType.Text).Value = "CC1910004";
+                    //cmd5.Parameters.Add("@SEQIT", OdbcType.Text).Value = "5";
+                    //cmd5.Parameters.Add("@VOUDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd5.Parameters.Add("@ACCNUM", OdbcType.Text).Value = "1130-52";
+                    //cmd5.Parameters.Add("@DEPCOD", OdbcType.Text).Value = "IMP";
+                    //cmd5.Parameters.Add("@JOBCOD", OdbcType.Text).Value = "";
+                    //cmd5.Parameters.Add("@PHASE", OdbcType.Text).Value = "";
+                    //cmd5.Parameters.Add("@COSCOD", OdbcType.Text).Value = "";
+                    //cmd5.Parameters.Add("@DESCRP", OdbcType.Text).Value = "คชจ.อื่น ๆ     นายวีรวัฒน์  อภัยนอก";
+                    //cmd5.Parameters.Add("@TRNTYP", OdbcType.Text).Value = "1";
+                    //cmd5.Parameters.Add("@AMOUNT", OdbcType.Decimal).Value = 21776.00;
+                    //cmd5.Parameters.Add("@CHGDAT", OdbcType.Date).Value = DateTime.Now.Date;
+                    //cmd5.Parameters.Add("@CHGTIM", OdbcType.Text).Value = "1627";
+                    //cmd5.Parameters.Add("@ADJUST", OdbcType.Text).Value = "";
+                    //cmd5.Parameters.Add("@CHGACCFROM", OdbcType.Text).Value = "";
+                    //cmd5.ExecuteNonQuery();
+
+
+                    ////APRCPCQ **********************************************************************
+                    //strInsert =
+                    //             "insert into APRCPCQ ( "
+                    //                + "RCPNUM,"
+                    //                + "CHQNUM,"
+                    //                + "PAYAMT"
+
+                    //             + " ) values ( "
+                    //                + "?,"
+                    //                + "?,"
+                    //                + "?"
+
+                    //              + "  )";
+                    //OleDbCommand cmd6 = new OleDbCommand(strInsert, yourConnectionHandler);
+                    //cmd6.Parameters.Add("@RCPNUM", OdbcType.Text).Value = "CC1910004";
+                    //cmd6.Parameters.Add("@CHQNUM", OdbcType.Text).Value = "A4CC1910004";
+                    //cmd6.Parameters.Add("@PAYAMT", OdbcType.Decimal).Value = 12959;
+                    //cmd6.ExecuteNonQuery();
+                    #endregion
+
+                } catch (Exception ex) {
+                    error = ex.Message;
+                    yourConnectionHandler.Close();
+                }
+            }
+            return error;
+        }
+
+
+        public static string UpdateBackBS() {
+            string error = "";
+            try {
+                List<JOB_IS_BS> isList = GetBackBSnumber();
+                //List<JobHeader> isList = new List<JobHeader>();
+                using (MyEntities entities = new MyEntities()) {
+                    foreach (var i in isList) {
+                        var IsList = entities.JobInvoice.Where(o => o.IS_No == i.IS_No).ToList();
+                        foreach (var j in IsList) {
+                            if (i.DOCSTAT == "C") {
+                                j.IsActive = false;
+                            }
+                            if (i.BS_No == "~") {
+                                j.BS_No = "";
+                            } else {
+                                j.BS_No = i.BS_No;
+                            }
+                        }
+                    }
+                    entities.SaveChanges();
+                }
+            } catch (Exception ex) {
+                error = ex.Message.ToString();
+            }
+            return error;
+        }
+
+
+        public static DataTable GetYourData() {
+            DataTable YourResultSet = new DataTable();
+
+            OleDbConnection yourConnectionHandler = new OleDbConnection(
+                @"Provider=VFPOLEDB.1;Data Source=C:\Users\PC1\Documents\Visual FoxPro Projects\");
+
+            // if including the full dbc (database container) reference, just tack that on
+            //      OleDbConnection yourConnectionHandler = new OleDbConnection(
+            //          "Provider=VFPOLEDB.1;Data Source=C:\\SomePath\\NameOfYour.dbc;" );
+
+
+            // Open the connection, and if open successfully, you can try to query it
+            yourConnectionHandler.Open();
+
+            if (yourConnectionHandler.State == ConnectionState.Open) {
+                string mySQL = "select * from CLIENTS";  // dbf table name
+
+                OleDbCommand MyQuery = new OleDbCommand(mySQL, yourConnectionHandler);
+                OleDbDataAdapter DA = new OleDbDataAdapter(MyQuery);
+
+                DA.Fill(YourResultSet);
+
+                yourConnectionHandler.Close();
+            }
+
+            return YourResultSet;
+        }
+
+    }
+}

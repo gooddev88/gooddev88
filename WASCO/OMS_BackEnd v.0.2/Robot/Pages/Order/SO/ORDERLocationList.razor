@@ -1,0 +1,264 @@
+﻿@page "/Order/SO/ORDERLocationList"
+
+@using Robot.Data.DA.HR;
+@using Robot.Data.ML;
+@using System.Text.Json
+@using static Robot.Data.DA.Order.SO.SOService;
+
+
+<style>
+    thead tr {
+        background-color: #f3f3f3 !important;
+        color: black !important;
+        text-align: left !important;
+    }
+
+    th, td {
+        padding: 12px 15px !important;
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: #f3f3f3 !important;
+    }
+
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #08a1a1 !important;
+    }
+
+    .table-active.bg-primary {
+        background-color: #08a1a1 !important;
+        color: #ffffff !important;
+    }
+</style>
+
+
+<div class="row pt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4>
+                            <a @onclick="Back">
+                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                            </a>
+                        </h4>
+                    </div>
+
+                </div>
+
+
+
+
+
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+
+                    <div class="col-12 pt-4">
+
+                        <div class="row">
+
+
+
+                            <div class="col-md-2 col-12 pt-1">
+                                <span>วันที่ออเดอร์ตั้งแต่</span>
+                                <TelerikDatePicker @bind-Value="@Filter.DateFrom"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+                            </div>
+                            <div class="col-md-2 col-12 pt-1">
+                                <span>ถึงวันที่</span>
+                                <TelerikDatePicker @bind-Value="@Filter.DateTo"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+                            </div>
+
+                            <div class="col-md-3 pt-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row pt-1">
+    <div class="col-md-12">
+        <TelerikGrid Data=@DocList
+                     Pageable="true"
+                     Class="small"
+                     Groupable="true"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true"
+                     PageSize="20"
+                     OnRowClick="@OnRowClickHandler"
+                     Navigable="true">
+                           <GridAggregates>
+                <GridAggregate Field=@nameof(vw_OSOHead.SalesName) Aggregate="@GridAggregateType.Count" /> 
+                <GridAggregate Field=@nameof(vw_OSOHead.BaseNetTotalAmtIncVat) Aggregate="@GridAggregateType.Sum" />
+            </GridAggregates>
+            <GridColumns>
+             
+                <GridColumn Field=@nameof(vw_OSOHead.SalesName) Title="เซล" Width="180px" >
+                       <FooterTemplate>
+                        @context.Count?.ToString("n0")
+                    </FooterTemplate>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(vw_OSOHead.PName) Title="จังหวัด" Width="150px" />
+                <GridColumn Field=@nameof(vw_OSOHead.AName) Title="อำเภอ/เขต" Width="150px" />
+                <GridColumn Field=@nameof(vw_OSOHead.TName) Title="ตำบล/แขวง" Width="150px" />
+                <GridColumn Field=@nameof(vw_OSOHead.OrdID) Title="เลขออเดอร์" Width="150px" />
+                <GridColumn Field=@nameof(vw_OSOHead.OrdDate) Title="วันที่" DisplayFormat="{0:dd/MM/yyyy}" Width="150px" />
+                <GridColumn Field=@nameof(vw_OSOHead.BaseNetTotalAmtIncVat) Title="ยอดรวม" DisplayFormat="{0:N2}" Width="150px" >
+                    <FooterTemplate>
+                        @context.Sum?.ToString("n2")
+                    </FooterTemplate>
+                </GridColumn>
+                <GridColumn Field=@nameof(vw_OSOHead.CreatedDate) Title="วันที่สร้าง" DisplayFormat="{0:dd/MM/yyyy  HH:mm:ss}" Width="180px" />
+                <GridColumn Field=@nameof(vw_OSOHead.CreatedBy) Title="ผู้สร้าง" Width="150px" />
+
+
+            </GridColumns>
+        </TelerikGrid>
+
+
+    </div>
+</div>
+
+
+<TelerikWindow @bind-State="@State" Width="1000px" Height="600px" Modal=true
+               @bind-Visible=@isPopupLocation>
+    <WindowTitle>
+        <strong>Location</strong>
+    </WindowTitle>
+    <WindowContent>
+        @if (_soService.SelectOrder!=null) {
+            <ORDERLocationMap xlat="@_soService.SelectOrder.Lat.ToString()" xlon="@_soService.SelectOrder.Lon.ToString()"></ORDERLocationMap>
+        }
+
+    
+    </WindowContent>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+</TelerikWindow>
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+@code {
+    [Parameter] public string topic { get; set; } = "";
+    bool isLoading = true;
+    bool isPopupLocation = false;
+    bool collapse1Visible = true;
+    public WindowState State { get; set; } = WindowState.Default;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    I_SODocFiterSet Filter = SOService.NewFilterSet();
+    List<vw_OSOHead> DocList = new List<vw_OSOHead>();
+    protected override async Task OnInitializedAsync() {
+
+        await Task.Run(LoadDropDownList);
+        Filter = await Task.Run(() => _soService.GetSessionFiterSet());
+        if (Filter == null) {
+            Filter = SOService.NewFilterSet();
+        }
+
+        await Task.Run(() => login.CheckLogin());
+
+        pageHistory.AddPageToHistory(nav.Uri);
+
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task LoadDropDownList() {
+        //ListLoc = InventoryService.ListLoc();
+
+    }
+
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList = SOService.ListDoc(Filter);
+
+
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "642");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "642")) {
+
+            nav.NavigateTo("NoPermissionPage");
+        }
+
+    }
+
+
+    private void SetDefaultFilter() {
+        Filter.Status = Filter.Status == null ? "" : Filter.Status;
+        _soService.SetSessionFiterSet(Filter);
+    }
+
+    //async void Edit(vw_OSOHead data) {
+    //    var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    var com = login.LoginInfo.CurrentCompany.CompanyID;
+    //    var modified_by = login.LoginInfo.CurrentUser;
+    //    var modified_date = DateTime.Now.Date;
+    //    isLoading = true;
+
+    //    await sessionStorage.SetItemAsync(SOService.sessionActiveId, data.ID);
+    //    _soService.DocSet = _soService.GetDocSet(data.ID,rcom,com);
+    //    nav.NavigateTo($"Master/Location/LocDetail", false);
+    //    isLoading = false;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    async Task OnRowClickHandler(GridRowClickEventArgs args) {
+        _soService .SelectOrder= args.Item as vw_OSOHead;
+        isPopupLocation = true;
+
+    }
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Back() {
+      //  nav.NavigateTo("Dashboard/StartBoard");
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+    //async void NewDoc() {
+    //    var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    var com = login.LoginInfo.CurrentCompany.CompanyID;
+    //    await sessionStorage.RemoveItemAsync(SOService.sessionActiveId);
+    //    _soService.DocSet = _soService.NewTransaction(rcom,com);
+    //    nav.NavigateTo($"Master/Location/LocDetail", false);
+    //}
+
+}

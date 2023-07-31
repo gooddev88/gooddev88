@@ -1,0 +1,126 @@
+﻿@page "/Login"
+@using RobotWasm.Shared.Data.ML.Login
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@inject LoginService login
+
+<style>
+    .fix-content {
+        padding-top: 80px;
+        display: flex;
+        justify-content: center;
+        align-content: center;
+        height: 500px;
+        width: 100%;
+    }
+
+    .report-button-wrapper {
+        width: 100%;
+        text-align: center;
+    }
+
+    .loader-indicator {
+        margin-left: 5px;
+    }
+</style>
+
+
+<div class="container-fluid" style="background-color: #21D4FD; background-image: linear-gradient( 19deg, #21D4FD 0%, #B721FF 100%); padding-bottom: 100%;">
+    <div class="row">
+        <div class="col-xl-4 col-lg-7 col-md-8 col-sm-9 pt-150 col-11 mx-auto my-auto">
+            <div class="card rounded" style="border-radius: 1.25rem !important;">
+                <div class="card-body">
+                    <div class="row py-3">
+                        <div class="col-md-12 text-center">
+                            <div class="pb-2 pt-2"><img src="/img/kylogo.png" style="width: 150px;" /></div>
+                            <div><h5 class="font-weight-bold">ล็อกอินเข้าสู่ระบบ</h5></div>
+                        </div>
+                    </div>
+                    <div class="row pt-2" style="font-size:medium;">
+                        <div class="col-md-12">
+                            <span class="font-weight-bold">Username</span>
+                            <input type="text" class="form-control" id="username" placeholder="กรุณากรอกชื่อผู้ใช้" @bind="@username">
+                        </div>
+                    </div>
+                    <div class="row pt-2" style="font-size:medium;">
+                        <div class="col-md-12">
+                            <span class="font-weight-bold">Password</span>
+                            <input type="password" class="form-control" id="password1" placeholder="กรุณากรอกรหัสผ่าน" @bind="@password">
+                        </div>
+                    </div>
+                    <div class="row pt-4 pb-2">
+                        <div class="col-md-12">
+                            <TelerikButton Class="w-100" Size="@ThemeConstants.Button.Size.Large"
+                                           Rounded="@ThemeConstants.Button.Rounded.Full"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)"
+                                           OnClick="DoLogin" Enabled="@(!Visible)">
+                                เข้าระบบ
+                                <TelerikLoader Class="loader-indicator" ThemeColor="light" Visible="@Visible"></TelerikLoader>
+                            </TelerikButton>
+                            @if (!string.IsNullOrWhiteSpace(MessageButton)) {
+                                <p>@MessageButton</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="row pl-2">
+                        <div class="col-6">
+                            <TelerikCheckBox Id="chkIsActive" @bind-Value="@rememberMe"></TelerikCheckBox>
+                            <label for="rememberMe">จำไว้</label>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a class="btn-link text-decoration-none" @onclick="@OnChangePassword">เปลี่ยนรหัสผ่าน</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    string username = "";
+    string password = "";
+
+    bool Visible { get; set; }
+    string MessageButton { get; set; }
+
+    bool rememberMe { get; set; } = true;
+    private bool _processing = true;
+
+    async Task DoLogin() {
+        MessageButton = "กำลังเข้าสู่ระบบ";
+        Visible = true;
+
+        MessageButton = "";
+        LoginRequest n = new LoginRequest { UserName = username, Password = password, Apps = "", RememberMe = true };
+        var lgoin_data = await Task.Run(() => login.DoLogin(n));
+        Visible = false;
+        if (lgoin_data.LoginResult == "ok") {
+            var result = await Task.Run(() => _filego.LoginApiFileGo());
+
+            //if (lgoin_data.UserInRCompany.Count > 1)
+            //{
+            //    nav.NavigateTo("Login/ChangeRCom");
+            //}
+            if (lgoin_data.LoginResult == "new") {
+                if (lgoin_data.CurrentUserInfo.IsNewUser == true) {
+                    nav.NavigateTo("Login");
+                    //nav.NavigateTo("ChangePassword");
+                    return;
+                }
+            } else {
+                nav.NavigateTo("/");
+            }
+
+
+        } else {
+            await Swal.FireAsync("Warnig", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "info");
+        }
+    }
+
+    async void OnChangePassword() {
+        //nav.NavigateTo("ChangePassword");
+    }
+
+}

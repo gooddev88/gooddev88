@@ -1,0 +1,200 @@
+﻿@page "/Kitchen/POSOrderForKithenList"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    /*    .k-listview {
+            background-color: transparent;
+        }*/
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ห้องครัว</span></div>
+        </div>
+    </a>
+</div>
+
+<div class="row pt-1">
+    <div class="col-12 px-0">
+
+        <div class="card">
+            <div class="card-body">
+
+                <TelerikButton @onclick="@RefreshData" ThemeColor="@(ThemeConstants.Button.ThemeColor.Light)">
+                    <i class="fa-solid fa-arrows-rotate fa-lg"></i>&nbsp; โหลดรายการใหม่
+                </TelerikButton>&nbsp;&nbsp;
+                <TelerikButton @onclick="@GoToSetingCate" ThemeColor="@(ThemeConstants.Button.ThemeColor.Light)">
+                    <i class="fa-solid fa-gear fa-lg"></i>&nbsp; ตั้งค่าหมวด
+                </TelerikButton><hr class="my-3" />
+
+                @foreach (var l in ListKitchen) {
+                    <div class="row pt-1">
+                        <div class="col-3 ps-0">
+                            <img class="m-auto w-100" src="@l.ImgUrl" onerror="this.onerror=null; this.src='/img/applogox.png'"
+                             style="object-fit: cover;height:auto" />
+                            <div class="text-center">
+                                <span class="fw-bold" style="font-size:medium;">@l.ShipToLocName</span>
+                            </div>
+                        </div>
+                        <div class="col-9 px-0">
+                            <div class="d-inline-block"><span class="small">@l.ItemName</span></div>
+                            <div class="d-inline-block float-end"><span class="small fw-bold">@l.TableName</span></div>
+                            <br />
+                            <div class="d-inline-block">
+                                <span class="fw-bold" style="font-size:medium;">
+                                    @l.Qty.ToString("n0") / @(l.KitchenFinishCount == null
+                                ? "0" : Convert.ToInt32(l.KitchenFinishCount).ToString("n0"))
+                                </span>&nbsp;
+                                <span class="small text-danger">
+                                    @(l.INVID != "" ? "จ่ายเงิน" : "")
+                                </span>
+                            </div><br />
+                            <div class="d-inline-block float-end">
+                                <a class="btn text-white" style="background-color:OliveDrab;" @onclick="@(async () => await OnAcceptAll(l))">
+                                    <span class="small">เสร็จหมด</span>
+                                </a>&nbsp;
+                                <a class="btn text-white" style="background-color:ForestGreen;" @onclick="@(async () => await OnAccept(l))">
+                                    <span class="small">เสร็จ</span>
+                                </a>&nbsp;
+                                <a class="btn btn-danger text-white" @onclick="@(async () => await OnReject(l))">
+                                    <span class="small">ยกเลิก</span>
+                                </a>
+                            </div><br />
+                            <div class="d-inline-block float-end">
+                                <span class="x-small">@l.BillID</span>&nbsp;
+                                <span class="x-small">@l.CreatedDate?.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div class="d-inline-block">
+                                <span class="x-small">@l.Remark</span>&nbsp;
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-3" />
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    [Parameter]
+    public string pagecomefrom { get; set; } = "1";
+    bool isLoading = false;
+
+    KitchenStatusParam Filter = POSFuncService.NewFilterKitchen();
+    List<POS_SaleLineModel> ListKitchen = new List<POS_SaleLineModel>();
+
+    protected override async Task OnInitializedAsync() {
+        Filter = await Task.Run(() => _posService.GetLocalStorageFiterKitchen());
+        isLoading = true;
+        SetDefaultFilter();
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void SetDefaultFilter() {
+        _posService.SetLocalStorageFiterKitchen(Filter);
+    }
+
+    async void LoadData() {
+        string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+        string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+
+        Filter.rcom = rcom;
+        Filter.comid = com;
+        SetDefaultFilter();
+        ListKitchen = await _posService.ListOrderForKitchen(Filter);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnAcceptAll(POS_SaleLineModel select_data) {
+        KitchenStatusParam param_value = POSFuncService.NewFilterKitchen();
+        param_value.rcom = select_data.RComID;
+        param_value.comid = select_data.ComID;
+        param_value.billId = select_data.BillID;
+        param_value.lineunq = select_data.LineUnq;
+        param_value.status = "K-ACCEPT-ALL";
+        param_value.Username = login.LogInInfo.CurrentUser;
+
+        var rr = await Task.Run(() => _posService.UpdatePOSLineStatus(param_value));
+        if (rr.Result == "fail") {
+            await Swal.FireAsync("Error", rr.Message1, "info");
+            return;
+        } else {
+            await Task.Run(LoadData);
+            await Swal.FireAsync("Success", "ดำเนินการเรียบร้อย", SweetAlertIcon.Success);
+        }
+    }
+
+    async Task OnAccept(POS_SaleLineModel select_data) {
+        KitchenStatusParam param_value = POSFuncService.NewFilterKitchen();
+        param_value.rcom = select_data.RComID;
+        param_value.comid = select_data.ComID;
+        param_value.billId = select_data.BillID;
+        param_value.lineunq = select_data.LineUnq;
+        param_value.status = "K-ACCEPT";
+        param_value.Username = login.LogInInfo.CurrentUser;
+
+        var rr = await Task.Run(() => _posService.UpdatePOSLineStatus(param_value));
+        if (rr.Result == "fail") {
+            await Swal.FireAsync("Error", rr.Message1, "info");
+            return;
+        } else {
+            await Task.Run(LoadData);
+            await Swal.FireAsync("Success", "ดำเนินการเรียบร้อย", SweetAlertIcon.Success);
+        }
+    }
+
+    async Task OnReject(POS_SaleLineModel select_data) {
+        KitchenStatusParam param_value = POSFuncService.NewFilterKitchen();
+        param_value.rcom = select_data.RComID;
+        param_value.comid = select_data.ComID;
+        param_value.billId = select_data.BillID;
+        param_value.lineunq = select_data.LineUnq;
+        param_value.status = "K-REJECT";
+        param_value.Username = login.LogInInfo.CurrentUser;
+
+        var rr = await Task.Run(() => _posService.UpdatePOSLineStatus(param_value));
+        if (rr.Result == "fail") {
+            await Swal.FireAsync("Error", rr.Message1, "info");
+            return;
+        } else {
+            await Task.Run(LoadData);
+            await Swal.FireAsync("Success", "ดำเนินการเรียบร้อย", SweetAlertIcon.Success);
+        }
+    }
+
+    async void RefreshData() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToSetingCate() {
+        nav.NavigateTo("Kitchen/POSSelectCateInKithen");
+    }
+
+    async void GoBack() {
+        nav.NavigateTo("Dashboard/FirstBoard");
+    }
+}

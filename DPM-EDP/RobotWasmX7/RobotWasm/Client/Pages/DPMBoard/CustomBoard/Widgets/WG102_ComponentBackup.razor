@@ -1,0 +1,26 @@
+﻿@inject IJSRuntime jSRuntime;
+<h3>AcciProvinceTopDead</h3>
+
+@*<a onclick="@CreateChart" >Create chart</a>*@
+<div id="div_chart_province_top_dead"  class="amchart"></div>
+
+@code {
+ 
+
+    private async Task CreateChart() {
+        data = d.ListData();
+        await jSRuntime.InvokeVoidAsync("function_accident_top_dead", data);
+    }
+
+
+    protected override async void OnAfterRender(bool firstRender) {
+        // execute conditionally for loading data, otherwise this will load
+        // every time the page refreshes
+        if (firstRender) {
+            // Do work to load page data and set properties
+           await CreateChart();
+        }
+    }
+ }
+
+

@@ -1,0 +1,530 @@
+﻿@page "/Leave/UserLeaveDetail"
+@using Robot.Data.DA.Leave
+@using Robot.Data.ML
+@using Robot.Data.ML.DPMLeaveModel
+@*
+    @using CurrieTechnologies.Razor.SweetAlert2
+    @using Robot.Data.DA
+    @using Robot.Data.DA.DPMNews
+    @using System.Threading.Tasks;
+    @using Data.DA.Login
+    @using Microsoft.AspNetCore.Hosting;
+    @using Blazored.LocalStorage
+    @using Tools
+    @using Robot.Data.DA.Master
+    @using Robot.Data.DA.Leave
+    @using Robot.Data.ML
+
+*@
+@*
+    @inject IHostingEnvironment hostingEnvironment
+    @inject LogInService login
+    @inject IJSRuntime JsRuntime
+    @inject NavigationManager nav
+    @inject SweetAlertService Swal
+    @inject ILocalStorageService localStorage
+    @inject PageHistoryState pageHistory
+
+*@
+@inject LeaveService leaveService
+<style>
+    thead tr {
+        background-color: #f3f3f3 !important;
+        color: black !important;
+        text-align: left !important;
+    }
+
+    th, td {
+        padding: 12px 15px !important;
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: #f3f3f3 !important;
+    }
+
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #08a1a1 !important;
+    }
+
+    .table-active.bg-primary {
+        background-color: #08a1a1 !important;
+        color: #ffffff !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-9 mx-auto">
+                <a class="btn btn-dark w-100" @onclick="@btnback">
+                    <i class="fa fa-chevron-circle-left fa-2x"></i>&nbsp;
+                    พนักงาน
+                </a>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-9 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+
+                        <div class="row">
+                            <div class="col-md-3">
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <img src=@ImageUrl style="width:100%; height:100%;" onerror="this.onerror=null; this.src='/assets/img/pear.png'">
+                                    </div>
+                                </div>
+
+                                <div class="row text-center pt-3">
+                                    <div class="col-12">
+                                        <label style="font-size:xx-large;">สถานะ : </label>&nbsp;
+                                        <label style="font-size:xx-large; color:blue;">@UserStatus</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-9">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h4 style="font-weight: bold; color: black;">ข้อมูลพนักงาน</h4>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>รหัสพนักงาน : </span>&nbsp;
+                                        <label style="color:blue;">@leaveService.DocSet.info.Username</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>ชื่อ : </span>&nbsp;
+                                        <label style="color:blue;">@leaveService.DocSet.info.FullName</label>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>ชื่อเล่น : </span>&nbsp;
+                                        <label style="color:blue;">@leaveService.DocSet.info.NickName</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>เพศ : </span>&nbsp;
+                                        <label style="color:blue;">@lblGender</label>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>แผนก : </span>&nbsp;
+                                        <label style="color:blue;">@lblPosition</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>ตำแหน่ง : </span>&nbsp;
+                                        <label style="color:blue;">@lblDepartment</label>
+                                    </div>
+                                </div>
+
+                                <hr />
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h4 style="font-weight: bold; color: black;">สรุปการลา</h4>
+                                    </div>
+                                </div>
+
+                                @foreach (var l in ListSumHRLeave) {
+                                    <div class="row pt-2">
+                                        <div class="col-md-4">
+                                            <span>@l.LeaveTypeDesc ทั้งหมด : </span>&nbsp;
+                                            <label style="color:blue;">@l.QuotaInDay</label>
+                                            &nbsp;<span>วัน </span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <span>ใช้ไป : </span>&nbsp;
+                                            <label style="color:blue;">@l.LeaveDay</label>
+                                            &nbsp;<span>วัน </span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <span>คงเหลือ : </span>&nbsp;
+                                            <label style="color:blue;">@l.LeaveDayRemain</label>
+                                            &nbsp;<span>วัน </span>
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-5">
+            <div class="col-9 mx-auto">
+
+                <div class="row">
+                    <div class="col-6">
+                        <h4 class="fw-bold">รายการวันลา</h4>
+                    </div>
+                    <div class="col-6">
+                        <div class="row">
+                            <div class="col-6 pt-2 text-end">
+                                <span>เลือกปี</span>
+                            </div>
+                            <div class="col-6">
+                                <DxComboBox Data="@cboYear"
+                                            TextFieldName="@nameof(SelectOption.Description)"
+                                            ValueFieldName="@nameof(SelectOption.Value)"
+                                            FilteringMode="DataGridFilteringMode.Contains"
+                                            @bind-Value="@SelectYear"
+                                            SelectedItemChanged="@((SelectOption data) => SelectedYearChanged(data))"
+                                            SizeMode="@SizeMode.Medium">
+                                </DxComboBox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (login.CanEdit(login.LoginInfo, "173")) {
+                    <hr />
+                    <div class="row pt-3">
+                        <div class="col-md-2 col-sm-12 col-12">
+                            <span>ประเภทการลา</span>
+                            <DxComboBox Data="@ListLEAVETYPE"
+                                    TextFieldName="@nameof(MasterTypeLine.Description1)"
+                                    ValueFieldName="@nameof(MasterTypeLine.ValueTXT)"
+                                    FilteringMode="DataGridFilteringMode.Contains"
+                                    @bind-Value="@SelectLEAVETYPE"
+                                    SizeMode="@SizeMode.Medium">
+                            </DxComboBox>
+                        </div>
+                        <div class="col-md-3 col-sm-12 col-12">
+                            <label>ตั้งแต่</label>
+                            <DxDateEdit Id="DateFrom"
+                                    InputId="DateFrom"
+                                    CssClass="w-100"
+                                    TimeSectionVisible="true"
+                                    ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto"
+                                    DisplayFormat="dd/MM/yyyy h:mm"
+                                    Format="dd/MM/yyyy"
+                                    @bind-Date="@DateFrom"
+                                    SizeMode="@SizeMode.Medium">
+                            </DxDateEdit>
+                        </div>
+                        <div class="col-md-3 col-sm-12 col-12">
+                            <label>ถึงวันที่</label>
+                            <DxDateEdit Id="DateFrom"
+                                    InputId="DateFrom"
+                                    CssClass="w-100"
+                                    TimeSectionVisible="true"
+                                    DisplayFormat="dd/MM/yyyy h:mm"
+                                    Format="dd/MM/yyyy h:mm"
+                                    DateChanged="@((DateTime newValue) => OnDateChanged(newValue))"
+                                    Date="@DateTo"
+                                    SizeMode="@SizeMode.Medium">
+                            </DxDateEdit>
+                        </div>
+
+                        <div class="col-md-2 col-sm-12 col-12">
+                            <label>จำนวนวัน</label>
+                            <DxTextBox @bind-Text="@txtLeaveDay"
+                                   DisplayFormat="N0"
+                                   InputCssClass="text-end pe-2"
+                                   BindValueMode="BindValueMode.OnInput"
+                                   SizeMode="@SizeMode.Medium">
+                            </DxTextBox>
+                        </div>
+
+                        <div class="col-md-2 col-sm-12 col-12 text-start">
+                            <label>&nbsp;</label>
+                            <a @onclick="@btnAdd" class="btn btn-success text-white w-100">
+                                <i class="fas fa-plus-circle fa-lg"></i>&nbsp;
+                                เพิ่ม
+                            </a>
+                        </div>
+                    </div>
+
+                }
+
+
+                <div class="row pt-3">
+                    <div class="col-12">
+                        <div style="overflow-x: auto; width: 100%">
+                            <DxDataGrid Data="@DocList"
+                                        ShowPager="true"
+                                        @ref="dxDataGrid"
+                                        T="@HRLeave"
+                                        CssClass="small"
+                                        HorizontalScrollBarMode="ScrollBarMode.Visible"
+                                        ColumnResizeMode=" DataGridColumnResizeMode.Component"
+                                        DataNavigationMode="DataGridNavigationMode.Paging"
+                                        SelectionMode="DevExpress.Blazor.DataGridSelectionMode.SingleSelectedDataRow"
+                                        PageSize="20"
+                                        ShowFilterRow="false">
+                                <Columns>
+                                    <DxDataGridColumn Width="150px" Field="@nameof(HRLeave.LeaveTypeDesc)" Caption="ประเภาการลา" />
+                                    <DxDataGridColumn Width="150px" Field="@nameof(HRLeave.PositionName)" Caption="ตำแหน่ง" />
+                                    <DxDataGridDateEditColumn Width="150px" Field="@nameof(HRLeave.DateFrom)" DisplayFormat="dd/MM/yyyy h:mm" Caption="ตั้งแต่" />
+                                    <DxDataGridDateEditColumn Width="150px" Field="@nameof(HRLeave.DateTo)" DisplayFormat="dd/MM/yyyy h:mm" Caption="ถึงวันที่" />
+                                    <DxDataGridSpinEditColumn Width="160px" Field="@nameof(HRLeave.LeaveDay)" DisplayFormat="N0" Caption="จำนวนวัน" />
+                                    @if (login.CanDelete(login.LoginInfo, "173")) {
+                                        <DxDataGridColumn AllowFilter="false" AllowGroup="false" AllowSort="false" Caption="ลบ" Width="80px">
+                                            <DisplayTemplate>
+                                                @{
+                                                    var data = context as HRLeave;
+                                                    <div class="text-center">
+                                                        <button class="btn btn-default" @onclick="@(() => GoDeleteLine(data))"><i class="fas fa-trash"></i></button>
+                                                    </div>
+                                                }
+                                            </DisplayTemplate>
+                                        </DxDataGridColumn>
+                                    }
+                                </Columns>
+                            </DxDataGrid>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    public bool isShowDelete = true;
+    public string ImageUrl { get; set; } = "/assets/img/avatar-profile.png";
+    public string UserStatus { get; set; } = "";
+    public string lblGender { get; set; } = "";
+    public string lblPosition { get; set; } = "";
+    public string lblDepartment { get; set; } = "";
+
+    public DateTime? DateFrom { get; set; } = DateTime.Now;
+    public DateTime DateTo { get; set; } = DateTime.Now;
+    public string txtLeaveDay { get; set; } = "1";
+    public int defaultYear { get; set; } = DateTime.Now.Year + 543;
+
+    List<SP_HRLeaveSummary> ListSumHRLeave = new List<SP_HRLeaveSummary>();
+    List<SelectOption> cboYear = new List<SelectOption>();
+    public string SelectYear { get; set; } = "";
+
+    public DxDataGrid<HRLeave> dxDataGrid = new DxDataGrid<HRLeave>();
+    public List<HRLeave> DocList = new List<HRLeave>();
+
+    public List<MasterTypeLine> ListLEAVETYPE = new List<MasterTypeLine>();
+    public string SelectLEAVETYPE { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadDropDownList);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        var h = leaveService.DocSet.info;
+        BindData();
+        DocList = LeaveService.ListDocHRLeave(leaveService.DocSet.info.Username,defaultYear);
+        ListSumHRLeave = LeaveService.ListPOByStoreInDetail(h.Username, Convert.ToInt32(SelectYear));
+        isLoading = false;
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+         private void SetActiveControl() {
+            CheckPermission();
+        }
+        private void CheckPermission() {
+          
+            if (!login.CanCreate(login.LoginInfo, "173")) {//173 ข้อมูลลางาน
+                isShowNew = false;
+            }
+            if (!login.CanDelete(login.LoginInfo, "173")) {//173 ข้อมูลลางาน
+                isShowDelete = false;
+            }
+                if (!login.CanOpen(login.LoginInfo, "173")) {
+                nav.NavigateTo("NoPermissionPage");
+            }
+        }
+
+    async void LoadDropDownList() {
+        ListLEAVETYPE = MasterTypeService.ListType("", "LEAVE TYPE", true);
+
+        int y = -1;
+        for (int i = 2565; i >= DateTime.Now.AddYears(-3).Year + 543; i--) {
+            y++;
+            SelectOption year = new SelectOption {
+                    IsSelect = false,
+                    Value = i.ToString(),
+                    Description = i.ToString()
+                };
+            cboYear.Insert(y, year);
+        }
+
+        SelectYear = cboYear.FirstOrDefault().Value;
+
+    }
+
+    public void BindData() {
+        var h = leaveService.DocSet.info;
+
+        if (h.IsActive == true) {
+            UserStatus = "ทำงาน";
+        } else {
+            UserStatus = "พ้นสภาพ";
+        }
+
+        var Gender = MasterTypeService.GetType("GENDER", h.Gender);
+        lblGender = Gender.Description1;
+
+        var Department = MasterTypeService.GetType("DEPARTMENT", h.DepartmentID);
+        lblDepartment = Department.Description1;
+
+        var Position = MasterTypeService.GetType("JOB POSITION", h.PositionID);
+        lblPosition = Position.Description1;
+    }
+
+    async void SelectedYearChanged(SelectOption data) {
+        DocList = LeaveService.ListDocHRLeave(leaveService.DocSet.info.Username,Convert.ToInt32(data.Value));
+        if (DocList.Count > 0) {
+            await dxDataGrid.Refresh();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidLineData() {
+        var h = leaveService.DocSet.info;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+
+        if (string.IsNullOrEmpty(SelectLEAVETYPE)) {
+            Errmsg = "ระบุ ประเภทการลา";
+            isvalid = false;
+        }
+
+        if (DateFrom == null) {
+            Errmsg = "ระบุ ลาตั้งแต่";
+            isvalid = false;
+        }
+
+        if (DateTo == null) {
+            Errmsg = "ระบุ ถึงวันที่";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void btnAdd() {
+        if (!ValidLineData()) {
+            return;
+        }
+
+        var h = leaveService.DocSet.info;
+        HRLeave leaveline = LeaveService.NewLine();
+
+        DateTime newdate = DateTime.Now.AddMonths(3);
+        leaveline.WorkYear = newdate.Year + 543;
+        leaveline.Username = h.Username;
+        leaveline.PositionID = h.PositionID;
+        leaveline.PositionName = lblPosition;
+        leaveline.LeaveType = SelectLEAVETYPE;
+        if (leaveline.LeaveType != "") {
+            var leavetype = MasterTypeService.GetType("LEAVE TYPE", leaveline.LeaveType);
+            leaveline.LeaveTypeDesc = leavetype.Description1;
+        }
+
+        int xLeaveDay = 0;
+        int.TryParse(txtLeaveDay, out xLeaveDay);
+        leaveline.LeaveDay = xLeaveDay;
+
+        leaveline.DateFrom = Convert.ToDateTime(DateFrom);
+        leaveline.DateTo = DateTo;
+
+        leaveline.CreatedBy = login.LoginInfo.CurrentUser;
+
+        var rs = LeaveService.Save(leaveline);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            ResetControl();
+            ListGrd();
+            Swal.FireAsync("", "เพิ่มสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async void ListGrd() {
+        DocList = LeaveService.ListDocHRLeave(leaveService.DocSet.info.Username,Convert.ToInt32(SelectYear));
+        if (DocList.Count > 0) {
+            await dxDataGrid.Refresh();
+        }
+        ListSumHRLeave = LeaveService.ListPOByStoreInDetail(leaveService.DocSet.info.Username, Convert.ToInt32(SelectYear));
+    }
+
+    private void ResetControl() {
+        SelectLEAVETYPE = "";
+        DateFrom = DateTime.Now;
+        DateTo = DateTime.Now;
+        txtLeaveDay = "1";
+    }
+
+    void GoDeleteLine(HRLeave data) {
+        var rs = LeaveService.DeleteLine(data.ID);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            ListGrd();
+            Swal.FireAsync("", "ลบรายการ สำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void OnDateChanged(DateTime newValue) {
+        DateTo = newValue;
+
+        if (DateTo != null) {
+            var totaldays = Convert.ToInt32((Convert.ToDateTime(DateTo).Date - Convert.ToDateTime(DateFrom).Date).TotalDays) + 1;
+            txtLeaveDay = totaldays.ToString("N0");
+        }
+    }
+
+    async void btnback() {
+        if (!login.CanEdit(login.LoginInfo, "173")) {//ถ้าเป็น Staff ธรรมดาให้ไป Dashboard เลย
+            if (login.LoginInfo?.UserInBoard.Count == 0) {
+                nav.NavigateTo("Dashboard/StartBoard", false);
+            } else {
+                var get_first_board = login.LoginInfo?.UserInBoard.FirstOrDefault();
+                nav.NavigateTo(get_first_board.BoardUrl, false);
+            }
+        } else {
+            nav.NavigateTo($"Leave/UserLeaveList", false);
+        }
+
+    }
+
+}

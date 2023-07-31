@@ -1,0 +1,395 @@
+﻿@page "/Master/MasterType/MasterTypeDetail"
+@inject MasterTypeService mastertypeService
+
+<style>
+    .dxbs-input-group.input-group {
+        width: 100%;
+    }
+
+    /*ซ่อนเพิ่มลบตัวเลข TelerikNumericTextBox*/
+    .k-input-spinner {
+        display: none;
+    }
+
+    /*เปลี่ยนสี TelerikNumericTextBox Enabled*/
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                   
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Master/MasterType/MasterTypeList">หน้ารายการ</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="#">แก้ไข</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            <div class="col-6" style="text-align:right;">
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-md-12">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>
+                                    <span>@mastertypeService.DocSet.Head.Name</span>
+                                </h4>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <TelerikGrid @ref="@grd"
+                                             Data=@DocList
+                                             Width="100%"
+                                             Resizable="true"
+                                             Pageable="true"
+                                             PageSize=100
+                                             RowDraggable="true"
+                                             OnRowClick="@OnRowClickHandler"
+                                             OnRowDrop="@((GridRowDropEventArgs<MasterTypeLine> args) => ReOrder(args))">
+                                    <GridColumns>
+                                        <GridColumn Field=@nameof(MasterTypeLine.ValueTXT) Width="180px" Title="รหัสตัวเลือก" />
+                                        @*<GridColumn Title="รหัสตัวเลือก" Editable="false" Width="180px">
+                                            <Template>
+                                            @{
+                                            var data = context as MasterTypeLine;
+                                            <button class="btn btn-link btn-sm" @onclick="@(() => GoToMaster(data))">@data.ValueTXT</button>
+                                            }
+                                            </Template>
+                                            </GridColumn>*@
+                                        <GridColumn Field=@nameof(MasterTypeLine.Description1) Width="190px" Title="รายละเอียด" />
+                                        <GridColumn Field=@nameof(MasterTypeLine.Sort) Title="ลำดับ" DisplayFormat="{0:N0}" Width="130px" />
+                                        <GridColumn Field="IsActive" Title="ใช้งาน" Editable="true" Width="120px">
+                                            <Template>
+                                                @{
+                                                    var data = context as MasterTypeLine;
+                                                    <TelerikCheckBox Value="data.IsActive" />
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                    </GridColumns>
+                                </TelerikGrid>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="row">
+                            @if (isShowNew) {
+                                <div class="col-md-12 text-end">
+                                    <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                                        <i class="fas fa-plus-circle"></i>&nbsp;
+                                       เพิ่ม
+                                    </Button>
+                                </div>
+                            }
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+
+                                        <div class="row">
+                                            <div class="col-md-12">
+
+                                                <div class="row pt-2">
+                                                    <label>รหัสตัวเลือก</label>
+                                                    <div class="col-12">
+                                                        <TelerikTextBox   @bind-Value="@line_active.ValueTXT" Enabled="@ValuetxtEnabled" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row pt-2">
+                                                    <label>รายละเอียด1 </label>
+                                                    <div class="col-12">
+                                                        <TelerikTextBox @bind-Value="@line_active.Description1"
+                                                                        Size="ThemeConstants.DropDownList.Size.Small" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row pt-2">
+                                                    <label>รายละเอียด2 </label>
+                                                    <div class="col-12">
+                                                        <TelerikTextBox @bind-Value="@line_active.Description2"
+                                                                        Size="ThemeConstants.DropDownList.Size.Small" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row pt-2">
+                                                    <label>ลำดับ </label>
+                                                    <div class="col-12">
+                                                        <TelerikNumericTextBox Decimals="0" Format="N0"
+                                                                               Class="text-end pe-2" @bind-Value="@Sort"></TelerikNumericTextBox>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        <div class="row pt-5 pb-3">
+                                            <div class="col-6">
+                                                <TelerikCheckBox Id="chkIsActive" @bind-Value="@line_active.IsActive"></TelerikCheckBox>
+                                                <label class="font-weight-bold" for="chkIsActive">เปิดใช้งาน</label>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                               @onclick="@OnSave" Class="px-5 py-2"
+                                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">บันทึกข้อมูล</TelerikButton>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    public bool ValuetxtEnabled { get; set; } = true;
+    public string SearchText { get; set; } = "";
+    public string ImageUrl { get; set; } = "";
+    bool ShowFilterRow = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    public int Sort { get; set; } = 0;
+
+    public MasterTypeLine line_active { get; set; } = new MasterTypeLine { Description1 = "", Description2 = "", Description3 = "", Description4 = "NEW", ValueTXT = "", MasterTypeID = "", IsActive = true, ParentID = "", Sort = 1, RComID = "" };
+    TelerikGrid<MasterTypeLine> grd { get; set; }
+    IEnumerable<MasterTypeLine> ListMasterType;
+    List<MasterTypeLine> DocList = new List<MasterTypeLine>();
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+
+    }
+
+
+    async Task CheckIsRefresh() {
+        if (mastertypeService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(MasterTypeService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                mastertypeService.DocSet = mastertypeService.GetDocSet(docid, rcom, com);
+            } else {
+                mastertypeService.DocSet = MasterTypeService.NewTransaction(rcom);
+
+            }
+        }
+    }
+
+    void LoadData() {
+        LoadDropDownList();
+        BindData();
+        isLoading = false;
+        SetActiveControl();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SetActiveControl() {
+        CheckPermission();
+    }
+
+    private void CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9011");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+        if (!login.CanCreate(login.LoginInfo, "9011")) { //9011 ตั้งค่าตัวเลือก
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "9011")) {
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "9011")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+    void LoadDropDownList() {
+
+    }
+
+    void BindData() {
+        DocList = mastertypeService.DocSet.Line.Where(o => o.Description4 != "NEW").ToList();
+        line_active = mastertypeService.DocSet.LineActive;
+        if (line_active == null) {
+            return;
+        }
+        if (line_active.ValueTXT != "") {
+            ValuetxtEnabled = false;
+        } else {
+            ValuetxtEnabled = true;
+        }
+        Sort = line_active.Sort;
+    }
+
+    private void SetPrimaryData() {
+        var h = mastertypeService.DocSet.LineActive;
+
+        h.MasterTypeID = mastertypeService.DocSet.Head.MasterTypeID;
+        h.Sort = Sort;
+    }
+
+    void GoToMaster(MasterTypeLine data) {
+        mastertypeService.DocSet = mastertypeService.GetDocSet(data.MasterTypeID, data.RComID, data.ValueTXT);
+        BindData();
+        nav.NavigateTo($"Master/MasterType/MasterTypeDetail", false);
+        //LoadData();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ReOrder(GridRowDropEventArgs<MasterTypeLine> args) {
+        var new_id = args.Item.ValueTXT;
+        var new_sort = args.Item.Sort;
+        var old_id = args.DestinationItem.ValueTXT;
+        var old_sort = args.DestinationItem.Sort;
+
+        if (old_sort > new_sort) {
+            var reNumber_item = mastertypeService.DocSet.Line.Where(o => o.Sort <= old_sort && o.Sort > new_sort && o.ValueTXT != new_id).ToList();
+            foreach (var i in reNumber_item) {
+                i.Sort = i.Sort - 1;
+            }
+            var get_new = mastertypeService.DocSet.Line.Where(o => o.ValueTXT == new_id).FirstOrDefault();
+            get_new.Sort = old_sort;
+            //var get_old = ListNewsCateHead.Where(o => o.CateID == old.CateID).FirstOrDefault();
+            //get_old.Sort = get_old.Sort - 1;
+
+        } else {
+            var reNumber_item = mastertypeService.DocSet.Line.Where(o => o.Sort >= old_sort && o.Sort < new_sort && o.ValueTXT != new_id).ToList();
+            foreach (var i in reNumber_item) {
+                i.Sort = i.Sort + 1;
+            }
+
+            var get_new = mastertypeService.DocSet.Line.Where(o => o.ValueTXT == new_id).FirstOrDefault();
+            get_new.Sort = old_sort;
+        }
+
+        mastertypeService.DocSet.Line = mastertypeService.DocSet.Line.OrderByDescending(o=>o.IsActive).ThenBy(o => o.MasterTypeID).ThenBy(o => o.Sort).ToList();
+        int j = 1;
+        foreach (var m in   mastertypeService.DocSet.Line )
+        {
+            m.Sort=j;
+            j++;
+        }
+        LoadData();
+        InvokeAsync(StateHasChanged);
+
+        try {
+            isLoading = true;
+            MasterTypeService.ReOrder(mastertypeService.DocSet.Line.ToList());
+        } catch (Exception ex) {
+
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async Task OnRowClickHandler(GridRowClickEventArgs args) {
+        var doc = mastertypeService.DocSet;
+
+        var data = args.Item as MasterTypeLine;
+        mastertypeService.DocSet = MasterTypeService.SetActiveRow(mastertypeService.DocSet, data);
+        BindData();
+        nav.NavigateTo($"Master/MasterType/MasterTypeDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidData() {
+        var h = mastertypeService.DocSet.LineActive;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.ValueTXT == "") {
+            Errmsg = "ระบุ รหัสตัวเลือก";
+            isvalid = false;
+        }
+        if (h.Description1 == "") {
+            Errmsg = "ระบุ รายละเอียดตัวเลือก";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        Save();
+    }
+
+    private void Save() {
+        SetPrimaryData();
+        var h = mastertypeService.DocSet.LineActive;
+        h.Description4 = "";
+
+        var rs = MasterTypeService.Save(h, login.LoginInfo);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+
+        } else {
+            mastertypeService.DocSet = mastertypeService.GetDocSet(mastertypeService.DocSet.Head.MasterTypeID, login.LoginInfo.CurrentRootCompany.CompanyID, h.ValueTXT);
+            LoadData();
+            Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task NewDoc() {
+        
+        mastertypeService.DocSet = mastertypeService.GetDocSet(mastertypeService.DocSet.Head.MasterTypeID, login.LoginInfo.CurrentRootCompany.CompanyID, "");
+        mastertypeService.DocSet.LineActive = MasterTypeService.AddLineItem("", mastertypeService.DocSet.Head.UseFor, login.LoginInfo.CurrentRootCompany.CompanyID, mastertypeService.DocSet);
+        LoadData();
+    }
+
+}

@@ -1,0 +1,27 @@
+﻿@*<MudNavMenu>
+
+
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink OnClick="@ReloadPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Refresh">Refresh Website</MudNavLink> 
+@*    <MudNavLink Href="Menu/PortalMenu" Match="NavLinkMatch.Prefix" Icon="@Icons.Filled.Code">Portal api</MudNavLink> 
+    <MudNavLink Href="DPMBoard/A01/DashBoard/MapSf" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Map Sf</MudNavLink>
+    <MudNavLink Href="DPMBoard/A01/DashBoard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Accident Board</MudNavLink> 
+    *@
+@*
+     <MudNavLink Href="DPMBoard/MapsTest/TMapOpenGeoJson" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Telerik GeoJson</MudNavLink>
+    <MudNavLink Href="DPMBoard/MapsTest/TMapOpenStreet" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Telerik OpenStreet</MudNavLink>*@
+    @* <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+        <MudNavLink Href="fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Fetch data</MudNavLink>
+        <MudNavLink Href="upload/UploadPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Upload</MudNavLink>
+        <MudNavLink Href="upload/DragUploadPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Drag Upload</MudNavLink>
+        <MudNavLink Href="upload/UserList" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Data Grid</MudNavLink>
+        <MudNavLink Href="DPMBoard/Accident/DPMBoard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Dash board</MudNavLink>
+        <MudNavLink Href="DpmBoard/DpmPortal/ShowEventInProvince" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">X</MudNavLink>*@
+
+@*</MudNavMenu>
+*@
+@code{
+       protected void ReloadPage() {
+        jsRuntime.InvokeVoidAsync("window.location.reload");
+    }
+}

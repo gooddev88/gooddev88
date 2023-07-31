@@ -1,0 +1,127 @@
+﻿@using RobotWasm.Shared.Data.ML.Shared
+@using System.Globalization
+
+<h4>@WidgetName</h4>
+<h6>วิตเจ็ตกลุ่มอุบัติเหตุ</h6>
+<hr />
+
+<div class="row">
+    <div class="col-12">
+
+       
+        
+            <div class="row pt-4">
+                <div class="col-md-12">
+                    <span>วันที่</span>
+                    <TelerikDatePicker @bind-Value="@DateBegin"
+                                   Format="dd/MM/yyyy">
+                    </TelerikDatePicker>
+                </div>
+            </div>
+            <div class="row pt-4">
+                <div class="col-md-12">
+                    <span>ถึงวันที่</span>
+                    <TelerikDatePicker @bind-Value="@DateEnd"
+                                   Format="dd/MM/yyyy">
+                    </TelerikDatePicker>
+                </div>
+            </div>
+       
+
+        <div class="row pt-4">
+            <div class="col-6">
+                <TelerikCheckBox Id="setallInGroup"
+                                 Value="@setForAllInGroup">
+                </TelerikCheckBox>
+                <label for="setallInGroup">ตั้งค่าให้ทั้งกลุ่ม</label>
+            </div>
+        </div>
+        <div class="row pt-4">
+
+            <div class="col-12 text-end">
+                <TelerikButton @onclick="@(() => OnReturnData.InvokeAsync("cancel"))" ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                    <i class="fas fa-times"></i>&nbsp; ยกเลิก
+                </TelerikButton>
+                <TelerikButton @onclick="@(()=> SetParamCaption())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                    <i class="fas fa-check-circle"></i>&nbsp; บันทึก
+                </TelerikButton>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+@code {
+    [Parameter] public string WidgetID { get; set; }
+    [Parameter] public string WidgetName { get; set; }
+    [Parameter] public string BoardID { get; set; }
+    [Parameter] public EventCallback<string> OnReturnData { get; set; }
+
+
+
+    List<custom_widget_param_in_user> param_all = new List<custom_widget_param_in_user>();
+
+    #region for param
+    public string FilterCaption = "";
+    public string FilterCaption2 = "";
+    public bool isShowParam = false;
+ 
+  
+    public DateTime DateBegin = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    public DateTime DateEnd = DateTime.Now.Date;
+    public List<SelectOption> yearOption;
+ 
+    public bool setForAllInGroup = true;
+    #endregion
+
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => LoadData());
+
+    }
+    protected async Task SetParamCaption() {
+        FilterCaption2 = "แสดงแบบระบุวันที่ ";
+        FilterCaption = "ภัยในช่วงวันที่ " + BoardService.ConvertDateThai(DateBegin) + " ถึงวันที่ " + BoardService.ConvertDateThai(DateEnd);
+    }
+
+    
+    async public Task Save() { 
+        var param_all = CustomBoardService.CreateDefaultParamG50(BoardID, WidgetID, login.LogInInfo.CurrentUser);
+        var r = await Task.Run(() => _customBoardService.SaveWidgetParam(param_all, 1));
+        if (r.Result!="ok")
+        {
+            await Swal.FireAsync("Wanring", r.Message1, SweetAlertIcon.Info);
+        }else {
+            await Swal.FireAsync("Success", "บันทึกสำเร็จ", SweetAlertIcon.Success);
+        } 
+    }
+
+
+
+
+    async public Task LoadData() {
+       
+        param_all = await Task.Run(() => _customBoardService.GetWidgetParam(BoardID, WidgetID));
+
+        if (param_all.Count > 0) {
+            
+            var txtbegin = param_all.Where(o => o.param_id == "date_begin").FirstOrDefault().data;
+            var txtend = param_all.Where(o => o.param_id == "date_end").FirstOrDefault().data;
+            DateBegin = DateTime.ParseExact(txtbegin, "yyyyMMdd", CultureInfo.InvariantCulture);
+            DateEnd = DateTime.ParseExact(txtend, "yyyyMMdd", CultureInfo.InvariantCulture);
+            
+        } else {
+            
+          
+            await Task.Run(() => SetParamCaption());
+        }
+        await Task.Run(() => SetParamCaption());
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+
+
+
+
+}

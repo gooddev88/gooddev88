@@ -1,0 +1,266 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.DpmPortal
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+
+<style>
+    .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay {
+        position: fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom: 0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h3>DPM0020</h3>
+        <h5>บริการข้อมูลสถานีและข้อมูลโทรมาตร</h5>
+    </div>
+</div>
+<hr />
+@if (!isLoading) {
+
+
+    <div class="row pt-2 pb-2">
+        <div class="col-10">
+            <div class="row">
+                <div class="col">
+                    <TelerikTextBox @bind-Value="search_pname"
+                                PlaceHolder="จังหวัด" TabIndex="1"></TelerikTextBox>
+                </div>
+                <div class="col">
+                    <TelerikTextBox @bind-Value="search_aname"
+                                PlaceHolder="อำเภอ" TabIndex="2"></TelerikTextBox>
+                </div>
+                <div class="col">
+                    <TelerikTextBox @bind-Value="search_tname"
+                                PlaceHolder="ตำบล" TabIndex="3"></TelerikTextBox>
+                </div>
+            </div>
+        </div>
+        <div class="col-2 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@OnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            @if (!isShowErrorAPI) {
+            <TelerikGrid Data="@ndata"
+                     Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                <GridToolBar>
+                    <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                    <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                    <GridSearchBox />
+                </GridToolBar>
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.STATIONID) Title="STATIONID" Width="150px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.LOCATION) Title="LOCATION" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.PROVINCE_ID) Title="PROVINCE_ID" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.PROVINCE_NAME) Title="PROVINCE_NAME" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AMPHUR_ID) Title="AMPHUR_ID" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AMPHUR_NAME) Title="AMPHUR_NAME" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.TUMBOL_ID) Title="TUMBOL_ID" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.TUMBOL_NAME) Title="TUMBOL_NAME" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.LATITUDE) Title="LATITUDE" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.LONGITUDE) Title="LONGITUDE" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSSERIALNAME) Title="AWSSERIALNAME-เลขเครื่องตรวจวัด" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSRECORDTIME) Title="AWSRECORDTIME-เวลาตรวจวัด" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSPTEMPERATURE) Title="AWSPTEMPERATURE-อุณหภูมิตัวเครื่อง" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSPRESSURE) Title="AWSPRESSURE-ความกดอากาศ" Width="180px" />
+
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSRAINFALL) Title="AWSRAINFALL-ความกดอากาศ" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSPRESSURE) Title="AWSPRESSURE-ประมาณฝน" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSTEMPERATURE) Title="AWSTEMPERATURE-อุณหภูมิ(°C)" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSRELATVIEHUMIDITY ) Title="AWSRELATVIEHUMIDITY -ความช้ืน (%)" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSWINDSPEED) Title="AWSWINDSPEED-ความเร็วลม (m/s)" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSWINDDIRECTION) Title="AWSWINDDIRECTION-ทิศทางลม" Width="180px" />
+
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSACTIVESTATUS) Title="AWSACTIVESTATUS-ความปกติเครื่องตรวจวัด" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AWSLASTUPDATE) Title="AWSLASTUPDATE-เวลาบันทึกสภาพอากาศ" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQSERIALNAME) Title="AQSERIALNAME-เลขเครื่องตรวจวัดอากาศ" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQTEMPERATURE) Title="AQTEMPERATURE-อุณหภูมิที่ตัวเครื่องตรวจวัดอากาศ" Width="180px" />
+
+
+
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQDEWPOINT) Title="AQDEWPOINT-จุดน้าค้าง (°C)" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQNO2) Title="AQNO2-ไนโตรเจนไดออกไซต์" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQO3 ) Title="AQO3-โอโซน" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQOX ) Title="AQOX-โอโซน" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQRELATIVEHUMIDITY ) Title="AQRELATIVEHUMIDITY-ความชื้นจากเครื่องตรวจวัดอากาศ" Width="180px" />
+
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQPM1 ) Title="AQPM1-PM 1.0" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQPM25 ) Title="AQPM25-ความชื้นจากเครื่องตรวจวัดอากาศ" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQPM10 ) Title="AQPM10-PM 10" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQACTIVESTATUS ) Title="AQACTIVESTATUS-ความปกติเครื่องตรวจวดัคุณภาพอากาศ" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.AQLASTUPDATE ) Title="AQLASTUPDATE-เวลาตรวจวัดคุณภาพอากาศ" Width="180px" />
+
+
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.ACCUMULATERAINFALL3HOURS ) Title="ACCUMULATERAINFALL3HOURS-ประมาณฝนสะสม 3 ชัวโมง" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.ACCUMULATERAINFALL24HOURS ) Title="ACCUMULATERAINFALL24HOURS -ประมาณฝนสะสม 24 ชัวโมง" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.ACCUMULATERAINFALLLASTUPDATE ) Title="ACCUMULATERAINFALLLASTUPDATE -เวลาที่ประมวลผลฝนสะสมล่าสุด" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.ACCUMULATERAINFALLRECORDTIME ) Title="ACCUMULATERAINFALLRECORDTIME -เวลาที่บันทึกข้อมูลฝนสะสมล่าสุด" Width="180px" />
+                    <GridColumn Field=@nameof(DPM020DataSet.DataRow.REGION ) Title="REGION-ภาคที่สถานะสังกัด" Width="180px" />
+
+                </GridColumns>
+            </TelerikGrid>
+                                       } else {
+            <div class="text-center" style="color:slategray">
+                <i class="fa-solid fa-circle-exclamation fa-4x"></i>
+                <br />
+                <h3>No data or api error.</h3>
+            </div>
+        }
+        </div>
+    </div>
+
+} else {
+
+    <TelerikLoaderContainer>
+        <Template>
+            <div class="lds-dual-ring"></div>
+        </Template>
+    </TelerikLoaderContainer>
+}
+
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool isShowErrorAPI = false;
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search_pname { get; set; } = "";
+    public string search_aname { get; set; } = "";
+    public string search_tname { get; set; } = "";
+    public DPM020DataSet.DocSet data_set { get; set; }
+    public List<DPM020DataSet.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    protected override async Task OnInitializedAsync() {
+        //  await LoadData();
+    }
+
+
+
+    private async void OnSearch(object input) {
+        if (ndata == null) {
+            await Task.Run(() => LoadData());
+        }
+        ndata = data_set.rows.ToList();
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=dpm020");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?pname={search_pname}&aname={search_aname}&tname={search_tname}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<DPM020DataSet.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                isShowErrorAPI = true;
+                isLoading = false;
+                return;
+            }
+            data_set = (DPM020DataSet.DocSet)query.Result;
+            ndata = data_set.rows;
+                        #region show unshow api
+            isShowErrorAPI = false;
+            if (ndata == null)
+            {
+                isShowErrorAPI = true;
+            }
+            else
+            {
+                if (ndata.Count == 0)
+                {
+                    isShowErrorAPI = true;
+                }
+            }
+            #endregion
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+    async void OnLoad() {
+        await LoadData();
+    }
+}

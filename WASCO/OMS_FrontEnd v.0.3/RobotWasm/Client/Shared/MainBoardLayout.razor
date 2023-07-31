@@ -1,0 +1,358 @@
+﻿@using Blazorise.Localization
+@using RobotWasm.Client.Pages
+@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Pages.Login
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@layout TelerikLayout
+@inherits LayoutComponentBase
+
+<style>
+    .container-lg {
+        max-width: 1460px;
+    }
+
+    .d-none {
+    display: inline-block!important;
+}
+
+    .bg-dark {
+        background-color: #218c74 !important;
+    }
+
+    .Green {
+        background-color: #218c74 !important;
+        color: white !important;
+    }
+
+    .b-bar-vertical-inline.b-bar-dark
+    .b-bar-link:hover,
+    .b-bar-vertical-popout.b-bar-dark
+    .b-bar-link:hover, .b-bar-vertical-small.b-bar-dark
+    .b-bar-link:hover {
+        color: white !important;
+    }
+
+    .b-bar-vertical-inline.b-bar-dark
+    .b-bar-dropdown-menu
+    .b-bar-dropdown-item:hover,
+    .b-bar-vertical-popout.b-bar-dark
+    .b-bar-dropdown-menu .b-bar-dropdown-item:hover,
+    .b-bar-vertical-small.b-bar-dark .b-bar-dropdown-menu
+    .b-bar-dropdown-item:hover {
+        color: white !important;
+    }
+
+    button.dropdown-toggle {
+        color: white !important;
+    }
+
+        button.dropdown-toggle:hover {
+            background-color: transparent !important;
+            color: white !important;
+        }
+
+    /*input search*/
+    .input-elevated {
+        font-size: 16px;
+        line-height: 1.5;
+        border: none;
+        /* background: #FFFFFF;
+                            background-image: url("img/search.svg");
+                            background-repeat: no-repeat;
+                            background-position: 10px 10px;
+                            background-size: 20px 20px;*/
+        box-shadow: 0 2px 4px 0 rgba(0,0,0,0.08);
+        border-radius: 5px;
+        /*width: 300px;*/
+        padding: .5em 1em .5em 1em;
+    }
+
+        .input-elevated::placeholder {
+            color: #838D99;
+        }
+
+        .input-elevated:focus {
+            outline: none;
+            box-shadow: 0 4px 10px 0 rgba(0,0,0,0.16);
+        }
+
+        .bg-Lightgray {
+            background-color: #ededf5 !important;
+        }
+</style>
+
+<AuthorizeView>
+    <Authorized>
+        <Layout Sider Class="b-docs">
+            <LayoutSider>
+                <LayoutSiderContent>
+                    <Bar @ref="@sideBar" Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark"
+                         Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Hide">
+                        <BarBrand>
+                            <BarItem>
+                                <BarLink To="Dashboard/StartBoard" Class="Green">
+                                    <BarIcon IconName="customIcon" Display="Display.InlineBlock" />
+                                    Kypos
+                                </BarLink>
+                            </BarItem>
+                        </BarBrand>
+                        <BarMenu>
+                            <BarStart>
+
+                                <BarItem>
+                                    <BarLink Class="Green" @onclick="@GoFirstBoard">
+                                        <i class="fa-solid fa-house"></i>&nbsp;
+                                        หน้าหลัก
+                                    </BarLink>
+                                </BarItem>
+                              
+                                @if (UserInMenu != null) {
+                                    @foreach (var menu in UserInMenu.Where(o => o.TypeID == "MENUGROUP")) {
+                                        @if (menu.IsOpen == true) {
+                                            <BarItem>
+                                        <BarDropdown @bind-Visible="@menu.IsToggleGroupmenu" Class="Green">
+                                            <BarDropdownToggle>
+                                                <i class="@menu.Icon"></i>&nbsp;
+                                                @menu.MenuDesc1
+                                            </BarDropdownToggle>
+                                            @foreach (var lm in UserInMenu.Where(o => o.GroupID == menu.GroupID && o.TypeID != "MENUGROUP")) {
+                                                        @if (lm.IsOpen == true)
+                                                        {
+                                                            <BarDropdownMenu Class="Green">
+                                                                <BarDropdownItem @onclick="@(() => ChangeURL(lm.Url))">
+                                                        @lm.MenuDesc1
+                                                    </BarDropdownItem>
+                                                </BarDropdownMenu>
+                                                }
+                                            }
+                                        </BarDropdown>
+                                    </BarItem>
+                                        }
+                                    }
+                                }
+                        <BarItem>
+                            <BarDropdown>
+                                <BarDropdownToggle Class="Green">
+                                    <i class="fa-solid fa-unlock"></i>&nbsp;
+                                    ออกจากระบบ
+                                </BarDropdownToggle>
+                                <BarDropdownMenu Class="Green">
+                                    <BarDropdownItem>
+                                        @login.LogInInfo?.CurrentUserInfo.FullName
+                                    </BarDropdownItem>
+                                    <BarDropdownItem @onclick="@LogOut">ออกจากระบบ</BarDropdownItem>
+                                </BarDropdownMenu>
+                            </BarDropdown>
+                        </BarItem>
+                        <BarItem>
+                            <BarLink Class="Green" @onclick="@ReloadPage">
+                                <i class="fas fa-redo"></i>&nbsp;
+                                Refresh Website
+                            </BarLink>
+                        </BarItem>
+                            </BarStart>
+                        </BarMenu>
+                    </Bar>
+                </LayoutSiderContent>
+            </LayoutSider>
+
+            <Layout>
+                <LayoutHeader ElementId="docs-layout-header">
+                    <Bar Class="b-top-bar" @ref="@topBar" @bind-Visible="@topBarVisible" Style="justify-content:start !important;"
+                         Breakpoint="Breakpoint.Desktop" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark">
+                        <BarToggler Bar="@sideBar" Border="Border.Is0" />
+                        <BarBrand Display="Display.None.InlineBlock.OnWidescreen">
+                            <BarLink To="/" Class="Green">
+                                Ky Pos Management
+                                </BarLink>
+                  
+                        </BarBrand>
+                        <BarMenu>
+                            <BarEnd>
+                                    <Dropdown Class="Green">
+                                        <DropdownToggle Color="Color.Default" Class="text-white">
+                                            <i class="fa-solid fa-circle-user fa-lg"></i>&nbsp;
+                                            @Username
+                                        </DropdownToggle>
+                                        <DropdownMenu>
+                                            <DropdownItem @onclick="@ReloadPage">Refresh Website</DropdownItem>
+                                            <DropdownItem @onclick="@LogOut">ออกจากระบบ</DropdownItem>
+                                        </DropdownMenu>
+                                    </Dropdown>
+                                
+                            </BarEnd>
+                        </BarMenu>
+                    </Bar>
+                </LayoutHeader>
+                <LayoutContent Padding="Blazorise.Padding.Is0.OnX.Is4.OnY.Is2.OnWidescreen" Class="pb-4 pt-2">
+                    <Container Breakpoint="Breakpoint.Widescreen">
+                        <TelerikRootComponent>
+                            @Body
+                        </TelerikRootComponent>
+                    </Container>
+                </LayoutContent>
+            </Layout>
+        </Layout>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+    public string Username { get; set; }
+
+    public string color { get; set; } = "darkcyan";
+
+    private Bar sideBar;
+    private Bar topBar;
+
+    @*เปิด/ปิด Collapse ด้านข้าง*@
+    private bool collapseNavMenu = false;
+    private string collapseMenuCss => collapseNavMenu ? "collapse" : null;
+    private bool topBarVisible;
+    private void ToggleMenuCss()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    public string first_board_url = "Dashboard/StartBoard";
+    RenderFragment customIcon = @<Image Source="img/kylogo.png" Style="width:35px" />;
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(login.CheckLogin);
+        first_board_url = await Task.Run(() => login.GetFirstBoardUrl());
+        var filter_app = new List<string> { "KYPOS_V2" };
+        //UserInMenu = login.LogInInfo.UserInMenuDisplay.Where(o => filter_app.Contains(o.App)).ToList() ;
+        
+        await Task.Run(LoadData);
+        Username = await _localStorage.GetItemAsync
+    <string>(Globals.AuthUsername);
+
+        nav.LocationChanged += OnLocationChanged;
+        await SelectCulture("en-US");
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        if (login.LogInInfo != null) {
+            Username = login.LogInInfo.CurrentUserInfo.FullName;
+        }
+    }
+
+    private void GoFirstBoard() {
+        first_board_url = login.GetFirstBoardUrl();
+        nav.NavigateTo(first_board_url);
+    }
+    private void GoToLogin() {
+
+        nav.NavigateTo("Login", true);
+    }
+
+    private Task SelectCulture(string name) {
+        LocalizationService.ChangeLanguage(name);
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeEnabledChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.Enabled = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeGradientChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsGradient = value;
+
+        //if ( Theme.GradientOptions == null )
+        //    Theme.GradientOptions = new GradientOptions();
+
+        //Theme.GradientOptions.BlendPercentage = 80;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeRoundedChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsRounded = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeColorChanged(string value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.ColorOptions ??= new();
+
+        Theme.BackgroundOptions ??= new();
+
+        Theme.TextColorOptions ??= new();
+
+        Theme.ColorOptions.Primary = value;
+        Theme.BackgroundOptions.Primary = value;
+        Theme.TextColorOptions.Primary = value;
+
+        Theme.InputOptions ??= new();
+
+        //Theme.InputOptions.Color = value;
+        Theme.InputOptions.CheckColor = value;
+        Theme.InputOptions.SliderColor = value;
+
+        Theme.SpinKitOptions ??= new();
+
+        Theme.SpinKitOptions.Color = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    [Inject] protected ITextLocalizerService LocalizationService { get; set; }
+
+    [CascadingParameter] protected Theme Theme { get; set; }
+    void LogOut(string id) {
+        nav.NavigateTo("Logout", false);
+    }
+
+
+    #region Methods Theme
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e) {
+        //await JSRuntime.InvokeVoidAsync( "blazoriseDocs.navigation.scrollToTop" );
+    }
+    #endregion
+
+    async private Task LogOut() {
+        await login.Logout();
+    }
+
+    protected void ReloadPage() {
+        jsRuntime.InvokeVoidAsync("window.location.reload");
+    }
+
+    async private Task ChangeURL(string url) {
+        nav.NavigateTo(url, false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

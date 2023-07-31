@@ -1,0 +1,327 @@
+﻿@page "/POS/POSSaleTax"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@using Blazored.LocalStorage
+@using Robot.PrintOut
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<style>
+    /*    .myPopUp {
+            height: calc(100vh - 3.5rem);
+        }
+
+            .myPopUp > .modal-content {
+                min-width: 950px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }*/
+
+    .myPopUp > .modal-content {
+        min-width: 950px;
+        /* top: 50%;*/
+        left: 50%;
+        transform: translate(-50%);
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div class="row pt-4 pb-2">
+            <div class="col-lg-8 col-md-10 col-sm-11 col-12 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-12 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <i class="fas fa-step-backward fa-2x"></i>&nbsp;
+                                    <strong style="font-size:x-large; color:black;">กลับ</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @*InputCssClass="col-md-8 form-control"*@
+                    <div class="card-body">
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ชื่อลูกค้า &nbsp;</label>
+                                <TelerikTextBox @bind-Value="@txtCustomerName"
+                                                    Size="ThemeConstants.DropDownList.Size.Small" />
+                               
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>สาขา &nbsp;</label>
+                                <TelerikTextBox @bind-Value="@txtCustBranchName"
+                                                Size="ThemeConstants.DropDownList.Size.Small" />
+                                
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 1 &nbsp;</label>
+                                <TelerikTextBox @bind-Value="@txtBillAddr1"
+                                                Size="ThemeConstants.DropDownList.Size.Small" />
+                                
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 2 &nbsp;</label>
+                                <TelerikTextBox @bind-Value="@txtBillAddr2"
+                                                    Size="ThemeConstants.DropDownList.Size.Small" />
+                                
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>เลขผู้เสียภาษี &nbsp;</label>
+                                <TelerikTextBox @bind-Value="@txtCustTaxID"
+                                                Size="ThemeConstants.DropDownList.Size.Small" />
+                                
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-lg-8 col-md-10 col-sm-11 col-12 mx-auto text-center">
+                <a class="btn btn-success w-100 text-white"
+                   @onclick="@OnSaveAndPrintTax">พิมพ์ใบกำกับ</a>
+            </div>
+        </div>
+
+
+         <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                       @bind-Visible=@isPopupPrint Modal="true">
+        <WindowTitle>
+                <strong>Printer master</strong>
+        </WindowTitle>
+        <WindowActions>
+            <WindowAction Name="Close" />
+        </WindowActions>
+        <WindowContent>
+                <XPreview printid="@printid"></XPreview>
+        </WindowContent>
+    </TelerikWindow>
+
+
+        <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                       @bind-Visible=@isPopupPrintVisible Modal="true">
+            <WindowTitle>
+                <strong>Edit Contact</strong>
+            </WindowTitle>
+            <WindowActions>
+                <WindowAction Name="Close" />
+            </WindowActions>
+            <WindowContent>
+                 @*  @if (@isPopupPrintVisible) {
+                    <Robot.PrintOut.XReportViewer reportname="PrintFInvoice" docid="@posService.DocSet.Head.BillID"></Robot.PrintOut.XReportViewer>
+                }*@
+            </WindowContent>
+        </TelerikWindow>
+
+        <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                       @bind-Visible=@isPopupPrintDesktop Modal="true">
+            <WindowTitle>
+                <strong>Edit Contact</strong>
+            </WindowTitle>
+            <WindowActions>
+                <WindowAction Name="Close" />
+            </WindowActions>
+            <WindowContent>
+                @*   @if (@isPopupPrintDesktop) {
+                <Robot.PrintOut.XReportViewer reportname="PrintFInvoice" docid="@posService.DocSet.Head.BillID"></Robot.PrintOut.XReportViewer>
+                }*@
+            </WindowContent>
+        </TelerikWindow>
+
+
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+
+    public string txtCustomerName { get; set; } = "";
+    public string txtCustBranchName { get; set; } = "";
+    public string txtBillAddr1 { get; set; } = "";
+    public string txtBillAddr2 { get; set; } = "";
+    public string txtCustTaxID { get; set; } = "";
+
+    bool isPopupPrintVisible { get; set; } = false;
+    bool isPopupPrintDesktop { get; set; } = false;
+    string PrintUrl { get; set; } = "";
+
+    bool isPopupPrint { get; set; } = false;
+    public string printid { get; set; } = "";
+
+    private string isDevice { get; set; }
+    private bool mobile { get; set; }
+
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        var h = posService.DocSet.Head;
+        BindData();
+        isLoading = false;
+    }
+
+    void BindData() {
+        var h = posService.DocSet.Head;
+        txtCustomerName = h.CustomerName;
+        txtCustBranchName = h.CustBranchName;
+        txtBillAddr1 = h.CustAddr1;
+        txtBillAddr2 = h.CustAddr2;
+        txtCustTaxID = h.CustTaxID;
+    }
+
+    bool ValidData() {
+        var line = posService.DocSet.Line;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        if (line.Count() == 0) {
+            Errmsg = "ไม่พบรายการสินค้า";
+            isvalid = false;
+        }
+
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    private void PrepairDataSave() {
+        var h = posService.DocSet.Head;
+        h.CustomerName = txtCustomerName;
+        h.CustBranchName = txtCustBranchName;
+        h.CustAddr1 = txtBillAddr1;
+        h.CustAddr2 = txtBillAddr2;
+        h.CustTaxID = txtCustTaxID;
+
+    }
+
+    public async Task OnSaveAndPrintTax() { 
+        var h = posService.DocSet.Head;
+        #region  validate
+        if (txtCustomerName == "") {
+            await Swal.FireAsync("Warning", "กรอกชื่อลูกค้า..", "error");
+            return;
+        }
+        if (txtCustBranchName == "") {
+            await Swal.FireAsync("Warning", "กรอกสาขา..", "error");
+            return;
+        }
+        if (txtBillAddr1 == "") {
+            await Swal.FireAsync("Warning", "กรอกที่อยู่..", "error");
+            return;
+        }
+        if (txtCustTaxID == "") {
+            await Swal.FireAsync("Warning", "กรอกเลขผู้เสียภาษี..", "error");
+            return;
+        }
+        #endregion
+
+        PrepairDataSave();
+        var rr = posService.SaveTaxSlip(posService.DocSet, login.LoginInfo.CurrentMacNo);
+        if (rr.Result == "fail") {
+            await Swal.FireAsync("", rr.Message1, "error");
+            return;
+        } else {
+            posService.DocSet.Head.FINVID = rr.Message2;
+            await Print();
+
+        } 
+    }
+
+
+
+   async private Task Print(){
+           string printform_id = "R421";
+      
+        var r = await Task.Run(() => Robot.PrintOut.CreatePrintData.R40X.RunReport.Convert2PrintData(posService.DocSet, printform_id));
+        if (r.Result == "ok") {
+            printid = r.Message2;
+            isPopupPrint = true;
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("Error", r.Message1, "error");
+            return;
+        }
+
+        var mobile = await JsRuntime.InvokeAsync<bool>("isDevice");
+        var isDevice = mobile ? "Mobile" : "Desktop";
+
+        if (isDevice == "Desktop") {
+            isPopupPrint = true;
+        } else {
+            isPopupPrint = false;
+            string baseurl = Globals.ApiPrintMasterBaseUrl; 
+            string yurl = $"{baseurl}/TempFile/Print/{printid}.pdf";
+            yurl = yurl.Replace("http://", "https://");
+            await JsRuntime.InvokeVoidAsync("sendUrlToPrint", yurl);
+
+        }
+    }
+
+
+    async void Back() {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        var url = pageHistory.GetGoBackPage();
+        nav.NavigateTo(url);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

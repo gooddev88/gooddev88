@@ -1,0 +1,1030 @@
+﻿@page "/Stock/StkAdjustDetail"
+@using Microsoft.AspNetCore.Http;
+@using Robot.Data.DA.Document
+@using Robot.Data.DA.HR;
+@using Robot.Data.DA.Stock
+@using Robot.Data.DA.Order.SO
+@using System.IO
+@using Robot.Data.ML
+@using System.Net.Http.Json;
+@using static Robot.Data.ML.I_Result
+@inject SOService _soService
+@inject ProtectedLocalStorage _protectedLocalStore
+@*@inject HttpClient Http*@
+<style>
+
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    textarea {
+        height: 70px !important;
+    }
+
+    .input-grid {
+        font-size: medium;
+        font-weight: bold;
+        color: deeppink;
+    }
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/assets/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+    .fix-div {
+        font-size: 1.2rem;
+        height: 60px;
+    }
+</style>
+
+
+@if (stkAdjustService.DocSet != null) {
+
+    <div class="row pb-2 pt-2 pb-1" style="background-color: darkslategrey">
+        <div class="col-12">
+            <Button Color="Color.None" @onclick="@Back" Class="text-white">
+                <i class="fas fa-reply-all"></i>&nbsp;
+                <span>ปรับปรุงสินค้า</span>
+            </Button>
+            <Buttons>
+                @if (isShowSave) {
+                    <Button Color="Color.None" @onclick="() => btnSave()" Class="text-white"
+                            OnClientClick="this.disabled='true';"
+                            UseSubmitBehavior="false">
+                        บันทึก
+                    </Button>
+                }
+                @if (isShowDelete) {
+                    <Button Color="Color.None" @onclick="() => DeleteDoc()" Class="text-white"
+                            OnClientClick="this.disabled='true';"
+                            UseSubmitBehavior="false">
+                        ลบเอกสาร
+                    </Button>
+                }
+                @if (isCloseDoc) {
+                    <Button Color="Color.None" @onclick="() => ClosedDoc()" Class="text-white"
+                            OnClientClick="this.disabled='true';"
+                            UseSubmitBehavior="false">
+                        ยืนยันเอกสาร
+                    </Button>
+                }
+            </Buttons>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 px-0">
+            <div class="card">
+                <div class="card-body">
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            @*                            <TelerikTabStrip TabPosition=@(Telerik.Blazor.TabPosition.Top)>
+                        <TabStripTab Title="ข้อมูลปรับสต๊อก">*@
+
+                            <div class="row pb-1">
+                                <div class="col-md-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row pb-1 pt-2">
+                                                <div class="col-md-8">
+                                                    @if (string.IsNullOrEmpty(stkAdjustService.DocSet.Head.AdjID)) {
+                                                        <label style="font-size:x-large;">
+                                                            ++NEW++
+                                                        </label>
+                                                    } else {
+                                                        <label style="font-size:x-large;"> @stkAdjustService.DocSet.Head.AdjID </label>
+                                                    }
+                                                    <br />
+
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    @if (stkAdjustService.DocSet.Head.Status == "OPEN") {
+                                                        <h3><span class="badge rounded-pill bg-info">OPEN</span></h3>
+                                                    } else if (stkAdjustService.DocSet.Head.Status == "CONFIRM") {
+                                                        <h3><span class="badge rounded-pill bg-success">CONFIRM</span></h3>
+                                                    } else {
+                                                        <h3><span class="badge rounded-pill bg-danger">DELETED</span></h3>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div class="row pt-1">
+                                                <div class="col-md-3">
+                                                    <span>วันที่ปรับสต็อก</span>
+                                                    <TelerikDatePicker @bind-Value="@stkAdjustService.DocSet.Head.AdjDate"
+                                                                       FillMode="@FillMode" Format="dd/MM/yyyy">
+                                                    </TelerikDatePicker>
+                                                </div>
+                                             @*   <div class="col-md-3">
+                                                    <span>ยี่ห้อ</span>
+
+                                                    <TelerikDropDownList Data="@ListBrand"
+                                                                         Value="@stkAdjustService.DocSet.Head.BrandID"
+                                                                         Enabled=@isEnableBrand
+                                                                         TextField="@nameof(MasterTypeLine.Description1)"
+                                                                         ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                         ValueChanged="@((string v) => ValueChangeBrand(v))"
+                                                                         Filterable=true
+                                                                         Width="100%">
+                                                    </TelerikDropDownList>
+                                                </div>*@
+                                            </div>
+
+                                            <div class="row pt-2">
+                                                <div class="col-md-12">
+                                                    <TelerikTextArea @bind-Value="@stkAdjustService.DocSet.Head.Remark"
+                                                                     AutoSize="true"
+                                                                     FillMode="@FillMode"
+                                                                     Class="w-100">
+                                                    </TelerikTextArea>
+                                                </div>
+                                            </div>
+                                            <div class="row pt-2">
+                                                <div class="col-md-12">
+                                                    <span style="font-size:smaller;">@lblCompany &nbsp;</span>
+                                                    <span style="font-size:smaller;">สร้างโดย @stkAdjustService.DocSet.Head.CreatedBy  &nbsp;</span>
+                                                    <span style="font-size:smaller;">เมื่อ @stkAdjustService.DocSet.Head.CreatedDate.ToString("dd/MM/yyyy HH:mm")  &nbsp;</span>
+                                                    @if (@stkAdjustService.DocSet.Head.ModifiedDate != null) {
+                                                        <span style="font-size:smaller;">แก้ไขโดย @stkAdjustService.DocSet.Head.CreatedBy  &nbsp;</span>
+                                                        <span style="font-size:smaller;">เมื่อ @stkAdjustService.DocSet.Head.CreatedDate.ToString("dd/MM/yyyy HH:mm")  &nbsp;</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row pt-3">
+                                <div class="col-12">
+
+                                    @if (isShowStockBal) {
+                                        <div class="row pt-2 pb-4">
+                                            <div class="col-12 text-center">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <span class="fw-bold" style="font-size:x-large;">โหลดสินค้าคงเหลือ</span>
+                                                        <div class="d-inline float-end">
+                                                            <a class="text-decoration-none text-danger" @onclick="@CloseDisplay">
+                                                                <i class="fa-solid fa-square-xmark fa-2x"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body p-3">
+                                                        <div class="col-lg-4 col-md-6 col-sm-12 col-12 mx-auto">
+
+
+                                                            <label class="float-start">คลัง</label>
+                                                            <TelerikComboBox @bind-Value="@SelectLocation2"
+                                                                             Data="@cboLocation2"
+                                                                             TextField="@nameof(LocationInfo.NameDisplay)"
+                                                                             ValueField="@nameof(LocationInfo.LocID)"
+                                                                             Filterable="true"
+                                                                             Width="100%">
+                                                            </TelerikComboBox>
+                                                            <div class="btn-group" role="group" aria-label="Basic example">
+                                                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                                @onclick="@LoadStockBal" Class="w-100 mt-3"
+                                                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                                                    <i class="fas fa-cloud-download-alt fa-lg"></i>&nbsp;โหลดรายการ
+                                                                </TelerikButton>
+                                                                &nbsp;&nbsp;
+                                                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                                @onclick="@DownLoadProduct" Class="w-100 mt-3"
+                                                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                                                                    <i class="fa-solid fa-file-excel fa-lg"></i>&nbsp;โหลด Excel
+
+                                                                </TelerikButton>
+                                                            </div>
+
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @*         @if (isShowStockBalByLocation) {
+                                <div class="row pt-2 pb-4">
+                                <div class="col-12 text-center">
+                                <div class="card">
+                                <div class="card-header">
+                                <span class="fw-bold" style="font-size:x-large;">โหลดสินค้าคงเหลือจาก Location</span>
+                                <div class="d-inline float-end">
+                                <a class="text-decoration-none text-danger" @onclick="@CloseDisplay">
+                                <i class="fa-solid fa-square-xmark fa-2x"></i>
+                                </a>
+                                </div>
+                                </div>
+                                <div class="card-body p-3">
+                                <div class="col-lg-4 col-md-6 col-sm-12 col-12 mx-auto">
+
+
+                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                @onclick="@LoadStockBalByLoccation" Class="w-100 mt-3"
+                                ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                <i class="fas fa-cloud-download-alt fa-lg"></i>&nbsp;โหลดสินค้าคงเหลือ
+                                </TelerikButton>
+
+                                </div>
+                                </div>
+                                </div>
+                                </div>
+                                </div>
+                                }*@
+
+                                    @if (isShowDivUpLoad) {
+                                        <div class="row pt-2 pb-4">
+                                            <div class="col-12 text-center">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <span class="fw-bold" style="font-size:x-large;">อัพโหลดสินค้า</span>
+                                                        <div class="d-inline float-end">
+                                                            <a class="text-decoration-none text-danger" @onclick="@CloseDisplay">
+                                                                <i class="fa-solid fa-square-xmark fa-2x"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body p-4">
+                                                        <InputFile OnChange="OnInputFileChanged" accept=".xlsx, .xls">
+                                                        </InputFile>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="row pt-2 pb-2">
+                                        <div class="col-6">
+                                            <h4 class="fw-bold">รายการสินค้า</h4>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            @if (isShowLoadStockBal) {
+                                                <Buttons>
+                                                    <Dropdown Display="Display.InlineBlock">
+                                                        <DropdownToggle Color="Color.Warning">อัพโหลดสินค้า</DropdownToggle>
+                                                        <DropdownMenu MaxMenuHeight="100px" style="overflow-y: hidden;">
+                                                            <DropdownItem @onclick="@ShowUpLoadExcel">อัพโหลดสินค้า</DropdownItem>
+                                                            @*   <DropdownItem @onclick="@DownLoadProduct">เทมเพลตสำหรับอัพโหลดสินค้า</DropdownItem>*@
+                                                        </DropdownMenu>
+                                                    </Dropdown>
+                                                </Buttons>
+
+                                                <span>&nbsp;&nbsp;</span>
+
+                                                <Buttons>
+                                                    <Dropdown Display="Display.InlineBlock">
+                                                        <DropdownToggle Color="Color.Warning">โหลดสินค้าคงเหลือ</DropdownToggle>
+                                                        <DropdownMenu MaxMenuHeight="150px" style="overflow-y: hidden;">
+                                                            <DropdownItem @onclick="@ShowStockBal">โหลดจากสินค้า</DropdownItem>
+                                                            @*<DropdownItem @onclick="@ShowStockBalByLocation">โหลดจาก Location</DropdownItem>*@
+                                                        </DropdownMenu>
+                                                    </Dropdown>
+                                                </Buttons>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12">
+
+                                            <div class="card">
+                                                <div class="card-body">
+
+                                                    <div class="row">
+                                                        <div class="col-md-2">
+                                                            <span>คลัง</span>
+                                                            <TelerikComboBox @bind-Value="@SelectLocation"
+                                                                             Data="@cboLocation"
+                                                                             TextField="@nameof(LocationInfo.NameDisplay)"
+                                                                             ValueField="@nameof(LocationInfo.LocID)"
+                                                                             Filterable="true"
+                                                                             Width="100%">
+                                                            </TelerikComboBox>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <span>สินค้า</span>
+                                                            <TelerikComboBox Value="@SelectDataItem"
+                                                                             Data="@cboItem"
+                                                                             ScrollMode="@DropDownScrollMode.Virtual"
+                                                                             ValueField="@nameof(ItemInfo.ItemID)"
+                                                                             TextField="@nameof(ItemInfo.NameDisplay)"
+                                                                             Width="100%" PageSize="15" ItemHeight="35"
+                                                                             Filterable="true"
+                                                                             ValueChanged="@((string v) => ValueChangeItem(v))"
+                                                                             FilterOperator="@StringFilterOperator.Contains">
+
+
+                                                            </TelerikComboBox>
+                                                        </div>
+                                                 
+                                                        <div class="col-md-2 pt-4">
+                                                            <Strong>เหลือ @(SelectItemStockBal.ToString("n2"))</Strong>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <span>จำนวน </span>
+                                                                <TelerikNumericTextBox Decimals="0" Format="N0"
+                                                                                       Class="text-end pe-2" @bind-Value="@txtQty"></TelerikNumericTextBox>
+                                                            </div>
+                                                            <div class="col-md-2 pt-4 text-start">
+                                                                <TelerikButton @onclick="@btnAddLine" Size="@(ThemeConstants.Button.Size.Medium)"
+                                                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                                                    <i class="fas fa-plus-circle fa-lg"></i>&nbsp<span>เพิ่ม</span>
+                                                                </TelerikButton>
+                                                                <TelerikButton @onclick="@DeleteLineAll" Size="@(ThemeConstants.Button.Size.Medium)"
+                                                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                                                    <i class="fa-solid fa-broom-wide fa-lg"></i>&nbsp<span>ล้างรายการ</span>
+                                                                </TelerikButton>
+
+                                                            </div>
+                                                        </div>
+
+                                                        @if (stkAdjustService.DocSet.Line.Count() > 0) {
+                                                        <div class="row pt-3">
+                                                            <div class="col-12">
+                                                                <TelerikListView Data="@stkAdjustService.DocSet.Line" @ref="@ListViewLineRef" Pageable="true" PageSize="20">
+                                                                    <Template>
+
+                                                                        <div class="row pb-1">
+                                                                            <div class="col-md-12">
+                                                                                <div class="row ">
+                                                                                    <div class="col-md-12">
+                                                                                        <div class="row">
+                                                                                            <div class="col-lg-8 col-md-8 col-sm-8 col-8 pt-2 text-left">
+                                                                                                <span style="color: black;">
+                                                                                                    @context.ItemID -  @context.Name
+                                                                                                    &nbsp ตั้งต้น
+                                                                                                    <strong>@context.BeginQty.ToString("n2")</strong>
+                                                                                                    &nbsp ปรับปรุง
+                                                                                                    <strong>@context.AdjQty.ToString("n2")</strong>
+                                                                                                    &nbsp @context.Unit
+                                                                                                </span>
+                                                                                                <br />
+                                                                                            </div>
+                                                                                            <div class="col-lg-4 col-md-4 col-sm-4 col-4 text-end">
+                                                                                                <a class="btn text-decoration-none p-0" @onclick="@(e => DeleteLine(e,context))">
+                                                                                                    <i style="color:gray;" class="far fa-trash-alt fa-lg"></i>
+                                                                                                </a>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div class="row pb-2">
+                                                                                            <div class="col-2 pt-2 pr-0 pt-2">
+                                                                                                <span>@context.LocID</span>
+                                                                                            </div>
+
+                                                                                            <div class="col-10 text-end">
+                                                                                                <span>จำนวนหลังปรับปรุง</span>
+                                                                                                <input type="number" value="@Convert.ToDecimal(((decimal)context.ActualQty).ToString("n2"))" placeholder="จำนวน" class="form-control-sm px-1 py-1 text-end input-grid" @onchange="args=> textqtychange(context,args)" />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <hr class="mt-0" />
+
+                                                                    </Template>
+                                                                </TelerikListView>
+                                                            </div>
+                                                        </div>
+                                                    } else {
+                                                        <div class="row pt-5">
+                                                            <div class="col-12 text-center">
+                                                                <img src="/assets/img/filesearch.png" style="width:8rem;" /><br />
+                                                                <span class="font-weight-bold" style="color:gray;"> ไม่พบข้อมูล </span>
+                                                            </div>
+                                                        </div>
+                                                    }
+
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+
+                            @*</TabStripTab>
+
+                        <TabStripTab Title="ประวัติรายการ">
+                        <div class="row pt-4">
+                        <div class="col-12">
+
+                        <div class="row">
+                        <div class="col-12">
+                        <h4 class="fw-bold">ประวัติรายการ</h4>
+                        </div>
+                        </div>
+                        <div class="row pt-2">
+                        <div class="col-md-12">
+                        <TelerikGrid Data=@stkAdjustService.DocSet.Log
+                        Pageable="true"
+                        Groupable="false"
+                        Sortable="true"
+                        Resizable="true"
+                        Reorderable="true"
+                        PageSize="20"
+                        Navigable="true">
+                        <GridColumns>
+                        <GridColumn Field=@nameof(TransactionLog.CreatedBy) Title="สร้างโดย" Width="150px" />
+                        <GridColumn Field=@nameof(TransactionLog.CreatedDate) Title="วันที่สร้าง" Width="150px" DisplayFormat="{0:dd/MM/yyyy h:mm}" />
+                        <GridColumn Field=@nameof(TransactionLog.Action) Title="Action" Width="150px" />
+                        </GridColumns>
+                        </TelerikGrid>
+                        </div>
+                        </div>
+                        </div>
+                        </div>
+                        </TabStripTab>
+                        </TelerikTabStrip>*@
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+
+@code {
+
+    public bool isLoading = true;
+    public bool isShowSave = true;
+    public bool isShowDelete = true;
+    public bool isCloseDoc = true;
+    public bool isShowLoadStockBal = true;
+    public bool isEnableBrand = true;
+
+    bool isShowStockBal { get; set; } = false;
+    //bool isShowStockBalByLocation { get; set; } = false;
+    bool isShowDivUpLoad { get; set; } = false;
+
+    public string lblCompany { get; set; } = "";
+
+    public string SelectLocation { get; set; } = "";
+    public string SelectDataItem { get; set; } = "";
+    //public string SelectBrand { get; set; } = "";
+    public int txtQty { get; set; }
+    public decimal SelectItemStockBal = 0;
+    public IEnumerable<ItemInfo> cboItem;
+    public List<LocationInfo> cboLocation = new List<LocationInfo>();
+
+
+    public string SelectLocation2 { get; set; } = "";
+    public List<MasterTypeLine> cboBrand = new List<MasterTypeLine>();
+    public List<LocationInfo> cboLocation2 = new List<LocationInfo>();
+    List<MasterTypeLine> ListBrand = new List<MasterTypeLine>();
+    public string FillMode { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+
+    private TelerikListView<StkAdjustLine> ListViewLineRef { get; set; }
+
+    public TelerikGrid<vw_OSOLine> TrDataGrid { get; set; }
+    public TelerikGrid<vw_XFilesRef> TrFileGrid { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadData());
+        await Task.Run(() => LoadItem());
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckIsRefresh() {
+        if (stkAdjustService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(StkAdjustService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            if (!string.IsNullOrEmpty(docid)) {
+                stkAdjustService.DocSet = stkAdjustService.GetDocSet(docid, rcom, com);
+            } else {
+                stkAdjustService.DocSet = StkAdjustService.NewTransaction(rcom, com);
+            }
+        }
+    }
+
+    public async Task LoadData() {
+        LoadDropDown();
+        BindData();
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+    //async public Task ValueChangeBrand(string value) {
+
+    //    stkAdjustService.DocSet.Head.BrandID = value;
+    //    SelectDataItem = "";
+    //    await Task.Run(() => LoadItem());
+    //}
+    async public Task ValueChangeItem(string value) {
+        SelectDataItem = value;
+        if (string.IsNullOrEmpty(SelectDataItem) || string.IsNullOrEmpty(SelectLocation)) {
+            return;
+        }
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var bal = InventoryService.GetBalance(SelectDataItem, rcom, com, SelectLocation);
+        if (bal != null) {
+            SelectItemStockBal = bal.BalQty;
+        } else {
+            SelectItemStockBal = 0;
+        }
+
+    }
+
+    public async Task LoadItem() {
+        try {
+            //if (string.IsNullOrEmpty(stkAdjustService.DocSet.Head.BrandID)) {
+            //    return;
+            //}
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            cboItem = await Task.Run(() => ItemService.ListItemInfo(rcom, com, stkAdjustService.DocSet.Head.BrandID));
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception) {
+
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+    private async Task SetActiveControl() {
+        var h = stkAdjustService.DocSet.Head;
+        if (h.Status == "OPEN" && h.AdjID == "") {//ยังไม่ได้ save ครั้งแรก
+            isShowSave = true;
+            isShowDelete = false;
+            isCloseDoc = false;
+            isShowLoadStockBal = false;
+        }
+        if (h.Status == "OPEN" && h.AdjID != "") {
+            isShowSave = true;
+            isShowDelete = true;
+            isCloseDoc = true;
+            isShowLoadStockBal = true;
+        }
+        if (h.Status == "CONFIRM") {
+            isShowSave = false;
+            isShowDelete = false;
+            isCloseDoc = false;
+            isShowLoadStockBal = false;
+        }
+        if (h.Status == "DELETED") {
+            isShowSave = false;
+            isShowDelete = false;
+            isCloseDoc = false;
+            isShowLoadStockBal = false;
+        }
+        if (stkAdjustService.DocSet.Line.Count > 0) {
+            isEnableBrand = false;
+        } else {
+            isEnableBrand = true;
+        }
+        CheckPermission();
+    }
+
+  async  private void CheckPermission() {
+        var h = stkAdjustService.DocSet.Head;
+        if (h.AdjID == "") {
+            isShowDelete = false;
+            isCloseDoc = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "710")) {
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "710")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void LoadDropDown() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        ListBrand = MasterTypeService.ListType("", "ITEM BRAND", true);
+        cboLocation = CompanyService.ListLocationInfo(rcom, com);
+        cboLocation2 = cboLocation;
+
+
+    }
+
+    public async void BindData() {
+        var h = stkAdjustService.DocSet.Head;
+        //await ValueChangeBrand(h.BrandID);
+        var com = CompanyService.GetComInfoByComID(h.ComID);
+        lblCompany = "สาขา " + com.Name1 + " " + com.Name2 + " (" + com.CompanyID + ")";
+    }
+
+    #region Save
+    bool ValidData() {
+        var h = stkAdjustService.DocSet.Head;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        if (h.AdjDate == null) {
+            Errmsg = "ระบุ วันที่ปรับสต็อก";
+            Swal.FireAsync("Warning", Errmsg, "info");
+            return false;
+        }
+        //if (string.IsNullOrEmpty(h.BrandID)) {
+        //    Errmsg = "ระบุ ยี่ห้อ";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (string.IsNullOrEmpty(h.LocID)) {
+        //    Errmsg = "ระบุ คลัง";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+
+
+        return isvalid;
+    }
+
+    private bool PrepairDataSave() {
+        var h = stkAdjustService.DocSet.Head;
+        bool isnew = h.AdjID == "" ? true : false;
+
+        if (isnew) {
+            string docid = IDRuunerService.GetNewIDV2("ADJUST", h.RComID, h.ComID, h.AdjDate, false, "th")[1];
+            h.AdjID = docid;
+            h.CreatedBy = login.LoginInfo.CurrentUser;
+        } else {
+            h.ModifiedBy = login.LoginInfo.CurrentUser;
+        }
+        return isnew;
+    }
+
+    public async void btnSave() {
+        await Save(true);
+    }
+    async Task Save(bool isSaveShowResult) {
+        try {
+            if (isSaveShowResult) {
+                isLoading = true;
+                StateHasChanged();
+                await Task.Delay(500);
+            }
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var h = stkAdjustService.DocSet.Head;
+            if (!ValidData()) {
+                return;
+            }
+
+
+            var isnew = PrepairDataSave();
+
+            var rs = new I_BasicResult();
+            if (isnew) {
+                rs = StkAdjustService.Save(stkAdjustService.DocSet, rcom, com, "insert");
+            } else {
+                rs = StkAdjustService.Save(stkAdjustService.DocSet, rcom, com, "update");
+            }
+
+            if (rs.Result == "ok") {//save successufull
+                stkAdjustService.DocSet = await Task.Run(() => stkAdjustService.GetDocSet(h.AdjID, rcom, com));
+                if (isnew) {
+                    await sessionStorage.SetItemAsync(StkAdjustService.sessionActiveId, stkAdjustService.DocSet.Head.AdjID);
+                }
+
+                if (isSaveShowResult) {
+                    isLoading = false;
+                    StateHasChanged();
+                    nav.NavigateTo($"Stock/StkAdjustDetail", false);
+                    await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                    SetActiveControl();
+                }
+            } else {
+                if (isnew) {
+                    h.AdjID = "";
+                }
+                isLoading = false;
+                // StateHasChanged();
+                await Swal.FireAsync("", rs.Message1, "error");
+            }
+        } catch (Exception ex) {
+            isLoading = false;
+            //  StateHasChanged();
+            await Swal.FireAsync("", ex.Message, "error");
+
+        } finally {
+            isLoading = false;
+            // StateHasChanged();
+        }
+
+    }
+    #endregion
+
+    private void DeleteLine(MouseEventArgs e, StkAdjustLine line) {
+        stkAdjustService.DocSet.Line.RemoveAll(o => o.LineNum == line.LineNum);
+        ListViewLineRef?.Rebind();
+        StateHasChanged();
+    }
+    private void DeleteLineAll() {
+        stkAdjustService.DocSet.Line = new List<StkAdjustLine>();
+        ListViewLineRef?.Rebind();
+        StateHasChanged();
+    }
+    async public void CloseDisplay() {
+        //isShowStockBalByLocation = false;
+        isShowStockBal = false;
+        isShowDivUpLoad = false;
+    }
+
+    async public void ShowStockBal() {
+        //isShowStockBalByLocation = false;
+        var h = stkAdjustService.DocSet.Head;
+        //if (string.IsNullOrEmpty(h.BrandID)) {
+        //    await Swal.FireAsync("Info", "ระบุ ยี่ห้อ", "info");
+        //    return;
+        //}
+        isShowStockBal = true;
+        isShowDivUpLoad = false;
+    }
+
+    //async public void ShowStockBalByLocation() {
+    //    //isShowStockBalByLocation = true;
+    //    isShowStockBalByBrand = false;
+    //    isShowDivUpLoad = false;
+    //}
+
+    async public void LoadStockBal() {
+        var h = stkAdjustService.DocSet.Head;
+        //if (string.IsNullOrEmpty(SelectLocation2)) {
+        //    await Swal.FireAsync("Info", "ระบุ คลัง", "info");
+        //    return;
+        //}
+        if (string.IsNullOrEmpty(SelectLocation2)) {
+            await Swal.FireAsync("Warning", "กรุณาเลือกคลัง..", "info");
+            return;
+        }
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการโหลดสินค้าคงเหลือ",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+
+        isLoading = true;
+
+        var data = StkAdjustService.ListSTKBalByBrandAndLocation(h.RComID, h.ComID, h.BrandID, SelectLocation2);
+
+        stkAdjustService.DocSet.Line = StkAdjustService.STKBalConvert2AdjustLine(data, stkAdjustService.DocSet);
+
+        isShowStockBal = false;
+        ListViewLineRef?.Rebind();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //async public void LoadStockBalByLoccation() {
+    //    var h = stkAdjustService.DocSet.Head;
+
+    //    SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+    //            Title = "Warning",
+    //            Text = $"ยืนยันการโหลดสินค้าคงเหลือ",
+    //            ShowCancelButton = true,
+    //            ConfirmButtonText = "Yes",
+    //            CancelButtonText = "No"
+    //        });
+    //    if (string.IsNullOrEmpty(result.Value)) {
+    //        return;
+    //    }
+
+    //    isLoading = true;
+    //    var data = StkAdjustService.ListSTKBalByLoccation(h.RComID, h.ComID, SelectLocation2);
+
+    //    stkAdjustService.DocSet.Line = StkAdjustService.STKBalConvert2AdjustLine(data, stkAdjustService.DocSet);
+    //    SelectLocation2 = "";
+    //    isShowStockBalByLocation = false;
+    //    ListViewLineRef?.Rebind();
+    //    isLoading = false;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    #region Order Line
+
+    private bool ValidAddLine(bool isExcelUpload) {
+        bool isvalid = true;
+        string Errmsg = "";
+        decimal new_qty = 0;
+        //if (string.IsNullOrEmpty(stkAdjustService.DocSet.Head.BrandID)) {
+        //    Errmsg = "ระบุ ยี่ห้อ";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (string.IsNullOrEmpty(SelectLocation)) {
+        //    Errmsg = "ระบุ คลัง";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        if (!isExcelUpload) {
+            if (string.IsNullOrEmpty(SelectDataItem)) {
+                Errmsg = "ระบุ สินค้าโอนย้าย";
+                Swal.FireAsync("Warning", Errmsg, "info");
+                return false;
+            }
+        }
+
+        return isvalid;
+    }
+
+    async public void btnAddLine() {
+
+        if (!ValidAddLine(false)) {
+            return;
+        }
+
+        var h = stkAdjustService.DocSet.Head;
+        StkAdjustLine newLine = StkAdjustService.NewLine(stkAdjustService.DocSet);
+        var item = ItemService.GetItem(SelectDataItem, h.RComID);
+        var rs = StkAdjustService.GetStkBalByLoc(h.RComID, h.ComID, SelectDataItem, SelectLocation);
+        newLine.ItemID = item.ItemID;
+        newLine.LocID = SelectLocation;
+        newLine.Name = item.Name1;
+        newLine.Unit = item.UnitID;
+        newLine.BeginQty = rs == null ? 0 : rs.BalQty;
+        newLine.Price = item.Price;
+
+        newLine.ActualQty = txtQty == null ? 0 : txtQty;
+        newLine.AdjQty = Convert.ToDecimal(newLine.BeginQty) - Convert.ToDecimal(newLine.ActualQty);
+        var r = StkAdjustService.NewLineByItem(stkAdjustService.DocSet, newLine, newLine.ItemID);
+        if (r.Result == "fail") {
+            await Swal.FireAsync("", r.Message1, "error");
+        } else {
+            ResetControl();
+        }
+        ListViewLineRef?.Rebind();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ResetControl() {
+        txtQty = 1;
+        SelectDataItem = null;
+        SelectLocation = null;
+    }
+
+    async Task textqtychange(StkAdjustLine line, ChangeEventArgs args) {
+        var data = stkAdjustService.DocSet.Line.Where(o => o.LineNum == line.LineNum).FirstOrDefault();
+        decimal qty = (decimal)data.ActualQty;
+        decimal.TryParse(args.Value.ToString(), out qty);
+        data.ActualQty = qty;
+    }
+
+    #endregion
+
+    public void Back() {
+        nav.NavigateTo($"Stock/StkAdjustList", false);
+    }
+    public async void ClosedDoc() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        try {
+            isLoading = true;
+            StateHasChanged();
+            await Task.Run(() => Save(false));
+            var rs = StkAdjustService.ClosedDoc(stkAdjustService.DocSet, login.LoginInfo.CurrentUser);
+            if (rs.Result == "ok") {
+                nav.NavigateTo($"Stock/StkAdjustList", false);
+            } else {
+                await Swal.FireAsync("", rs.Message1, "error");
+            }
+        } catch (Exception ex) {
+            var x = ex.Message;
+        } finally {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    public async void DeleteDoc() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+
+        var rs = StkAdjustService.DeleteDoc(stkAdjustService.DocSet, login.LoginInfo.CurrentUser);
+        if (rs.Result == "ok") {
+            nav.NavigateTo($"Stock/StkAdjustList", false);
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+    }
+
+    async void DownLoadProduct() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var h = stkAdjustService.DocSet.Head;
+        //SelectLocation2
+        if (string.IsNullOrEmpty( SelectLocation2)) {
+            await Swal.FireAsync("Warning", "กรุณาเลือกคลัง..", "info");
+            return;
+        }
+
+        string donwload_url = nav.BaseUri + $"api/stock/StockAdj/DownloadItem/{rcom}/{com}/{SelectLocation2}";
+        nav.NavigateTo(donwload_url, true);
+    }
+
+    async void ShowUpLoadExcel() {
+        //isShowStockBalByLocation = false;
+        if (!ValidAddLine(true)) {
+            return;
+        }
+        isShowStockBal = false;
+        isShowDivUpLoad = true;
+    }
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+
+        var h = stkAdjustService.DocSet.Head;
+        //if (string.IsNullOrEmpty(h.AdjID)) {
+        //    await Swal.FireAsync("Error", "Save before upload", "error");
+        //    return;
+        //}
+
+        try {
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (10024 * 10024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                // Create a new IFormFile using the MemoryStream
+                IFormFile data = new FormFile(ms, 0, ms.Length, file.Name, file.Name);
+
+                var rs = StkAdjustService.UploadItem(data, stkAdjustService.DocSet);
+                if (rs.Result == "ok") {
+                    isShowDivUpLoad = false;
+                    ListViewLineRef?.Rebind();
+                    await Swal.FireAsync("", "อัพโหลดสำเร็จ", "success");
+                } else {
+                    await Swal.FireAsync("Error", rs.Message1, "error");
+                }
+            }
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

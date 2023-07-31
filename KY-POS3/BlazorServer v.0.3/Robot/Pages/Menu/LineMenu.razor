@@ -1,0 +1,190 @@
+﻿@page "/Menu/LineMenu"
+
+@using Robot.Data.DA.MiscService
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using Robot.Data.DA.LoginCrossApp
+
+@inject POSItemService postemService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+ 
+
+<style>
+    .card-box-shadow {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+        border-radius: 10px;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-5">
+            <div class="col-12 text-center mx-0">
+
+                <a @onclick="@ChangeRCom">
+                    @*<i class="fas fa-exchange-alt fa-lg"></i>&nbsp;*@
+                    <strong style="font-size:xx-large;" class="text-white">@companyname</strong>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="row px-3 pt-4">
+            <div class="col-12">
+                <div class="row px-2">
+
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 pb-2 p-1">
+                        <a @onclick="@GoToReport">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/mobile-app-pos.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.5rem;">รายงาน</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 pb-2 p-1">
+                        <a @onclick="@GoToWeb">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/google-chrome.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.5rem;">เปิดเว็บ</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 pb-2 p-1">
+                        <a @onclick="@DownLoadApp">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/download-pos.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.5rem;">ดาวน์โหลดแอ๊ป</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+
+
+                </div>
+
+
+            </div>
+        </div>
+
+
+
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool firstRender = true;
+    bool isLoading = true;
+    string companyname = "";
+
+    protected override async Task OnInitializedAsync() {
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login", true);
+            } else {
+                await Task.Run(LoadData);
+            }
+        } else {
+            await Task.Run(LoadData);
+        }
+    }
+
+    protected override void OnInitialized() {
+        //    isLoading = true;
+        //LoadData();
+    }
+
+    void LoadData() {
+        BinData();
+        isLoading = false;
+    }
+    void BinData() {
+        companyname= login.LoginInfo.CurrentRootCompany.Name1 + " " + login.LoginInfo.CurrentRootCompany.Name2;
+        InvokeAsync(StateHasChanged);
+
+    }
+
+    async void GoToReport() {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo("Menu/LineMenuReport");
+        //string fwd_url = GetRootApp($"/Communication/Report/LineMenuReport");
+        //var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, fwd_url);
+        //string rootappurl = GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+        //nav.NavigateTo(rootappurl);
+    }
+
+    async void ChangeRCom() {
+        login.LoginInfo.LatestPage = "Menu/LineMenu";
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo("Login/ChangeRCom");
+
+    }
+
+    void GoToWeb() {
+        isLoading = true;
+        var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser);
+        string rootappurl = GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}&openExternalBrowser=1");
+        nav.NavigateTo(rootappurl);
+        isLoading = false;
+    }
+
+    void DownLoadApp() {
+        var b = LinkService.GetLinkInfo("download_app").AppLink;
+        string ling = b + "?openExternalBrowser=1";
+        nav.NavigateTo(ling);
+    }
+
+    string GetRootApp(string pageurl) {
+        string rootdomain = nav.BaseUri.ToUpper().ToString().Replace("SALE/", "");
+        string subApp = "APP";
+        string url = rootdomain + subApp + pageurl;
+        return url;
+    }
+
+}

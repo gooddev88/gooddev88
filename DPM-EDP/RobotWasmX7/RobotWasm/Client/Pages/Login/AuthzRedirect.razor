@@ -1,0 +1,28 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Service.Authen
+@inject AuthenticationStateProvider _authenticationStateProvider;
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="Loadding ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = true;
+    //[CascadingParameter]
+    //private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    
+   
+    protected override async Task OnInitializedAsync() {
+   
+        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
+        nav.NavigateTo("/", true);
+
+          //((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(LogInInfo.CurrentUserInfo);
+        //var authenticationState = await AuthenticationStateTask;
+        //((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        //nav.NavigateTo("Login", true);
+    }
+
+}

@@ -1,0 +1,150 @@
+﻿@*@page "/Order/SO/ORDERLocationList/{xlat}/{xlon}"*@
+ 
+@using BlazorPro.Spinkit
+ 
+<style>
+    #mapId {
+        height: 400px;
+    }
+
+    .leaflet-popup-content-wrapper {
+        font-size: large;
+        width: 300px;
+    }
+
+</style>
+
+
+
+<SpinLoader IsLoading="isLoading">
+
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div class="row pt-2 px-2">
+            <div class="col-md-12 ">
+                <div class="row pt-1">
+                    <div class="col-md-12 text-center">
+                        <img src="/img/wasco_logo.png" style="height:70px" />
+                    </div>
+                </div>
+                <div class="row pt-1">
+                    <div class="col-md-12">
+                        @if (SelectOrder != null) {
+                            <span>@text_last_update </span>
+                        }
+                    </div>
+                </div>
+                <div class="row pt-1">
+                    <div class="col-md-12">
+                        @if (SelectOrder != null) {
+                            <span>@text_info </span>
+                        }
+                    </div>
+                </div>
+            @*    <div class="row pt-2">
+                    <div class="col-md-12">
+                        <span>@text_moreinfo &nbsp;</span> <span><a href="http://air4thai.pcd.go.th/" style="font-size:large"><strong>Air4Thai</strong></a></span>
+                    </div>
+                </div>*@
+                @if (mapOptions != null) {
+                    <div class="row pt-4 px-2">
+                        <div class="col-md-12" style="border: dashed black;">
+                            <Map @ref="mapRef" MapOptions="@mapOptions"></Map>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+    [Parameter] public string xlat { get; set; }
+    [Parameter] public string xlon { get; set; } 
+    [Inject] private IMarkerFactory MarkerFactory { get; init; }
+    bool isLoading = false;
+    double lat;
+    double lon;
+    string lang;
+    string text_last_update = "";
+    string text_info = "";
+  
+    private bool firstRender = true;
+    private vw_OSOHead SelectOrder;
+    private Marker stationMarker;
+    private Map mapRef;
+    private LatLng StationMarkerLatLng;
+    private MapOptions mapOptions;
+
+    protected override async Task OnInitializedAsync() {
+        await GetOrderInfo();
+    }
+    private async Task GetOrderInfo() {
+        try {
+            SelectOrder = _soService.SelectOrder;
+            isLoading = true;
+            StateHasChanged();
+            lat = Convert.ToDouble(xlat.Replace("_", "."));
+            lon = Convert.ToDouble(xlon.Replace("_", "."));
+
+
+            if (SelectOrder != null) {
+                text_last_update = "สร้างเมื่อ " + SelectOrder.CreatedDate.ToString("dd/MM/yyyy HH:mm");
+                text_info = "โดย " + SelectOrder.CreatedBy;
+               
+            }
+            await LoadMap();
+        } catch (Exception) {
+        } finally {
+            isLoading = false;
+            StateHasChanged();
+        }
+
+    }
+    private async Task LoadMap() {
+        mapOptions = new MapOptions() {
+                DivId = "mapId",
+                Center = new LatLng(lat, lon),
+                Zoom = 16,
+                UrlTileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                SubOptions = new MapSubOptions() {
+                    Attribution = "&copy; <a lhref='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+                    TileSize = 512,
+                    ZoomOffset = -1,
+                    MaxZoom = 19,
+                }
+            };
+        AddMarkers();
+    }
+    protected async Task AddMarkers() {
+        await Task.Delay(1500);
+        string popup_message = $"{SelectOrder?.PName} -> {SelectOrder?.AName} -> {SelectOrder?.TName}";
+      
+        if (mapRef != null) {
+            StationMarkerLatLng = new LatLng(lat, lon);
+            stationMarker = await MarkerFactory.CreateAndAddToMap(StationMarkerLatLng, mapRef);
+            if (SelectOrder != null) {
+                stationMarker.BindPopup(popup_message);
+                stationMarker.TogglePopup();
+            }
+
+            StateHasChanged();
+        }
+
+
+    }
+}

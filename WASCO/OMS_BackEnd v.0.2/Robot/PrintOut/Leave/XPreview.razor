@@ -1,0 +1,171 @@
+﻿@using Robot.Data.ML
+@using Robot.PrintOut.Leave
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+<div class="row pt-2 pb-3">
+    <div class="col-md-3 col-12">
+        <span>ปี</span> 
+        <TelerikDropDownList Data="@Years" TextField="Description" 
+            ValueField="Value" @bind-Value="SelectYear">
+</TelerikDropDownList>
+    </div>
+    <div class="col-md-3 col-12">
+        <span>หน่วยงาน</span>
+        <TelerikComboBox Data="@ListCompany"
+                         ValueField="@(nameof(CompanyInfo.CompanyID))"
+                         TextField="@(nameof(CompanyInfo.Name1))"
+                         Width="100%"
+                         PageSize="10"
+                         @bind-Value="@Department" OnChange="@SelectedCompanyChanged"
+                         Size="@ThemeConstants.DropDownList.Size.Large"
+                         ItemHeight="35"
+                         Filterable="true"
+                         FilterOperator="@StringFilterOperator.Contains">
+            <ComboBoxSettings>
+                <ComboBoxPopupSettings Width="500" Height="300px"></ComboBoxPopupSettings>
+            </ComboBoxSettings>
+            <ItemTemplate>
+                <span>@($"{context.CompanyID} ({context.Name1})")</span>
+            </ItemTemplate>
+        </TelerikComboBox>
+    </div>
+
+    <div class="col-md-3 col-12">
+        <span>ส่วนงาน</span>
+        <TelerikComboBox @bind-Value="@SubDepartment"
+                         Data="@ListDepartment"
+                         Placeholder=""
+                         TextField="@nameof(CompanyProjectInfo.Name1)"
+                         ValueField="@nameof(CompanyProjectInfo.ProjectID)"
+                         ItemHeight="35"
+                         Filterable="true"
+                         Size="@ThemeConstants.DropDownList.Size.Large"
+                         Width="100%">
+            <ComboBoxSettings>
+
+            </ComboBoxSettings>
+        </TelerikComboBox>
+    </div>
+    <div class="col-md-3 col-12 pt-3">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@btnPrintLeave"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+            <i class="fa-solid fa-filter"></i>&nbsp; กรองข้อมูล
+        </TelerikButton>
+    </div>
+</div>
+@if (!string.IsNullOrEmpty(Department))
+{
+   <iframe src=@PrintUrl height="100%" width="100%" frameborder="0"></iframe> 
+}
+
+
+    </ContentTemplate>
+</SpinLoader>
+@code {
+
+    [Parameter]
+    public string printid { get; set; }
+    string PrintUrl { get; set; } = "";
+    bool isLoading = true;
+    string Department = "";
+    string SubDepartment = "";
+    string SelectYear = "";
+    List<SelectOption> Years = new List<SelectOption>();
+
+    List<CompanyInfo> ListCompany = new List<CompanyInfo>();
+    List<CompanyProjectInfo> ListDepartment = new List<CompanyProjectInfo>();
+
+    protected override async Task OnInitializedAsync() {
+        LoadDropDownList();
+
+        //var r = await Task.Run(() => RunReportLeave.Convert2PrintData("LEAVE", "", ""));
+        //if (r.Result == "ok") {
+        //    printid = r.Message2;
+        //    await InvokeAsync(StateHasChanged);
+        //} else {
+        //    await Swal.FireAsync("Error", r.Message1, "error");
+        //}
+        LoadData();
+        isLoading = false;
+    }
+
+    void LoadDropDownList() {
+        var uic = login.LoginInfo.UserInCompany;
+        ListCompany = CompanyService.ListBranch(uic, "");
+        ListYear();
+    }
+
+    protected override void OnParametersSet() {
+        PrintUrl = Globals.ApiPrintMasterBaseUrl + $"/Viewer/Leave/Viewer.aspx?id={printid}";
+    }
+
+    private void SelectedCompanyChanged(object theUserInput) {
+        if (theUserInput != null) {
+            var com = theUserInput.ToString();
+
+            string company = "";
+            if (com != null) {
+                company = com;
+            }
+
+            Department = company;
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            ListDepartment = CompanyService.ListCompanyProjectByDepartment(company, rcom);
+        }
+    }
+    private void LoadData() {
+        BindData();
+        SetActiveControl();
+    }
+    private void BindData() {
+      
+    }
+    private void SetActiveControl() {
+
+    }
+
+    public async Task btnPrintLeave() {
+        isLoading = true;
+        var r = await Task.Run(() => RunReportLeave.Convert2PrintData("LEAVE",Convert.ToInt32( SelectYear), Department, SubDepartment));
+        if (r.Result == "ok") {
+            printid = r.Message2;
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("Error", r.Message1, "error");
+        }
+        PrintUrl = Globals.ApiPrintMasterBaseUrl + $"/Viewer/Leave/Viewer.aspx?id={printid}";
+        isLoading = false;
+    }
+
+    public void ListYear() {
+        Years = new List<SelectOption>();
+        var getStartYear = GetYear(DateTime.Now.Date)-2;
+        for (int i = 0; i < 4; i++) {
+            Years.Add(new SelectOption { Value = (getStartYear + i).ToString(), Description = (getStartYear + i).ToString(), Sort = getStartYear + i });
+        }
+          SelectYear = GetYear(DateTime.Now).ToString();
+    }
+
+    public int GetYear(DateTime myDate) {
+        var year = myDate.Year;
+        if (year<2500) {
+            year = year + 543;
+        }
+        return year;
+    }
+
+}

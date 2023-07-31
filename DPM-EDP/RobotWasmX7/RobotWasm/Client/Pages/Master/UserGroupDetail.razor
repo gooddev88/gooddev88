@@ -1,0 +1,473 @@
+﻿@page "/Master/UserGroupDetail"
+
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .hidden {
+        visibility: hidden;
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-checkbox:checked, .k-checkbox.k-checked {
+        border-color: #03a9f4;
+        background-color: #03a9f4;
+    }
+</style>
+
+@if (!isLoading)
+{
+    @if (_userGroupService.DocSet != null)
+    {
+
+
+        <div class="row pt-1">
+            <div class="col-12">
+
+                <div class="row">
+                    <div class="col-6">
+                        <Breadcrumb Mode="BreadcrumbMode.Auto">
+                            <BreadcrumbItem>
+                                <BreadcrumbLink To="Master/UserGroupList">@menuCaption</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbItem Active>
+                                <BreadcrumbLink To="#">แก้ไข</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </Breadcrumb>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="btn-group" role="group" aria-label="Basic example">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                   @onclick="@btnSave" Class=""
+                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+                            </TelerikButton>
+                            <div>&nbsp;</div>
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                   @onclick="@btnToList" Class=""
+                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                                <i class="fa-regular fa-rectangle-list"></i>&nbsp; กลับหน้ารายการ
+                            </TelerikButton>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row pt-2">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header" style="background-color: cadetblue;">
+                                <div class="row">
+                                    <div class="col-md-12 text-start">
+                                        <span style="color: white">
+                                            <i class="fas fa-user-secret fa-2x"></i>
+                                            <span>
+                                                @menuCaption
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" style="font-size: smaller">
+                                    <div class="col-md-2">
+                                        <span>รหัสกลุ่มผู้ใช้งาน</span>
+                                        <TelerikTextBox PlaceHolder="กลุ่มผู้ใช้งานใหม่" @bind-Value="@_userGroupService.DocSet.Group.group_id" Enabled="false" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span>ชื่อกลุ่ม</span>
+                                        <TelerikTextBox @bind-Value="@_userGroupService.DocSet.Group.group_name" />
+                                    </div>
+
+                                    @*<div class="col-md-2">
+                                        <span>จัดเรียง</span>
+                                        <TelerikNumericTextBox Decimals="0" Enabled="true" Format="N0" Max="1000"
+                                                       Class="text-center font-weight-bold" @bind-Value="Sort"></TelerikNumericTextBox>
+                                    </div>*@
+                                    @*<div class="col-md-2 pt-4">
+                                        <TelerikCheckBox Id="chkIsActive" @bind-Value="@isactive"></TelerikCheckBox>
+                                        <span style="font-size:medium;">ใช้งาน</span>
+                                        </div>*@
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row pt-2 @IsdivPermission" id="divPermission">
+                    <div class="col-md-12">
+
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header" style="background-color: #feca57 !important">
+                                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleMenu = !IsVisibleMenu;
+                                                                                })">
+                                            <span style="color: black">กำหนดสิทธิ์ ตามเมนู</span>
+                                        </a>
+                                    </div>
+                                    <div class="collapse @(IsVisibleMenu ? "show" : "")">
+                                        <div class="card-body bg-white pb-1">
+                                            @foreach (var m in _userGroupService.DocSet.XMenu.Where(o => new List<string> { "MENUGROUP", "MASTER", "SETUP ALL" }.Contains(o.MenuTypeID)).OrderBy(o => o.MenuGroupSort).ToList())
+                                            {
+                                                @*<br />*@
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="btn-group">
+                                                            <TelerikCheckBox Class="@(Convert.ToBoolean(m.NeedOpenPermission) ? "" : "hidden")" @bind-Value="@m.isOpenBind"></TelerikCheckBox>
+                                                            &nbsp; <strong>@m.MenuDesc1 </strong>&nbsp;&nbsp;
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr class="mt-1" />
+
+                                                @foreach (var mm in _userGroupService.DocSet.XMenu.Where(o => new List<string> { "MENU", "FUNCTION", "SETUP" }.Contains(o.MenuTypeID) && o.MenuGroupID == m.MenuGroupID).OrderBy(o => o.MenuSort).ToList())
+                                                {
+                                                    @*@foreach (var mm in _userGroupService.DocSet.XMenu.Where(o => o.MenuTypeID == "MENU" && o.group_id == m.group_id).OrderBy(o => o.MenuSort).ToList()) {*@
+                                                    <div class="row pl-4 pb-3">
+                                                        <div class="col-4">
+                                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>@mm.MenuDesc1</span>
+                                                        </div>
+                                                        <div class="col-8">
+                                                            <div class="btn-group">
+                                                                <TelerikCheckBox @bind-Value="@(mm.isOpenBind)" Class="@(Convert.ToBoolean(mm.NeedOpenPermission) ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionOpenPermission </span>&nbsp;&nbsp;
+                                                                <TelerikCheckBox @bind-Value="@(mm.isCreateBind)" Class="@(Convert.ToBoolean(mm.NeedCreatePermission) ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionCreatePermission </span>&nbsp;&nbsp;
+                                                                <TelerikCheckBox @bind-Value="@(mm.isEditBind)" Class="@(Convert.ToBoolean(mm.NeedEditPermission) ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionEditPermission </span>&nbsp;&nbsp;
+                                                                <TelerikCheckBox @bind-Value="@(mm.isDeleteBind)" Class="@(Convert.ToBoolean(mm.NeedDeletePermission) ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionDeletePermission </span>&nbsp;&nbsp;
+                                                                <TelerikCheckBox @bind-Value="@(mm.isPrintBind)" Class="@(Convert.ToBoolean(mm.NeedPrintPermission) ? "" : "hidden")"></TelerikCheckBox>&nbsp;<span>@mm.CaptionPrintPermission </span>&nbsp;&nbsp;
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header" style="background-color: #feca57 !important">
+                                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleDashboard = !IsVisibleDashboard;
+                                                                                })">
+                                            <span style="color: black">สิทธิ์ใช้ Dashboard</span>
+                                        </a>
+                                    </div>
+                                    <div class="collapse @(IsVisibleDashboard ? "show" : "")">
+                                        <div class="card-body bg-white pb-1">
+                                            @foreach (var b in _userGroupService.DocSet.XBoard)
+                                            {
+                                                <div class="row">
+                                                    <div class="col-2">
+                                                        <TelerikCheckBox @bind-Value="@b.X"></TelerikCheckBox>
+                                                        &nbsp;&nbsp;<span>@b.board_id</span>
+                                                    </div>
+                                                    <div class="col-10">
+                                                        <span>@b.Name</span>
+                                                    </div>
+                                                </div>
+                                                <hr class="mt-1" />
+                                            }
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header" style="background-color: #feca57 !important">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleApi = !IsVisibleApi;
+                                                                                })">
+                                                    <span style="color: black">สิทธิ์ใช้ API &nbsp; <i class="fa-solid fa-sort"></i></span>
+                                                </a>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <a class="w-100 text-decoration-none" @onclick="@(() => DashCheckUnCheckAll(true))">
+                                                    <span class="text-black">เลือกทั้งหมด</span>
+                                                </a>
+                                                &nbsp;
+                                                <a class="w-100 text-decoration-none" @onclick="@(() => DashCheckUnCheckAll(false))">
+                                                    <span class="text-black">ไม่เลือกทั้งหมด</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="collapse @(IsVisibleApi ? "show" : "")">
+                                        <div class="card-body bg-white pb-1">
+                                            @foreach (var b in _userGroupService.DocSet.XApi)
+                                            {
+                                                <div class="row">
+                                                    <div class="col-2">
+                                                        <TelerikCheckBox @bind-Value="@b.X"></TelerikCheckBox>
+                                                        &nbsp;&nbsp;<span>@b.api_id</span>
+                                                    </div>
+                                                    <div class="col-10">
+                                                        <span>@b.api_name</span>
+                                                    </div>
+                                                </div>
+                                                <hr class="mt-1" />
+                                            }
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row pt-4">
+                            <div class="col-md-12">
+                                <h4 class="fw-bold">ผู้ใช้งานในกลุ่ม</h4>
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+                                <TelerikGrid Data=@_userGroupService.DocSet.UserInGroup
+                                     Pageable="true"
+                                     Groupable="false"
+                                     Sortable="true"
+                                     Resizable="true"
+                                     Reorderable="true"
+                                     PageSize="30"
+                                     Navigable="true">
+                                    <GridColumns>
+                                        <GridColumn Field="@nameof(vw_user_in_group.username)" Title="รหัสผู้ใช้งาน" Width="170px" />
+                                        <GridColumn Field="@nameof(vw_user_in_group.full_name)" Title="ชื่อผู้ใช้งาน" Width="200px" />
+                                        <GridColumn Field="@nameof(vw_user_in_group.group_name)" Title="กลุ่มผู้ใช้งาน" Width="180px" />
+                                    </GridColumns>
+                                </TelerikGrid>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<usergroup_info> DocList = new List<usergroup_info>();
+
+    string IsdivPermission { get; set; } = "";
+    public int Sort { get; set; }
+    public bool isactive { get; set; }
+
+    public bool IsVisibleApi { get; set; } = false;
+    public bool IsVisibleDashboard { get; set; } = true;
+    public bool IsVisibleMenu { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh()
+    {
+        try
+        {
+            if (_userGroupService.DocSet == null)
+            {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_USERGROUP);
+                if (!string.IsNullOrEmpty(docid))
+                {
+                    _userGroupService.DocSet = await Task.Run(() => _userGroupService.GetDocSet(docid));
+                }
+                else
+                {
+                    _userGroupService.DocSet = UserGroupService.NewTransaction();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var xx = ex.Message;
+        }
+    }
+
+    async void LoadData()
+    {
+        var h = _userGroupService.DocSet.Group;
+        SetActiveControl();
+        BindData();
+        if (h.group_id == "")
+        {
+            var getsort = await Task.Run(() => _userGroupService.GenSort());
+            Sort = Convert.ToInt32(getsort);
+        }
+        else
+        {
+            Sort = Convert.ToInt32(h.group_sort);
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetActiveControl()
+    {
+        CheckPermission();
+    }
+    private void CheckPermission()
+    {
+        var menu = UserGroupService.GetMenuInfo(login.LogInInfo, "902");
+        menuCaption = menu.menu_name;
+        menuGroupCaption = UserGroupService.GetMenuGroup(login.LogInInfo, menu.group_id).menu_name;
+    }
+
+    void BindData()
+    {
+        var h = _userGroupService.DocSet.Group;
+        if (h.group_id != "")
+        {
+            IsdivPermission = "";
+        }
+        else
+        {
+            IsdivPermission = "hidden";
+        }
+    }
+
+    #region Save
+
+    bool ValidData()
+    {
+        var h = _userGroupService.DocSet.Group;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        //if (usergroup == "")
+        //{
+        //    Errmsg = "ระบุรหัสกลุ่ม!! ";
+        //    isvalid = false;
+        //}
+
+        if (h.group_name == "")
+        {
+            Errmsg = "ระบุชื่อกลุ่ม!! ";
+            isvalid = false;
+        }
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    async void btnSave()
+    { 
+        if (!ValidData())
+        {
+            return;
+        }
+        isLoading = true;
+        await Task.Run(Save);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async private Task Save()
+    {
+        var isnew = await Task.Run(() => PrepairDataSave());
+        var group = _userGroupService.DocSet.Group;
+        var rs = await Task.Run(() => _userGroupService.Save(_userGroupService.DocSet));
+        if (rs.Result.ToString() == "fail")
+        {
+            await Swal.FireAsync("", rs.Message1, "error");
+            return;
+        }
+        else
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "success",
+                    Text = $"บันทึกสำเร็จ",
+                    ShowCancelButton = false,
+                    Icon = "success",
+                    ConfirmButtonText = "ตกลง"
+                });
+            if (string.IsNullOrEmpty(result.Value))
+            {
+                return;
+            }
+            nav.NavigateTo($"Master/UserGroupList", false);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+        protected async Task<bool> PrepairDataSave()
+    {
+        var h = _userGroupService.DocSet.Group;
+        var user = login.LogInInfo.CurrentUser;
+
+        bool isnew = h.group_id == "" ? true : false;
+        if (isnew)
+        {
+            if (string.IsNullOrEmpty(h.group_id))
+            {
+                List<string>? list_docid = await Task.Run(() => _iDRuunerService.GetNewIDV2("USERGROUP", "DPM", "", DateTime.Now.Date, true, "th"));
+                h.group_id = list_docid[1];
+            }
+            h.created_by = user;
+        }
+
+        h.modified_by = user;
+        h.group_sort = Convert.ToInt16(Sort);
+        return isnew;
+    }
+
+    #endregion
+
+    async void btnToList()
+    {
+        nav.NavigateTo($"Master/UserGroupList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void DashCheckUnCheckAll(bool ischeck)
+    {
+        foreach (var u in _userGroupService.DocSet.XApi)
+        {
+            u.X = ischeck;
+        }
+    }
+}

@@ -1,0 +1,31 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Pages.Login
+@inherits LayoutComponentBase
+<style>
+    body{
+         background-color: #E4ECF4;
+    }
+</style>
+<div Class="container-fluid">
+    <AuthorizeView>
+    <Authorized>
+    <TelerikRootComponent>
+    @Body
+    </TelerikRootComponent>
+        </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+</div>
+
+
+
+
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(login.CheckLogin);
+        await InvokeAsync(StateHasChanged);
+    }
+}

@@ -1,0 +1,70 @@
+﻿@using Robot.Pages.Login
+@using Robot.Pages
+
+@inherits LayoutComponentBase
+<style>
+     .topBar {
+        background: #263238;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 22px;
+        font-weight: bold;
+        text-transform: uppercase;
+        /*    padding: 20px 0;*/
+        text-align: center;
+    }
+
+    div.scrollmenu {
+        background-color: #455A64;
+        overflow-x: scroll;
+        white-space: nowrap;
+        color: white;
+    }
+
+        div.scrollmenu a {
+            display: inline-block;
+            color: white;
+            text-align: center;
+            padding: 14px;
+            text-decoration: none;
+        }
+
+            div.scrollmenu a:hover {
+                border-bottom: 2px solid #E64A19;
+            }
+
+            div.scrollmenu a:active {
+                border-bottom: 2px solid #E64A19;
+            }</style>
+
+<ReconnectDialog> </ReconnectDialog>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <TelerikRootComponent>
+                    @Body
+                </TelerikRootComponent>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    public string Username { get; set; }
+    public string CompanyName { get; set; }
+
+
+    async private Task LogOut() {
+        var authenticationState = await AuthenticationStateTask;
+        ((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        nav.NavigateTo("Login", true);
+    }
+
+}

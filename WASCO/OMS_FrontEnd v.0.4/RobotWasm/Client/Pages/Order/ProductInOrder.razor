@@ -1,0 +1,448 @@
+﻿@page "/Order/ProductInOrder"
+@page "/Order/ProductInOrder/{Edit}"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Order;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using static RobotWasm.Shared.Data.DA.SOFuncService;
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">รายละเอียดสินค้า</span></div>
+        </div>
+    </a>
+</div>
+@if (_soService.DocSet != null) {
+
+
+    <div class="row pt-2">
+        <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row pb-2">
+                        <div class="col-md-12 text-center">
+                            @if (_soService.PromotionSet != null) {
+                                <Strong style="font-size:larger">@_soService.DocSet.LineActive.ProName</Strong>
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mx-auto text-center">
+                            @*    <img class="m-auto" src="@_soService.DocSet.LineActive.ImageUrl" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                        style="width: 100%;object-fit: cover;width:100%;height:auto; aspect-ratio: 13 / 9;" />*@
+                            <img class="m-auto" src="@_soService.DocSet.LineActive.ImageUrl" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                 style="width: 200px" />
+                        </div>
+                        <div class="row  pt-3">
+                            <div class="col-12">
+                                <span style="font-size:small;">@_soService.DocSet.LineActive.ItemID - @_soService.DocSet.LineActive.ItemName</span>
+                                <span class="small">คงเหลือ <span class="badge bg-success">@_soService.DocSet.LineActive.QtyShip.ToString("n0")</span></span>
+                            </div>
+                        </div>
+                        @if (@_soService.DocSet.LineActive.Status == "REJECT") {
+                            <div class="row  pt-2">
+                                <div class="col-12">
+                                    <span class="badge rounded-pill bg-danger">Reject</span>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="row  pt-2">
+                            <div class="col-12">
+                                <span style="font-size:small">จำนวน</span>
+                                <span @onfocusin="@FocusInQtyHandler">
+                                    <TelerikNumericTextBox Id="@TheQtyTbId" Decimals="0" Enabled="true" Format="N0" OnChange="@OnTextChanged_QtyItem"
+                                                           Class="text-end pe-2" @bind-Value="@_soService.DocSet.LineActive.Qty"></TelerikNumericTextBox>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row  pt-2">
+                            <div class="col-12">
+                                @if (@_soService.DocSet.LineActive.IsSpecialPrice == true) {
+                                    <img src="/img/icon/sale-icon.png" style="width:25px" />
+
+                                }
+                                <span style="font-size:small">
+                                    ราคาต่อชิ้น
+                                </span>
+                                <span @onfocusin="@FocusInPriceHandler">
+                                    <TelerikNumericTextBox Id="@ThePriceTbId" Decimals="2" Enabled="@isChangePriceAble" Format="N2" OnChange="@OnTextChanged_Price"
+                                                           Class="text-end pe-2" @bind-Value="@_soService.DocSet.LineActive.PriceIncVat"></TelerikNumericTextBox>
+                                </span>
+                            </div>
+                        </div>
+                        @if (!isLockDiscount) {
+                            <div class="row  pt-2">
+                                <div class="col-12">
+                                    <span style="font-size:small">ส่วนลดต่อชิ้น</span>
+                                    <span @onfocusin="@FocusInDiscountHandler">
+                                        <TelerikNumericTextBox Id="@TheDiscountTbId" Decimals="2" Enabled="true" Format="N2" OnChange="@OnTextChanged_DiscountPerUnit"
+                                                               Class="text-end pe-2" @bind-Value="@_soService.DocSet.LineActive.DiscPPUIncVat"></TelerikNumericTextBox>
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                     
+                        <div class="row  pt-2">
+                            <div class="col-12">
+                                <span style="font-size:small">รวมทั้งหมด</span>
+                                <TelerikNumericTextBox Decimals="2" Enabled="false" Format="N2"
+                                                       Class="text-end pe-2" @bind-Value="@_soService.DocSet.LineActive.TotalAmtIncVat"></TelerikNumericTextBox>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!_soService.DocSet.Head.IsPrint || isadmin) {
+
+                        <div class="row pt-4">
+                            <div class="col-md-12 text-center">
+                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                @onclick="@(() => OnOk())" Class="w-100"
+                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                    ตกลง
+                                </TelerikButton>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div>
+
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    [Parameter] public string? Edit { get; set; }
+    bool isLoading = false;
+    bool isadmin = false;
+    bool isLockDiscount = false;
+    bool isChangePriceAble = false;
+    List<vw_STKBal> ListItemInLocation = new List<vw_STKBal>();
+    string TheQtyTbId { get; set; } = "myTbQty";
+    string ThePriceTbId { get; set; } = "myTbPrice";
+    string TheDiscountTbId { get; set; } = "myTbDiscount";
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckSelectPromotion());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            var user = login.LogInInfo.CurrentUser;
+            var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+            if (_soService.DocSet == null) {
+                var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+                    GoBack();
+                } else {
+                    _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                    _soService.DocSet.Head.BrandID = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_BrandID);
+                    try {
+                        var lat = await sessionStorage.GetItemAsync<string>(Globals.SessionLat);
+                        var lon = await sessionStorage.GetItemAsync<string>(Globals.SessionLon);
+                        _soService.DocSet.Head.TName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaTName);
+                        _soService.DocSet.Head.AName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaAName);
+                        _soService.DocSet.Head.PName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaPName);
+                        _soService.DocSet.Head.Lat = Convert.ToDecimal(lat);
+                        _soService.DocSet.Head.Lon = Convert.ToDecimal(lon);
+                    } catch (Exception) {
+
+                    }
+                    GoBack();
+                }
+            }
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+    }
+    async void CheckSelectPromotion() {
+        try {
+            if (_soService.PromotionSet == null && string.IsNullOrEmpty(Edit)) {
+                nav.NavigateTo("Order/OrderDetail");
+                await InvokeAsync(StateHasChanged);
+            }
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+
+    }
+    async void LoadData() {
+        try { 
+            isLoading = false;
+            await SetActiveControl();
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+    }
+
+    async Task SetActiveControl() {
+        isChangePriceAble = !_soService.DocSet.Head.IsLockPrice;
+        if (_soService.PromotionSet.Promotion.PatternID == "P000") {
+            isLockDiscount = false;
+        }else {
+            isChangePriceAble = false;
+            isLockDiscount = true;
+        }
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        isadmin = login.CanCreate(login.LogInInfo, "621");//621 ออเดอร์
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidData() {
+        bool isvalid = true;
+        string Errmsg = "";
+        var doc = _soService.DocSet;
+        //if (string.IsNullOrEmpty(h.from_user_id)) {
+        //    Errmsg = "ระบุ ผู้ส่งมอบทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.to_user_id)) {
+        //    Errmsg = "ระบุ ผู้รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.from_loc)) {
+        //    Errmsg = "ระบุ สถานที่ส่ง";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.to_loc)) {
+        //    Errmsg = "ระบุ สถานที่รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+        if (doc.LineActive.Qty <= 0) {
+            Errmsg = "ระบุ จำนวนซื้อสินค้า";
+            Swal.FireAsync("", Errmsg, "error");
+            return false;
+        }
+
+        if (doc.LineActive.Qty > doc.LineActive.QtyShip) {
+            Errmsg = "ระบุ สต๊อกคงเหลือไม่พอขาย";
+            Swal.FireAsync("", Errmsg, "error");
+            return false;
+        }
+        //if ( doc.LineActive.PriceIncVat==0) {
+        //        Errmsg = "ระบุ สินค้าไม่กำหนดราคาขาย กรุณาแจ้งเจ้าหน้าที่เพื่อกำหนดราคาสินค้า";
+        //        Swal.FireAsync("", Errmsg, "error");
+        //        return false;
+        //    }
+        return isvalid;
+    }
+
+    //protected async Task<bool> PrepairDataSave() {
+    //    var doc = _soService.DocSet;
+    //    var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+    //    var com = login.LogInInfo.CurrentCompany.CompanyID;
+    //    var h = _soService.DocSet.Head;
+    //    bool isnew = h.OrdID == "" ? true : false;
+
+    //    if (string.IsNullOrEmpty(h.OrdID)) {
+    //        h.OrdID = (await Task.Run(() => _iDRuunerService.GetNewIDV2(h.DocTypeID, rcom, com, h.OrdDate, false, "th")))[1];
+    //    } else {
+    //        h.ModifiedBy = login.LogInInfo.CurrentUser;
+    //    }
+
+    //    foreach (var l in doc.Line) {
+    //        l.Status = "OPEN";
+    //    }
+    //    foreach (var l in doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum)) {
+    //        l.Status = "OPEN";
+    //    }
+
+    //    return isnew;
+    //}
+
+    public async void OnOk() {
+        try {
+            var doc = _soService.DocSet;
+            if (!ValidData()) {
+                return;
+            }
+            await Task.Run(() => LoadLot());
+            //foreach (var l in doc.Line) {
+            //    l.Status = "OK";
+            //}
+            try {
+                doc = SOFuncService.ProCal(doc, _soService.PromotionSet.Promotion);
+                //foreach (var l in doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum)) {
+                //    l.Status = "OK";
+                //}
+            } catch {
+            }
+
+            _soService.DocSet = SOFuncService.CalDocSet(_soService.DocSet);
+            _soService.DocSet = SOFuncService.ClearPendingLot(_soService.DocSet);
+            //nav.NavigateTo("Order/SelectProduct");
+            //await InvokeAsync(StateHasChanged);
+            GoBack();
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+
+    }
+
+    public async void CalLine() {
+        var a = _soService.DocSet.LineActive;
+        a.BaseTotalAmtIncVat = a.PriceIncVat * a.Qty;
+        a.TotalAmtIncVat = a.BaseTotalAmtIncVat - (a.DiscPPUIncVat * a.Qty);
+
+    }
+
+    public async void OnTextChanged_QtyItem(object data) {
+        var a = _soService.DocSet.LineActive;
+        a.Qty = Convert.ToDecimal(data);
+        CalLine();
+    }
+
+    public async void OnTextChanged_Price(object data) {
+        var a = _soService.DocSet.LineActive;
+        a.Price = Convert.ToDecimal(data);
+        CalLine();
+    }
+    public async void OnTextChanged_DiscountPerUnit(object data) {
+        var a = _soService.DocSet.LineActive;
+        a.DiscAmtIncVat = Convert.ToDecimal(data);
+        a.DiscCalBy = "A";
+        CalLine();
+    }
+    void GoBack() {
+        var doc = _soService.DocSet;
+        _soService.DocSet = SOFuncService.ClearPendingLine(_soService.DocSet);
+        _soService.DocSet = SOFuncService.ClearPendingLot(_soService.DocSet);
+        // nav.NavigateTo("Order/OrderDetail");
+        if (string.IsNullOrEmpty(Edit)) {
+            nav.NavigateTo("Order/SelectProduct");
+        } else {
+            nav.NavigateTo("Order/OrderDetail");
+        }
+
+        //nav.NavigateTo("Order/OrderDetail");
+        //if (doc.Head.OrdID != "") {
+        //    nav.NavigateTo("Order/OrderDetail");
+        //} else {
+        //    nav.NavigateTo("Order/SelectProduct");
+        //}
+        InvokeAsync(StateHasChanged);
+    }
+   
+    #region lot
+    public async Task LoadLot() {
+        var doc = _soService.DocSet;
+        var h = _soService.DocSet.Head;
+        var a = _soService.DocSet.LineActive;
+        doc.Lot.RemoveAll(o => o.LineLineNum == a.LineNum);
+        ListItemInLocation = await Task.Run(() => _stockBalanceService.ListLot(doc.Head.RComID, doc.Head.ComID, doc.LineActive.ItemID, doc.LineActive.LocID));
+        await Task.Run(() => RefillOrdQty2Lot());
+
+
+
+        foreach (var l in ListItemInLocation.Where(o => o.OrdQty > 0)) {
+            vw_OSOLot n = SOFuncService.NewLot(h.RComID, h.ComID, a.LineNum, _soService.DocSet);
+            n.ItemID = a.ItemID;
+            n.ItemName = a.ItemName;
+            n.IsStockItem = true;
+            n.Qty = l.OrdQty;
+            n.QtyBal = l.BalQty;
+            n.Unit = l.UnitID;
+            n.LocID = l.LocID;
+            n.LocName = l.LocName;
+            n.LotNo = l.LotNo;
+            n.SerialNo = l.SerialNo;
+            n.Status = "NEW";
+            n.IsActive = true;
+            doc.Lot.Add(n);
+        }
+    }
+    async Task RefillOrdQty2Lot() {
+        var doc = _soService.DocSet;
+        ListItemInLocation = await _stockBalanceService.ListLot(doc.Head.RComID, doc.Head.ComID, doc.LineActive.ItemID, doc.LineActive.LocID);
+
+        var a = _soService.DocSet.LineActive;
+        decimal remain_qty = a.Qty;
+        foreach (var l in ListItemInLocation) {
+            l.OrdQty = 0;
+        }
+        foreach (var l in ListItemInLocation) {
+            if (remain_qty <= 0) {
+                break;
+            }
+
+            var lot = doc.Lot.Where(o => o.ItemID == l.ItemID && o.LotNo == l.LotNo && l.LocID == l.LocID).FirstOrDefault();
+            if (lot != null) {//ถ้ามี Lot ค้างอยู่ให้นำจำนวนใน lot นี้มารวมได้วย
+                l.BalQty = l.BalQty + lot.Qty;
+            }
+            if (remain_qty <= l.BalQty) {
+                l.OrdQty = remain_qty;
+            } else {
+                l.OrdQty = l.BalQty;
+            }
+            remain_qty = remain_qty - l.OrdQty;
+        }
+    }
+    //public async void OnOK() {
+    //    var doc = _soService.DocSet;
+
+    //    foreach (var l in doc.Line) {
+    //        l.Status = "OPEN";
+    //    }
+    //    foreach (var l in doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum)) {
+    //        l.Status = "OPEN";
+    //    }
+    //    GoBack();
+    //}
+    #endregion
+
+
+
+    #region  select all
+    async Task FocusInQtyHandler(FocusEventArgs e) {
+        await jsRuntime.InvokeVoidAsync("selectText", TheQtyTbId);
+    }
+    async Task FocusInPriceHandler(FocusEventArgs e) {
+        await jsRuntime.InvokeVoidAsync("selectText", ThePriceTbId);
+    }
+    async Task FocusInDiscountHandler(FocusEventArgs e) {
+        await jsRuntime.InvokeVoidAsync("selectText", TheDiscountTbId);
+    }
+    #endregion
+}

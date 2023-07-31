@@ -1,0 +1,212 @@
+﻿@page "/ApiServ/ApiDocList"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+
+@using System.Text
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .top-menu {
+        position: initial;
+        top: 70px;
+        width: 100%;
+        height: auto;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 1;
+    }
+
+    @@media only screen and (min-width: 290px) {
+        div.top-menu {
+            justify-content: flex-start !important;
+        }
+    }
+
+    @@media only screen and (min-width: 700px) {
+        div.top-menu {
+            justify-content: center !important;
+        }
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+
+        .samll {
+    font-size:small;
+}
+
+    .bg-get {
+        background-color: #00ba19 !important;
+        font-size: small;
+        font-weight: 100;
+    }
+
+    .nav-item {
+        width: 9rem;
+    }
+
+</style>
+
+<div class="text-center pb-3 pt-2">
+    <h4>บริการข้อมูล (Microservices)</h4>
+</div>
+
+@if (!isLoading) {
+
+    @if (menucate != null) {
+        <div class="top-menu justify-content-center">
+            <nav class="navbar navbar-expand navbar bg-tranparent justify-content-center pt-0">
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        @foreach (var m in menucate) {
+                            <Tooltip Text="@m.cate_name" Placement="TooltipPlacement.Bottom">
+                            <li class="nav-item">
+                                <NavLink class="nav-link px-2 text-center" onclick="@(() =>SelectApiCate(m.cate_id))">
+                                        <img src="@m.img_path" class="rounded-circle" alt="" width="70" height="70">
+                                        @if (select_cate == m.cate_id)
+                                        {
+                                            <p class="text-dark samll mt-1 mb-0"><strong style="font-size:large"> @m.cate_name</strong></p>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-dark samll mt-1 mb-0">@m.cate_name</p>
+                                        }
+                                </NavLink>
+                            </li>
+                            </Tooltip>
+                        }
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    }
+
+    <div class="row pb-3 pt-4">
+        <div class="col-6">
+            <h5>พบ @count_result_search รายการ</h5>
+        </div>
+        <div class="col-6 text-end">
+            <TelerikTextBox PlaceHolder="คำค้นหา" Class="box-sd-inputsearch center" Value="@SearchText" ValueChanged="@OnTextChanged_Apimaster"></TelerikTextBox>
+        </div>
+    </div>
+
+
+    @if (DocList.Count() > 0) {
+        <div class="row">
+            @foreach (var l in DocList) {
+                <div class="col-md-6 col-sm-6 col-12">
+                    <div class="card mb-2" style="background-color: #e3e3e3b3;">
+                        <div class="card-body">
+                            <a class="text-decoration-none text-dark" style="cursor: pointer" onclick="@(() =>ToApiDetail(l.api_id))">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label style="font-size:large;">
+                                            <span style="font-size:large;">@l.api_id</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        @if (l.method == "GET") {
+                                            <span class="badge rounded-pill bg-success bg-get">@l.method</span>
+                                        } else if (l.method == "POST") {
+                                            <span style="font-size:small;" class="badge rounded-pill bg-warning text-dark">@l.method</span>
+                                        } else {
+                                            <span style="font-size:small;" class="badge rounded-pill bg-danger">Not Found</span>
+                                        }
+                                    </div>
+                                    <div class="col-12">
+                                        <label style="font-size:smaller;">
+                                            @l.api_name
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    } else {
+        <div class="row pt-5">
+            <div class="col-12 text-center" style="color:darkgray;">
+                <i class="fa-solid fa-note-sticky fa-3x"></i> <br />
+                <h5>!! ไม่พบข้อมูล ...</h5>
+            </div>
+        </div>
+    }
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+
+    private bool isLoading = false;
+
+    public List<ApiCate> menucate { get; set; }
+    public List<api_master> DocList { get; set; }
+    string count_result_search = "0";
+    string select_cate = "";
+    string SearchText = "";
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        var search_apidoc = await sessionStorage.GetItemAsync<string>(Globals.Search_apidoc);
+        if (search_apidoc != null)
+        {
+            SearchText = search_apidoc.ToString();
+        }
+        await Task.Run(() => LoadCate());
+        await Task.Run(() => LoadData());
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadCate() {
+        menucate = await _apiMasterService.ListApiCates();
+    }
+
+    async Task LoadData() {    
+        DocList = await _apiMasterService.ListApi(SearchText, select_cate);
+        count_result_search = DocList.Count().ToString("n0");
+    }
+
+    async void SelectApiCate(string cateid) {
+        select_cate = cateid;
+
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void ToApiDetail(string api_id) {
+        await sessionStorage.SetItemAsync(Globals.ActiveID_ApiMaster, api_id);
+        nav.NavigateTo($"ApiServ/ApiDocDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnTextChanged_Apimaster(object Search) {
+        if (Search != null) {
+            SearchText = Search.ToString();
+            await Task.Run(LoadData);
+            await sessionStorage.SetItemAsync(Globals.Search_apidoc,SearchText);
+            await InvokeAsync(StateHasChanged);
+        
+        }
+    }
+
+}

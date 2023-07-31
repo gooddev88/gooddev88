@@ -1,0 +1,351 @@
+﻿@page "/POS/POSSelectProduct"
+
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+
+    .fix-top-head-menu {
+        position: fixed;
+        padding: 6px 10px 6px 10px;
+        background-color: #ffd32a;
+        border-radius: 0px 0px 15px 15px;
+        top: 0;
+        width: 100%;
+        z-index: 4;
+    }
+
+    div.scrollmenu {
+        background-color: #455A64;
+        overflow-x: scroll;
+        white-space: nowrap;
+        color: white;
+        font-size: small;
+    }
+
+    div.scrollmenu a {
+        display: inline-block;
+        color: white;
+        text-align: center;
+        padding: 12px;
+        text-decoration: none;
+    }
+
+    div.scrollmenu a:hover {
+        border-bottom: 2px solid #E64A19;
+    }
+
+    div.scrollmenu a:active {
+        border-bottom: 2px solid #E64A19;
+    }
+
+    div.scrollmenu a.active {
+        border-bottom: 2px solid #E64A19;
+    }
+
+    .fix-cate-menu {
+        position: fixed;
+        top: 45px;
+        width: 100%;
+        height: auto;
+        box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+        background-color: #fff;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 4;
+    }
+
+    .fix-info {
+        position: fixed;
+        background-color: #E4ECF4;
+        top: 0px;
+        width: 100%;
+        padding: 69px;
+        z-index: 3;
+    }
+
+    .fix-cate-info {
+        position: fixed;
+        top: 90px;
+        width: 100%;
+        z-index: 4;
+    }
+
+    .fix-desc-listitem {
+        padding-top: 9.1rem !important;
+        padding-bottom: 5rem !important;
+    }
+
+    .fix-bottom-listitem {
+        position: fixed;
+        /*padding: 5px;*/
+        bottom: 0;
+        width: 100%;
+        height: auto;
+        box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+        background-color: #FFD600;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 4;
+    }
+
+    .small {
+        font-size: small;
+    }
+
+    .medium {
+        font-size: medium;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+
+</style>
+
+<div class="row fix-top-head-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">รายการอาหาร</span></div>
+        </div>
+    </a>
+</div>
+
+@if (_posService.DocSet != null) {
+
+    <div class="row fix-cate-menu">
+        <div class="col-12 px-0">
+            @* เลือกสินค้า *@
+            <div class="scrollmenu">
+                @if (_posService.ItemCate != null) {
+                    @foreach (var m in _posService.ItemCate) {
+                        <a class="@m.RefID" @onclick="@(async () => await ItemCateClick(m.ValueTXT))">@m.Description1</a>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row fix-cate-info">
+        <div class="col-12 px-0">
+            <div class="card">
+                <div class="card-body p-2">
+
+                    <div class="row">
+                        <div class="col-8 text-start">
+                            <div class="input-group">
+                                <TelerikTextBox PlaceHolder="คำค้นหาสินค้า" Class="box-sd-inputsearch form-control rounded" Value="@SearchText" ValueChanged="@OnTextChanged_ListItem"></TelerikTextBox>
+                            </div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <h4 class="badge bg-warning text-dark medium mb-0">@(Cate == "" ? "ALL" : Cate)</h4>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row fix-info"></div>
+
+    <div class="row" style="margin-top: 8.9rem;">
+        <div class="col-12 px-1">
+            <div class="card">
+                <div class="card-body">
+
+                    <div class="row">
+                        <div class="col-md-12 ps-0">
+
+                            @if (menu.Count() > 0) {
+                                <TelerikListView Data="@menu" Pageable="true" Page="1" PageSize="100">
+                                    <Template>
+
+                                        <div class="row pt-1">
+                                            <div class="col-10">
+                                                <a class="p-0 text-decoration-none text-dark" @onclick="() => SelectMenuItem(context)">
+                                                <div class="row">
+                                                        <div class="col-3">
+                                                            <img class="m-auto w-100" src="@context.ImageUrl" onerror="this.onerror=null; this.src='/img/applogox.png'"
+                                                                style="object-fit: cover;height:auto;" />
+                                                        </div>
+                                                        <div class="col-9 ps-0 text-start">
+                                                            <div><strong style="font-size: calc(0.40em + 1.4vmin);">@context.Name</strong></div>
+                                                            <span style="font-size: calc(0.40em + 1.5vmin);">ราคา <b>@context.Price.ToString("n2")</b></span>
+                                                        </div>
+                                                </div>
+                                                </a>
+                                            </div>
+                                            <div class="col-2 pt-2 ps-0">
+                                                <div class="d-inline-block float-end">
+                                                    <span class="fw-bold pt-2" style="font-size: large;">
+                                                        @_posService.DocSet.Line.Where(o =>
+                                                o.ItemID == context.ItemID
+                                                && o.IsLineActive == true
+                                                && o.IsActive == true).Sum(o => o.Qty).ToString("n0")
+                                                    </span>
+
+                                                    <a class="btn p-0" style="color:#37b400;" @onclick="@(() => OnAddItem(context))">
+                                                        <i class="fa-solid fa-circle-plus" style="font-size:1.5rem"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr class="my-2" />
+                                    </Template>
+                                </TelerikListView>
+                            } else {
+                                <div class="row">
+                                    <div class="col-6 mx-auto">
+                                        <img src="/img/no_data.jpg" style="width: 100%;" />
+                                        <div class="text-center">ไม่พบสินค้า</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_posService.DocSet.Line.Count > 0) {
+        <div class="row fix-bottom-listitem">
+            <a class="btn" @onclick="@(() => ToPosDetail())">
+                <span class="fw-bold text-center" style="font-size: large; padding: 10px;">
+                    <b>
+                        ทั้งหมด @_posService.DocSet.Line.Where(o => o.IsLineActive == true).Count().ToString("n0") รายการ
+                        </b>
+                    </span>
+            </a>
+        </div>
+    }
+}
+
+
+<TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                        Text="ระบบกำลังประมวลผล ....."
+                        Visible="@isLoading"
+                        LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+
+@code {
+    bool isLoading = false;
+    public List<POSMenuItem> menu = new List<POSMenuItem>();
+    public string Cate = "";
+    public string SearchText = "";
+
+    List<POS_TableModel> Tables = new List<POS_TableModel>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POS/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (_posService.Menu.Count() == 0) {
+                _posService.Menu = await Task.Run(() => _posService.ListMenuItem(_posService.DocSet.Head.RComID, _posService.DocSet.Head.ComID, _posService.DocSet.Head.ShipToUsePrice));
+            } else {
+                foreach (var l in _posService.DocSet.Line) {
+                    if (_posService.Menu != null) {
+                        var iInfo = _posService.Menu.Where(o => o.ItemID == l.ItemID).FirstOrDefault();
+                        if (iInfo != null) {
+                            l.ImageUrl = iInfo.ImageUrl;
+                            l.ImageSource = iInfo.ImageUrl;
+                        }
+                    }
+                }
+            }
+
+            if (_posService.ItemCate.Count() == 0) {
+                _posService.ItemCate = await Task.Run(() => _posService.ListItemCate(_posService.DocSet.Head.RComID));
+            }
+
+            if (_posService.Tenders.Count() == 0) {
+                _posService.Tenders = ListTenderType();
+            }
+        }
+    }
+
+    async void LoadData() {
+        await LoadMenu();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task ItemCateClick(string cateid) {
+        var m = _posService.ItemCate.Where(o => o.ValueTXT == cateid).FirstOrDefault();
+        foreach (var l in _posService.ItemCate) {
+            l.RefID = "";
+        }
+
+        m.RefID = "active";
+        Cate = m.ValueTXT;
+        await Task.Run(LoadMenu);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadMenu() {
+        menu = _posService.Menu.Where(o =>
+                                             (o.CateID == Cate || Cate == "")
+                                             && (o.Name.Contains(SearchText))
+                                             && (o.TypeID != "DISCOUNT")
+        ).ToList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnTextChanged_ListItem(object Search) {
+        SearchText = Search == null ? "" : Search.ToString();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SelectMenuItem(POSMenuItem data) {
+        _posService.DocSet.SelectItem = _posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        var qty = _posService.DocSet.Line.Where(o => o.ItemID == data.ItemID && o.IsLineActive == true).Sum(o => o.Qty);
+        if (qty == 0) {
+            _posService.DocSet = POSFuncService.AddItem(_posService.DocSet, 777, 0);
+        }
+        _posService.DocSet.LineActive.ImageUrl = data.ImageUrl;
+        nav.NavigateTo("POS/ProductInOrder");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnAddItem(POSMenuItem data) {
+        _posService.DocSet.SelectItem = _posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        _posService.DocSet = POSFuncService.AddItem(_posService.DocSet, 777, 0);
+        _posService.DocSet.LineActive.ImageUrl = data.ImageUrl;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void ToPosDetail() {
+        nav.NavigateTo("POS/POSSaleDetail");
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POS/POSSaleDetail");
+    }
+}

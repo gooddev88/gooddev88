@@ -1,0 +1,150 @@
+﻿@page "/Menu/LineMenuReport"
+
+ 
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.LoginCrossApp
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Robot.PrintOut
+
+
+
+@inject IHostingEnvironment hostingEnvironment
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<style>
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-4">
+            <div class="col-12 mx-auto">
+                <div class="row text-center pb-3">
+                    <div class="col-12">
+                        <img src="/SALE/assets/img/applogo.png" style="width: 6rem;" />
+                        <br />
+                        <label class="font-weight-bold" style="font-size: 1.5rem;">เลือกรายงานที่ต้องการ</label>
+                    </div>
+                </div>
+
+                <div class="row pt-2">
+                    <div class="col-10 text-center mx-auto">
+                        <a class="btn btn-info text-decoration-none w-100 text-white" @onclick="@ReportSummarySale">
+                            <label style="font-size: 1.5rem;">รายงานสรุปยอดขายประจำวัน</label>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row pt-2">
+                    <div class="col-10 text-center mx-auto">
+                        <a class="btn btn-info text-decoration-none w-100 text-white" @onclick="@ReportPoSumByStore">
+                            <label style="font-size: 1.5rem;">รายงานสรุปสั่งซื้อสินค้า</label>
+                        </a>
+                    </div>
+                </div>
+
+                @*<div class="row pt-2">
+                    <div class="col-10 text-center mx-auto">
+                        <a class="btn btn-dark text-decoration-none w-100 text-white" @onclick="@Back">
+                            <label style="font-size: 1.5rem;">กลับเมนูหลัก</label>
+                        </a>
+                    </div>
+                </div>*@
+
+            </div>
+        </div>
+
+        <div class="row mx-0 fix-bottom-MenuReport">
+            <div class="col-12">
+                <a class="btn w-100" @onclick="@Back">
+                    <label style="font-size: 1.5rem;">กลับเมนูหลัก</label>
+                </a>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string uri = nav.Uri;
+        pageHistory.AddPageToHistory(uri);
+        if (login.LoginInfo == null)
+        {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null)
+            {
+                nav.NavigateTo("Login", true);
+            }
+            else
+            {
+                await Task.Run(LoadData);
+            }
+        }
+        else
+        {
+            await Task.Run(LoadData);
+        }
+
+    }
+
+    protected override void OnInitialized()
+    {
+        //isLoading = true;
+        //LoadData();
+    }
+
+    void LoadData()
+    {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl()
+    {
+
+    }
+
+    void ReportPoSumByStore()
+    {
+        nav.NavigateTo($"POSREPORTS/PO/ReportPOSumByStore/{login.LoginInfo.CurrentRootCompany.CompanyID}/1/line");
+    }
+
+    void ReportSummarySale()
+    {
+        nav.NavigateTo("LINE/ReportSalesSummary");
+    }
+
+    void Back()
+    {
+        nav.NavigateTo("Menu/LineMenu");
+    }
+
+}

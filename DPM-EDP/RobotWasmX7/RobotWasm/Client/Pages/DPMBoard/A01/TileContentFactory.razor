@@ -1,0 +1,46 @@
+﻿@using RobotWasm.Client.Pages.DPMBoard.A01.Widgets
+@using static RobotWasm.Client.Pages.DPMBoard.A01.A01Data
+
+
+@switch (TileID) {
+    case "EventLocationMapStreetMap":
+        <EventLocationMapStreetMap Data="@DataSet.EventLocation"></EventLocationMapStreetMap>
+        break;
+    case "NumberEvent":
+        <ShowNumber Title=@TileID   Data="@DataSet.Number_Data"></ShowNumber>
+        break;
+    case "NumberInjure":
+        <ShowNumber Title=@TileID Data="@DataSet.Number_Data"></ShowNumber>
+        break;
+    case "NumberDead":
+        <ShowNumber Title=@TileID Data="@DataSet.Number_Data"></ShowNumber>
+        break;
+    case "NumberDeadRate":
+        <ShowNumber Title=@TileID Data="@DataSet.Number_Data"></ShowNumber>
+        break;
+    case "RoadType":
+        <RoadType Data="@DataSet.RoadType"></RoadType>
+        break;
+    case "TimeRange":
+        <TimeRange Data="@DataSet.TimeRange"></TimeRange>
+        break;
+    case "Vehicle":
+        <Vehicle Data="@DataSet.Vehicle"></Vehicle>
+        break;
+    case "AgeRange":
+        <AgeRange Data="@DataSet.AgeRange_Data"></AgeRange>
+        break;
+    case "EventCause":
+        <EventCause Data="@DataSet.EventCause"></EventCause>
+        break;
+    default:
+        break;
+}
+
+
+@code {
+
+    [Parameter] public string TileID { get; set; } 
+    [Parameter] public DataSet DataSet { get; set; }
+
+}

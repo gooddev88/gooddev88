@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\LogTrans\**" />
+    <Compile Remove="Data\DataStoreDB\**" />
+    <Compile Remove="Data\DA\LogTran\**" />
+    <Compile Remove="XXTT\**" />
+    <Compile Remove="XXWWECCD\**" />
+    <Compile Remove="XXWWECC\**" />
+    <Compile Remove="XXWWEC\**" />
+    <Compile Remove="XXWW\**" />
+    <Content Remove="Controllers\LogTrans\**" />
+    <Content Remove="Data\DataStoreDB\**" />
+    <Content Remove="Data\DA\LogTran\**" />
+    <Content Remove="XXTT\**" />
+    <Content Remove="XXWWECCD\**" />
+    <Content Remove="XXWWECC\**" />
+    <Content Remove="XXWWEC\**" />
+    <Content Remove="XXWW\**" />
+    <EmbeddedResource Remove="Controllers\LogTrans\**" />
+    <EmbeddedResource Remove="Data\DataStoreDB\**" />
+    <EmbeddedResource Remove="Data\DA\LogTran\**" />
+    <EmbeddedResource Remove="XXTT\**" />
+    <EmbeddedResource Remove="XXWWECCD\**" />
+    <EmbeddedResource Remove="XXWWECC\**" />
+    <EmbeddedResource Remove="XXWWEC\**" />
+    <EmbeddedResource Remove="XXWW\**" />
+    <None Remove="Controllers\LogTrans\**" />
+    <None Remove="Data\DataStoreDB\**" />
+    <None Remove="Data\DA\LogTran\**" />
+    <None Remove="XXTT\**" />
+    <None Remove="XXWWECCD\**" />
+    <None Remove="XXWWECC\**" />
+    <None Remove="XXWWEC\**" />
+    <None Remove="XXWW\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\DataStoreController.cs" />
+    <Compile Remove="Controllers\DynamicDictionary.cs" />
+    <Compile Remove="Controllers\ProvinceController.cs" />
+    <Compile Remove="Data\ML\Data\Data510Set.cs" />
+    <Compile Remove="Models\Shared\Gmodel\I_Result.cs" />
+    <Compile Remove="Models\Shared\Gmodel\LoginSet.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MySql.Data" Version="8.0.30" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Npgsql" Version="6.0.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="Vertica.Data" Version="7.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\Cims\Budget\" />
+    <Folder Include="Models\Shared\Gmodel\" />
+  </ItemGroup>
+
+</Project>

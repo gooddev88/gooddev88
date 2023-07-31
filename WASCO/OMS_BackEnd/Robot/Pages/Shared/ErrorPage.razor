@@ -1,0 +1,43 @@
+﻿@page  "/ErrorPage"
+@*@using CurrieTechnologies.Razor.SweetAlert2
+@using Blazored.SessionStorage
+@using  Robot.Data.GADB.TT 
+@using Robot.Data.DA.Login
+
+@inject ISessionStorageService sessionStorage
+@inject SweetAlertService Swal
+@inject NavigationManager navigation
+@inject GAEntities db 
+@inject AuthenticationStateProvider authStateProvider
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+@using Microsoft.AspNetCore.Http
+@inject StateContainer StateContainer
+@inject LogInService login*@
+
+
+ 
+<div class="container-fluid" style="background-color: #21D4FD; background-image: linear-gradient( 19deg, #21D4FD 0%, #B721FF 100%); padding-bottom: 200px;">
+ <div class="row">
+                    <div class="col-xl-4 col-lg-7 col-md-8 col-sm-9 pt-150 col-11 mx-auto my-auto pb-600">
+                        <div class="card rounded" style="border-radius: 1.25rem !important;">
+                            <div class="card-body"> 
+                                <div class="row"  >
+                                    <div class="col-12 text-center">
+                                        <h4>@ErrorMsg</h4>
+                                    </div>
+                                </div> 
+                            </div>
+                        </div>
+                    </div>
+        </div> 
+</div>
+ 
+@code {
+
+
+    public string ErrorMsg { get; set; } = "";
+
+    
+}

@@ -1,0 +1,142 @@
+﻿@page "/DataQuality/DataQualityList"
+
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+@if (!isLoading) {
+
+    <div class="row pt-2">
+        <div class="col-12 pt-2">
+            <h3>@menuCaption</h3>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-2">
+            <label>วันที่ </label>
+            <TelerikDatePicker @bind-Value="DateFrom"
+                           Format="dd/MM/yyyy">
+            </TelerikDatePicker>
+        </div>
+        <div class="col-2">
+            <label>ถึงวันที่ </label>
+            <TelerikDatePicker @bind-Value="DateTo"
+                           FillMode="@ThemeConstants.DatePicker.FillMode.Solid"
+                           Rounded="@ThemeConstants.DatePicker.Rounded.Medium"
+                           Format="dd/MM/yyyy">
+            </TelerikDatePicker>
+        </div>
+        <div class="col-2">
+            <label>สถานะ</label>
+            <TelerikComboBox @bind-Value="@Status"
+                         Data="@cboStatus"
+                         TextField="@nameof(SelectOption.Description)"
+                         ValueField="@nameof(SelectOption.Value)"
+                         Filterable="true"
+                         Width="100%">
+            </TelerikComboBox>
+        </div>
+        <div class="col-md-3 col-12 pt-4">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-12">
+            <TelerikGrid Data=@DocList
+                     Pageable="true"
+                     Groupable="false"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true"
+                     PageSize="30"
+                     Navigable="true">
+                <GridToolBar>
+                    <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                </GridToolBar>
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field="@nameof(dqt_data_logs.data_set_id)" Title="รหัสชุดข้อมูล" Width="150px" />
+                    <GridColumn Field="@nameof(dqt_data_logs.job_date)" Title="วันที่ job run" Width="140px" DisplayFormat="{0:dd/MM/yyyy}" />
+                    <GridColumn Field="@nameof(dqt_data_logs.job_time)" Title="เวลา job run" Width="130px" DisplayFormat="{0:hh\:mm\:ss}" />
+                    <GridColumn Field="@nameof(dqt_data_logs.job_result)" Title="สถานะ" Width="120px" />
+                    <GridColumn Field="@nameof(dqt_data_logs.job_message)" Title="ข้อความจาก job" Width="250px" />
+                    <GridColumn Field="@nameof(dqt_data_logs.filename)" Title="ชื่อไฟล์นำเข้า" Width="450px" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    DateTime? DateFrom { get; set; }
+    DateTime? DateTo { get; set; }
+    public string SearchText { get; set; } = "";
+    public string Status { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<dqt_data_logs> DocList = new List<dqt_data_logs>();
+    List<SelectOption> cboStatus = new List<SelectOption>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        cboStatus = DataQualityService.ListStatus();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        if (DateFrom == null) {
+            DateFrom = DateTime.Now.Date;
+        }
+        if (DateTo == null) {
+            DateTo = DateTime.Now.Date;
+        }
+        await SetActiveControl();
+        DocList = await _dataQualityService.ListDoc(SearchText,DateFrom.ToString(),DateTo.ToString());
+        
+        if (Status != null)
+        {
+            DocList = DocList.Where(o => o.job_result == Status || Status == "").OrderByDescending(o => o.job_date).ToList();
+        }
+        
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = UserGroupService.GetMenuInfo(login.LogInInfo, "450");
+        menuCaption = menu.menu_name;
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

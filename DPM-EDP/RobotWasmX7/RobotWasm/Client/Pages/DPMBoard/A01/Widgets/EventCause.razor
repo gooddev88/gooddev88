@@ -1,0 +1,52 @@
+﻿@using Telerik.Blazor.Components
+@using static RobotWasm.Client.Pages.DPMBoard.A01.A01Data
+
+
+<a onclick="@DrillDrow" style="font-size:large"> <b style="color:red">DrillDrow</b></a>
+
+
+@if (Conn == "A") {
+
+<TelerikRootComponent>
+    <TelerikGrid Data="@Data"
+                 Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+
+        <GridColumns>
+            <GridColumn Field="@(nameof(ChartData.X))" Title="สาเหตุ" />
+            <GridColumn Field="@(nameof( ChartData.Y))" Title="จำนวน" />
+
+        </GridColumns>
+    </TelerikGrid>
+</TelerikRootComponent>
+} else {
+       <TestDrillDown Cond="@Conn" ></TestDrillDown>
+}
+
+
+
+
+@code {
+    [Parameter] public List<ChartData> Data { get; set; }
+    string Conn = "A";
+
+    async void DrillDrow() {
+        if (Conn == "") {
+            Conn = "A";
+            return;
+        }
+        if (Conn == "A") {
+            Conn = "B";
+            return;
+        }
+        if (Conn == "B") {
+            Conn = "C";
+            return;
+        }
+        if (Conn == "C") {
+            Conn = "A";
+            return;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+ 
+}

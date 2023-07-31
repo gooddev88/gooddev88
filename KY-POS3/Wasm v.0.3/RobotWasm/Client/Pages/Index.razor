@@ -1,0 +1,24 @@
+﻿@page "/"
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        if (!string.IsNullOrEmpty(user))
+        {
+            await Task.Run(() => login.CheckLogin());
+            //nav.NavigateTo("Dashboard/FirstBoard");
+            if (login.LogInInfo.UserInRCompany.Count > 0) {
+                nav.NavigateTo("POS/SelectRCompany");
+            } else {
+                nav.NavigateTo("Dashboard/FirstBoard");
+            }
+        }
+        else
+        {
+            nav.NavigateTo("/Login");
+            await InvokeAsync(StateHasChanged);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

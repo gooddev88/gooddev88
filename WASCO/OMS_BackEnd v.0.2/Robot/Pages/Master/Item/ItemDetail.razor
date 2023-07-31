@@ -1,0 +1,1021 @@
+﻿@page "/Master/Item/ItemDetail"
+@page "/Master/Item/ItemDetail/{xpage}"
+@using Microsoft.AspNetCore.Http;
+@using Robot.Data.DA.Document
+@using Robot.Data.ML
+@using System.IO
+@using Robot.Helper;
+@using static Robot.Data.ML.I_Result
+
+@inject ItemService itemService
+<style>
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/assets/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+</style>
+
+@if (itemService.DocSet != null) {
+    <div class="row">
+        <div class="col-5 px-0">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col-6 text-start">
+                                    <a ID="btnback" class="btn btn-default" @onclick="@Back">
+                                        <span style="color:black"><i class="fas fa-reply-all fa-lg"></i></span>
+                                        <span style="font-size:medium;color:black">กลับ</span>
+                                    </a>
+                                </div>
+                                @if (isShowNew) {
+                                    <div class="col-6 text-end">
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                        @onclick="@NewDoc" Class=""
+                                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                            <i class="fa-solid fa-circle-plus"></i>&nbsp; เพิ่มใหม่
+                                        </TelerikButton>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body p-3 pb-1">
+                            <div class="row pt-2">
+
+                                <div class="col-md-6">
+                                    <span>ยี่ห้อ</span>
+                                    <TelerikComboBox Value="@SelectBrand"
+                                                     Data="@listBrand"
+                                                     ValueChanged="@( (string type) => ValueChangeItemType(type))"
+                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                     ClearButton="true"
+                                                     Filterable="true"
+                                                     Width="100%">
+                                    </TelerikComboBox>
+
+                                </div>
+                                <div class="col-md-6">
+                                    <span>ค้นหา</span>
+                                    <TelerikTextBox PlaceHolder="คำค้นหา" FillMode="@(ThemeConstants.TextBox.FillMode.Outline)" ValueChanged="@OnTextChanged_Search"></TelerikTextBox>
+                                </div>
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-md-6 text-start">
+                                    <TelerikCheckBox Id="chkIsActive" Value="@isShowNotActive" OnChange="@OnChange_chkIsActive"></TelerikCheckBox>
+                                    <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                                </div>
+
+                                <div class="col-md-6 text-end" style="text-align:right;">
+                                    <Button style="color:darkslategrey;" @onclick="@ShowItemList">
+                                        แสดงสินค้าทั้งหมด
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row pt-2" style="min-height:600px">
+                <div class="col-12">
+                    <TelerikGrid Data=@ListItemInfo
+                                 ScrollMode="@GridScrollMode.Virtual"
+                                 Height="600px"
+                                 RowHeight="40"
+                                 PageSize="30"
+                                 Groupable="false"
+                                 Resizable="true"
+                                 Reorderable="true"
+                                 Sortable="true" FilterMode="@GridFilterMode.FilterMenu"
+                                 OnRowClick="@OnRowClickHandler"
+                                 Navigable="true">
+                        <GridColumns>
+
+                            <GridColumn Field="@nameof(vw_ItemInfo.ItemID)" Title="รหัสสินค้า" Width="180px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.Name1)" Title="ชื่อสินค้า" Width="220px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.BrandName)" Title="ยี่ห้อ" Width="80px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.IsActive)" Title="ใช้งาน" Editable="false" Width="8px">
+                                <Template>
+                                    @{
+                                        var data = context as vw_ItemInfo;
+
+
+                                        if (data.IsActive == true) {
+                                            <div class="text-center">
+                                                <span class="badge bg-success" style="font-size:smaller;">ใช้งาน</span>
+                                            </div>
+                                        } else {
+                                            <div class="text-center">
+                                                <span class="badge bg-danger" style="font-size:smaller;">ยกเลิก</span>
+                                            </div>
+                                        }
+
+                                    }
+                                </Template>
+                            </GridColumn>
+
+                        </GridColumns>
+                    </TelerikGrid>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-7 px-0">
+            <div class="row pb-1" style="font-size: smaller;">
+                <div class="col-12">
+                    <div class="card-body">
+                        <TelerikTabStrip TabPosition=@(Telerik.Blazor.TabPosition.Top)>
+                            <TabStripTab Title="ข้อมูลสินค้า">
+                                <div class="row pt-2">
+                                    <div class="col-6">
+                                        <h4>ข้อมูลสินค้าและบริการ</h4>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <h3>
+                                            @if (!string.IsNullOrEmpty(itemService.DocSet.Info.TypeID)) {
+                                                <span>@itemService.DocSet.Info.TypeID</span>
+                                            }
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8 col-sm-12 col-12">
+                                        <div class="row pb-1">
+                                            <div class="col-6">
+                                                <span style="color: gray;">รหัสสินค้าและบริการ</span>
+                                                <TelerikTextBox PlaceHolder="++New++"
+                                                @bind-Value="@itemService.DocSet.Info.ItemID"
+                                                                Enabled="@Itemreadonly" />
+                                            </div>
+                                            <div class="col-6">
+                                                <span style="color: gray;">รหัสอ้างอิง</span>
+                                                <TelerikTextBox @bind-Value="@itemService.DocSet.Info.RefID" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row pb-1">
+                                            <div class="col-12">
+                                                <span style="color: gray;">รายละเอียด 1</span>
+
+                                                <TelerikTextArea @bind-Value="@itemService.DocSet.Info.Name1"
+                                                                 AutoSize="true"
+                                                                 Class="w-100">
+                                                </TelerikTextArea>
+                                            </div>
+                                        </div>
+                                        <div class="row pb-1">
+                                            <div class="col-6">
+                                                <span style="color: gray;">ประเภท</span>
+                                                <TelerikDropDownList @bind-Value="@itemService.DocSet.Info.TypeID"
+                                                                     Data="@listBrand"
+                                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                     Filterable="true"
+                                                                     Width="100%">
+                                                </TelerikDropDownList>
+                                            </div>
+                                            <div class="col-6">
+                                                <span style="color: gray;">หมวด</span>
+                                                <TelerikDropDownList @bind-Value="@itemService.DocSet.Info.CateID"
+                                                                     Data="@ListCate"
+                                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                     Filterable="true"
+                                                                     Width="100%">
+                                                </TelerikDropDownList>
+                                            </div>
+                                        </div>
+                                        <div class="row pb-1">
+                                            <div class="col-6">
+                                                <span style="color: gray;">ยี่ห้อ</span>
+                                                <TelerikDropDownList @bind-Value="@itemService.DocSet.Info.BrandID"
+                                                                     Data="@listBrand"
+                                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                     Filterable="true"
+                                                                     Width="100%">
+                                                </TelerikDropDownList>
+                                            </div>
+                                            <div class="col-6">
+                                                <span style="color: gray;">หน่วย</span>
+                                                <TelerikDropDownList @bind-Value="@itemService.DocSet.Info.UnitID"
+                                                                     Data="@ListUnit"
+                                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                     Filterable="true"
+                                                                     Width="100%">
+                                                </TelerikDropDownList>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pb-1">
+
+                                            <div class="col-6">
+                                                <span style="color: gray;">ราคาขาย(Inc Vat.)</span>
+                                                <TelerikNumericTextBox Decimals="2" Enabled="true" Format="N2"
+                                                                       Class="text-center font-weight-bold" @bind-Value="itemService.DocSet.Info.PriceIncVat"></TelerikNumericTextBox>
+                                            </div>
+                                            <div class="col-6">
+                                                <span style="color: gray;">ราคาโปรโมชั่น(Inc Vat.)</span>
+                                                <TelerikNumericTextBox Decimals="2" Enabled="true" Format="N2"
+                                                                       Class="text-center font-weight-bold" @bind-Value="itemService.DocSet.Info.PriceProIncVat"></TelerikNumericTextBox>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pb-1">
+                                            <div class="col-6">
+                                                <span style="color: gray;">ทุน</span>
+                                                <TelerikNumericTextBox Decimals="2" Enabled="true" Format="N2"
+                                                                       Class="text-center font-weight-bold" @bind-Value="itemService.DocSet.Info.Cost"></TelerikNumericTextBox>
+                                            </div>
+                                            <div class="col-6">
+                                                <span>Vat</span>
+                                                <TelerikDropDownList @bind-Value="@itemService.DocSet.Info.TaxTypeID"
+                                                                     Data="@cboVatType"
+                                                                     TextField="@nameof(TaxInfoService.SelectListTax.TaxName)"
+                                                                     ValueField="@nameof(TaxInfoService.SelectListTax.TaxTypeID)"
+                                                                     Filterable="true"
+                                                                     Width="100%">
+                                                </TelerikDropDownList>
+                                            </div>
+
+                                        </div>
+                                        <div class="row pb-1" hidden>
+                                            <div class="col-6">
+                                                <span style="color: gray;">ลงชื่อบัญชีซื้อ</span>
+                                                <TelerikTextBox @bind-Value="@itemService.DocSet.Info.AccID_Purchase" />
+                                            </div>
+                                        </div>
+                                        <div class="row pb-1">
+                                            <div class="col-12">
+                                                <span style="color: gray;">หมายเหตุ 1</span>
+                                                <TelerikTextArea @bind-Value="@itemService.DocSet.Info.Remark1"
+                                                                 AutoSize="true"
+                                                                 Class="w-100">
+                                                </TelerikTextArea>
+                                            </div>
+                                            <div class="col-12">
+                                                <span style="color: gray;">หมายเหตุ 2</span>
+                                                <TelerikTextArea @bind-Value="@itemService.DocSet.Info.Remark2"
+                                                                 AutoSize="true"
+                                                                 Class="w-100">
+                                                </TelerikTextArea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12 col-12">
+                                        @* Profile*@
+
+                                        <SpinLoader IsLoading="isUploading">
+                                            <LoadingTemplate>
+                                                <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+                                                    <br /><br />
+                                                    <div class="row pt-2">
+                                                        <div class="col-10 mx-auto">
+                                                            <label style="color:blue; font-size:x-small;">... Loading ...</label><br /><br /><br /><br />
+                                                            <CircleFade Color="blue" Size="100px" Center="true" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </LoadingTemplate>
+                                            <ContentTemplate>
+                                                @if (itemService.DocSet.Info.ItemID != "") {
+                                                    <div class="row pb-1">
+                                                        <div class="col-12">
+                                                            <div class="card">
+                                                                <div class="card-body">
+
+                                                                    @*     <div class="row">
+                                                            <div class="col-12">
+                                                            <div class="file-input-zone">
+                                                            <InputFile OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                                            </InputFile>
+                                                            </div>
+                                                            </div>
+                                                            </div>*@
+                                                                    <div class="row pt-3">
+                                                                        <div class="col-12">
+                                                                            <div class="file-input-zone">
+                                                                                <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif">
+                                                                                </InputFile>
+                                                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                                                            </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                    <div class="row pt-1">
+                                                                        <div class="col-10 mx-auto mx-0">
+                                                                            <a @onclick="@DownLoadImage">
+                                                                                <img src=@ImageUrl style="width:100%; height:100%;" onerror="this.onerror=null; this.src='/assets/img/pear.png'">
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="col-12 text-end">
+                                                                            <a class="btn btn-default" @onclick="@OnDeleteProfile"> <i class="far fa-trash-alt"></i></a>
+
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+
+                                                <div class="row pb-1 text-right" hidden="hidden">
+                                                    <div class="col-12">
+                                                        <a @onclick="@Convert2File">
+                                                            <i class="fas fa-photo-video"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                @* End Profile*@
+                                            </ContentTemplate>
+                                        </SpinLoader>
+                                    </div>
+
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 col-sm-6 col-6 text-left pt-4">
+                                        <TelerikCheckBox Id="chkIsActive" @bind-Value="@itemService.DocSet.Info.IsActive"></TelerikCheckBox>
+                                        <label style="font-size:large;">เปิดใช้งาน</label>
+                                        @*<DxCheckBox CssClass="font-weight-bold" @bind-Checked="@itemService.DocSet.Info.IsActive"><span style="font-size:large;">เปิดใช้งาน</span></DxCheckBox>*@
+                                    </div>
+                                    <div class="col-md-4 col-sm-6 col-6 text-center pt-4">
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                        @onclick="@OnSave" Class="w-100 py-2"
+                                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                            <i class="fas fa-save fa-lg"></i>&nbsp;บันทึกข้อมูล
+                                        </TelerikButton>
+                                    </div>
+                                </div>
+                            </TabStripTab>
+
+                            <TabStripTab Title="อัพโหลดสินค้า">
+                                <div class="row pt-2">
+                                    <div class="col-6">
+                                        <h4>อัพโหลดสินค้า</h4>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <h3>
+                                        </h3>
+                                    </div>
+                                </div>
+                                <div class="row pt-2">
+                                    <div class="col-md-8 mx-auto">
+                                        <div class="btn-group" role="group" aria-label="Basic example">
+                                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)" Class="w-40"
+                                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Warning)">
+                                                <div style="position: relative;">
+                                                    <i class="fa-solid fa-file-excel fa-lg" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></i>
+                                                    <span>
+                                                        อัพโหลดสินค้า
+                                                        <InputFile id="uploadFile"
+                                                                   class="upload"
+                                                                   OnChange="OnInputFileExcelChanged"
+                                                                   style="opacity: 0;"
+                                                                   accept=".xlsx"></InputFile>
+                                                    </span>
+                                                </div>
+                                            </TelerikButton>
+                                            &nbsp;
+                                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                            @onclick="@DownLoadProduct"
+                                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                                                โหลดเทมเพลต
+                                            </TelerikButton>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </TabStripTab>
+                        </TelerikTabStrip>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+}
+
+
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+
+@code {
+    [Parameter] public string? xpage { get; set; }
+
+
+
+    bool isLoading = true;
+    bool isUploading = false;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+
+    public bool Itemreadonly { get; set; } = true;
+
+    public string searchText { get; set; } = "";
+    public bool isShowNotActive { get; set; } = false;
+    DateTime? DatePriceFr = DateTime.Now.Date;
+    DateTime? DatePriceTo = DateTime.Now.Date;
+    public string SelectComID { get; set; } = "";
+    public string SelectShipTo { get; set; } = "";
+    public string SelectPriceTaxcon { get; set; } = "";
+    public string SelectUseLevel { get; set; } = "0";
+
+    public decimal Price { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+    public string ImageUrl { get; set; } = "";
+
+    List<SelectOption> item_select_option = new List<SelectOption>();
+
+    //List<MasterTypeLine> listType { get; set; }
+    List<MasterTypeLine> ListUnit { get; set; }
+    List<MasterTypeLine> listBrand { get; set; }
+    List<MasterTypeLine> ListType { get; set; }
+    List<MasterTypeLine> ListCate { get; set; }
+    //List<MasterTypeLine> listSelectBrand { get; set; }
+    List<MasterTypeLine> listPriceTaxcon { get; set; }
+    List<SelectOption> ListUseLevel { get; set; }
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+
+
+
+
+    public string FillMode { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+
+
+
+    List<TaxInfoService.SelectListTax> cboVatType = new List<TaxInfoService.SelectListTax>();
+    public string SelectBrand { get; set; } = "";
+    IEnumerable<vw_ItemInfo> ListItemInfo;
+
+    protected override async Task OnInitializedAsync() {
+        LoadDropDown();
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+
+        LoadDropDownList();
+        await Task.Run(ListGridSearch);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+        if (itemService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(ItemService.sessionActiveId);
+            if (docid == null) {
+                itemService.DocSet = ItemService.NewTransaction(rcom, com);
+                itemService.DocSet.Info.CreatedBy = user;
+            }
+            if (!string.IsNullOrEmpty(docid)) {
+                itemService.DocSet = itemService.GetDocSet(docid, rcom, com);
+            } else {
+                itemService.DocSet = ItemService.NewTransaction(rcom, com);
+                itemService.DocSet.Info.CreatedBy = user;
+            }
+        }
+    }
+
+    async public void LoadDropDown() {
+        var u = login.LoginInfo;
+
+    }
+
+
+    private void LoadDropDownList() {
+
+        var h = itemService.DocSet.Info;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        //List<string> filter_Itemtype = new List<string>() { "DISCOUNT" };
+        listBrand = MasterTypeService.ListType("", "ITEM BRAND", true);
+        ListType = MasterTypeService.ListType("", "ITEM TYPE", true);
+        //Itemtype = Itemtype.Where(o => !filter_Itemtype.Contains(o.ValueTXT)).ToList();
+        //listType = Itemtype;
+        //listSelectType = Itemtype;
+
+        List<string> filter_Itemcate = new List<string>() { "DISC PER", "DISC AMT" };
+        var Itemcate = MasterTypeService.ListType("", "ITEM CATE", true);
+        ListCate = Itemcate.Where(o => !filter_Itemcate.Contains(o.ValueTXT)).ToList();
+
+        //  listSelectBrand = MasterTypeService.ListType("", "ITEM BRAND", true);
+
+        ListUnit = MasterTypeService.ListType("", "UNIT", true);
+        cboVatType = TaxInfoService.MiniSelectListV2("SALE", "THB", false);
+
+
+
+
+    }
+
+    void BindData() {
+        var h = itemService.DocSet.Info;
+
+        if (h.ItemID != "") {
+            Itemreadonly = false;
+        } else {
+            Itemreadonly = true;
+        }
+        Price = h.Price;
+        Task.Run(() => loadProfile());
+    }
+
+    async void LoadData() {
+        isLoading = true;
+        var h = itemService.DocSet.Info;
+        BindData();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+        await SetActiveControl();
+    }
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var h = itemService.DocSet.Info;
+        if (h.ItemID == "") {
+            isShowDelete = false;
+        }
+
+        menuCaption = LogInService.GetMenuInfo(login.LoginInfo, "131").Name;
+        if (!login.CanOpen(login.LoginInfo, "131")) {//131 สินค้าและบริการ
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "131")) {
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "131")) { //131  สินค้าและบริการ
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "131")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+    async void ListGridSearch() {
+        try {
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+            var rcom = login.LoginInfo.CurrentRootCompany.RCompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            ListItemInfo = ItemService.ListDoc(searchText, rcom, com, SelectBrand, isShowNotActive);
+            //if (dxDataGrid != null) {
+            //    await dxDataGrid.Refresh();
+            //}
+        } catch (Exception) {
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+    public async void OnChange_chkIsActive(object value) {
+        if (value != null) {
+            isShowNotActive = Convert.ToBoolean(value);
+            SearchAction();
+        }
+    }
+
+    public async void OnTextChanged_Search(object Search) {
+        if (Search != null) {
+            searchText = Search.ToString();
+            SearchAction();
+        }
+    }
+
+    public async void ValueChangeItemType(string data) {
+        if (!string.IsNullOrEmpty(data)) {
+            SelectBrand = data;
+            SearchAction();
+        } else {
+            SelectBrand = "";
+            SearchAction();
+        }
+    }
+
+    async void SearchAction() {
+        //isLoading = true;
+        await Task.Run(ListGridSearch);
+        //isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnRowClickHandler(GridRowClickEventArgs args) {
+
+        var data = args.Item as vw_ItemInfo;
+        try {
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+            await sessionStorage.SetItemAsync(ItemService.sessionActiveId, data.ItemID);
+            itemService.DocSet = itemService.GetDocSet(data.ItemID, data.RCompanyID, data.CompanyID);
+            item_select_option = new List<SelectOption>();
+            LoadData();
+        } catch (Exception) {
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+    //async void GoToItem(vw_ItemInfo data) {
+    //    await sessionStorage.SetItemAsync(ItemService.sessionActiveId, data.ItemID);
+    //    itemService.DocSet = itemService.GetDocSet(data.ItemID, data.RCompanyID, data.CompanyID);
+    //    item_select_option = new List<SelectOption>();
+    //    LoadData();
+
+
+    //}
+
+    async void NewDoc() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+        await sessionStorage.RemoveItemAsync(ItemService.sessionActiveId);
+        itemService.DocSet = ItemService.NewTransaction(rcom, com);
+        itemService.DocSet.Info.CreatedBy = user;
+        LoadData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    #region Save Item
+    bool ValidData() {
+        var h = itemService.DocSet.Info;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (string.IsNullOrEmpty(h.TypeID)) {
+            Errmsg = "ไม่ได้ระบุ ประเภทสินค้า";
+
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(h.TaxTypeID)) {
+            Errmsg = "ไม่ได้ระบุ VAT";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    private void SetPrimaryData() {
+        var h = itemService.DocSet.Info;
+
+        if (itemService.DocSet.Info.VendorID == null) {
+            itemService.DocSet.Info.VendorID = "";
+        }
+
+        itemService.DocSet.Info.Price = Price;
+    }
+
+    void PrepairDataSave() {
+        var h = itemService.DocSet.Info;
+        h.RCompanyID = login.LoginInfo.CurrentRootCompany.RCompanyID;
+        h.CompanyID = login.LoginInfo.CurrentCompany.CompanyID;
+        if (h.ItemID == "") {
+            h.ItemID = IDRuunerService.GetNewIDV2("ITEM", h.RCompanyID, h.CompanyID, h.CreatedDate.Date, true, "th")[1];
+        }
+        SetPrimaryData();
+    }
+
+    private void Save() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+        PrepairDataSave();
+        var rs = ItemService.Save(itemService.DocSet.Info, user);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            SearchAction();
+            return;
+        } else {
+            itemService.DocSet = itemService.GetDocSet(itemService.DocSet.Info.ItemID, rcom, com);
+            BindData();
+            Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void OnSave() {
+
+        if (!ValidData()) {
+            return;
+        }
+        Save();
+    }
+    #endregion
+
+    #region profile management
+
+    async Task loadProfile() {
+        isUploading = true;
+
+        var i = itemService.DocSet.Info;
+        ImageUrl = FileGo.GetFileUrl(i.RCompanyID, i.CompanyID, FileGo.Type_ItemProfile, i.ItemID);
+        if (string.IsNullOrEmpty(ImageUrl)) {
+            ImageUrl = "/assets/img/applogo.png";
+        }
+        isUploading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnDeleteProfile() {
+        try {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "Warning",
+                    Text = $"ต้องการลบรูปใช่หรือไม่",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+            if (string.IsNullOrEmpty(result.Value)) {
+                return;
+            }
+
+            //string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            var h = itemService.DocSet.Info;
+
+            isUploading = true;
+            var rr = await Task.Run(() => fileGo.DeleteFile(h.RCompanyID, h.CompanyID, FileGo.Type_ItemProfile, h.ItemID, user));
+            if (rr.Result == "ok") {
+                await loadProfile();
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "error");
+            }
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task DownLoadImage() {
+        try {
+            var i = itemService.DocSet.Info;
+            string file_url = FileGo.GetFileUrl(i.RCompanyID, i.CompanyID, FileGo.Type_ItemProfile, i.ItemID);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+        }
+    }
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = itemService.DocSet.Info;
+        if (string.IsNullOrEmpty(h.ItemID)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+        string user = login.LoginInfo.CurrentUser;
+        try {
+            //var old_file_id = FileGo.GetFileId(h.RCompanyID, h.CompanyID, FileGo.Type_ItemProfile, h.ItemID);
+            string photo_id = "";
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_ItemProfile, h.RCompanyID, h.CompanyID, h.ItemID);
+                photo_id = nfile.file_id;
+                #region resize image
+                System.Drawing.Image originalImage = System.Drawing.Image.FromStream(ms);
+                string extension = System.IO.Path.GetExtension(file.Name);
+                extension = extension.Replace(".", "");
+                var imgx = ImageService.ResizeImage(originalImage, 400, 400);
+                if (imgx == null) {
+                    isUploading = false;
+                    StateHasChanged();
+                    await Swal.FireAsync("Error", "Resize image fail.", "error");
+                    return;
+                }
+                MemoryStream resize_image_ms = new MemoryStream();
+                if (extension.ToLower() == "jpg" || extension.ToLower() == "jpeg") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                }
+                if (extension.ToLower() == "gif") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Gif);
+                }
+
+                if (extension.ToLower() == "png") {
+                    imgx.Save(resize_image_ms, System.Drawing.Imaging.ImageFormat.Png);
+                }
+                #endregion
+                nfile.data = Convert.ToBase64String(resize_image_ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+
+
+
+
+            }
+            var token_filego = FileGo.GetFileGoLogin();
+            //var token_filego = await protectedSessionStore.GetAsync<string>(Globals.AuthToken);
+            // var token = token_filego.Success ? token_filego.Value : "";
+            var i = itemService.DocSet.Info;
+            var r_up = await fileGo.UploadFileGo(upload_file, login.LoginInfo.CurrentUser, token_filego.JwtToken);
+            if (r_up.Result == "ok") {
+                ItemService.SavePhotoID(i.RCompanyID, i.CompanyID, i.ItemID, photo_id);
+                //if (old_file_id!=null) {
+                //    var r_del_photo = await Task.Run(() => fileGo.DeleteFileByFileId(h.RCompanyID, h.CompanyID, FileGo.Type_ItemProfile, h.ItemID, old_file_id.FileID, user));
+                //}
+                var r_del_photo = await Task.Run(() => fileGo.DeleteOldFileAfterSave(h.RCompanyID, h.CompanyID, FileGo.Type_ItemProfile, h.ItemID, user));
+                Task.Run(() => loadProfile());
+
+            } else {
+                await Swal.FireAsync("Error", r_up.Message1, "error");
+            }
+
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    //async Task Upload() {
+    //    try {
+    //        var h = itemService.DocSet.Info;
+    //        //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //        //var com = login.LoginInfo.CurrentCompany.CompanyID;
+    //        //var docid = itemService.DocSet.Info.ItemID;
+    //        string user = login.LoginInfo.CurrentUser;
+    //        isUploading = true;
+    //        var login_filego = FileGo.GetFileGoLogin();
+    //        string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+    //        I_BasicResult update_result = new I_BasicResult();
+    //        var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+    //        if (query.StatusCode != "OK") {
+    //            update_result.Result = "fail";
+    //            update_result.Message1 = query.StatusCode;
+    //        } else {
+    //            update_result = (I_BasicResult)query.Result;
+    //            if (update_result.Result == "fail") {
+    //                upload_file.Clear();
+    //                await Swal.FireAsync("Error", update_result.Message1, "error");
+    //                //ShowMessage(false, update_result.Message1);
+    //            } else {
+    //                //ShowMessage(true, "Upload Success");
+
+    //                var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+    //                var rr = FileGo.SaveXFileRef(xfile_ref);
+    //                var rrr = await Task.Run(() => fileGo.DeleteOldFileAfterSave(h.RCompanyID, h.CompanyID, FileGo.Type_ItemProfile, h.ItemID, user));
+    //                await loadProfile();
+    //            }
+    //        }
+    //    } catch {
+    //    } finally {
+    //        isUploading = false;
+    //    }
+    //}
+
+    async void Convert2File() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        // var rr = xfile.ConvertByte2File(rcom, "", "ITEMS_PHOTO_PROFILE");
+        //if (rr.Result == "fail") {
+        //    await Swal.FireAsync("Error", rr.Message1, "error");
+        //} else {
+        //    await Swal.FireAsync("Success", "สร้างรูปใน Server สำเร็จ", "error");
+        //}
+    }
+    #endregion
+
+    async void Back() {
+        @if (!string.IsNullOrEmpty(xpage)) {
+            nav.NavigateTo(itemService.PreviousPageUrl);
+        } else {
+            //var url = pageHistory.GetGoBackPage();
+            //nav.NavigateTo(url);
+            //await InvokeAsync(StateHasChanged);
+            nav.NavigateTo("Dashboard/StartBoard"); 
+        } 
+    }
+    async void ShowItemList() { 
+        //@if (!string.IsNullOrEmpty(xpage)) {
+        //    nav.NavigateTo(itemService.PreviousPageUrl);
+        //} else {
+        //    nav.NavigateTo("Master/Item/ItemList");
+        //} 
+        nav.NavigateTo("Master/Item/ItemList");
+    }
+
+    async void DownLoadProduct() {
+        //if (string.IsNullOrEmpty(stkTransferService.DocSet.Head.LocIDFr)) {
+        //    await Swal.FireAsync("info", "ระบุ คลังต้นทาง", "error");
+        //    return;
+        //}
+        //if (string.IsNullOrEmpty(stkTransferService.DocSet.Head.LocIDTo)) {
+        //    await Swal.FireAsync("info", "ระบุ คลังปลายทาง", "error");
+        //    return;
+        //}
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var h = itemService.DocSet.Info;
+        string donwload_url = nav.BaseUri + $"api/item/iteminfo/DownloadItem/{rcom}";
+        nav.NavigateTo(donwload_url, true);
+    }
+
+
+
+
+    async Task OnInputFileExcelChanged(InputFileChangeEventArgs e) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+
+        var h = itemService.DocSet.Info;
+        //if (string.IsNullOrEmpty(h.TRID)) {
+        //    await Swal.FireAsync("Error", "Save before upload", "error");
+        //    return;
+        //}
+
+        try {
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (10024 * 10024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                // Create a new IFormFile using the MemoryStream
+                IFormFile data = new FormFile(ms, 0, ms.Length, file.Name, file.Name);
+
+                var rs = ItemService.UploadItem(data, itemService.DocSet, rcom, com);
+                if (rs.Result == "ok") {
+                    await Swal.FireAsync("", "อัพโหลดสำเร็จ", "success");
+                } else {
+                    await Swal.FireAsync("Error", rs.Message1, "error");
+                }
+            }
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,90 @@
+﻿@page "/PublishDocument/TopMenu/{cate}"
+@using Blazorise
+@inject DocCateService docCateService
+
+<style>
+.top-menu {
+        position: initial;
+        top: 70px;
+        width: 100%;
+        height: auto;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 1;
+    }
+
+    @@media only screen and (min-width: 290px) {
+        div.top-menu {
+            justify-content: flex-start !important;
+        }
+    }
+
+    @@media only screen and (min-width: 700px) {
+        div.top-menu {
+            justify-content: center !important;
+        }
+    }
+
+        .nav-item {
+        width: 10rem;
+    }
+
+    .samll {
+    font-size:small;
+}
+
+</style>
+
+@if (CboCate != null)
+{
+    <div class="top-menu justify-content-center">
+        <nav class="navbar navbar-expand navbar bg-tranparent justify-content-center pt-0">
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    @foreach (var m in CboCate)
+                    {
+                        <Tooltip Text="@m.cate_name" Placement="TooltipPlacement.Bottom">
+                            <li class="nav-item">
+                                <NavLink class="nav-link px-2 text-center" onclick="@(() =>GotoPublishDoc_Page(m.cate_id))">
+                                    <img src="@m.img_path" class="rounded-circle" alt="" width="70" height="70">
+                                    @if (docCateService.Select_DoccateID == m.cate_id)
+                                    {
+                                        <p class="text-dark samll mt-1 mb-0"><strong style="font-size:large"> @m.cate_name</strong></p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-dark samll mt-1 mb-0">@m.cate_name</p>
+                                    }
+                                </NavLink>
+                            </li>
+                        </Tooltip>
+                    }
+                </ul>
+            </div>
+        </nav>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string cate { get; set; }
+    List<vw_publishdoc_cate>? CboCate;
+    public string select_cateid = "";
+
+    protected override async Task OnInitializedAsync() {
+        CboCate = await _docmentService.ListDocCates();
+        if (string.IsNullOrEmpty(docCateService.Select_DoccateID))
+        {
+            docCateService.Select_DoccateID = CboCate.FirstOrDefault().cate_id;
+        }else
+        {
+            docCateService.Select_DoccateID = cate;
+        }
+
+    }
+
+    async void GotoPublishDoc_Page(string cateid) {
+        nav.NavigateTo($"PublishDocument/ShowPublishRedirect/{cateid}");
+    }
+}

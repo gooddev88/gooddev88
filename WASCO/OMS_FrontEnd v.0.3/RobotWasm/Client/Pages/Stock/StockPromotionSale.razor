@@ -1,0 +1,230 @@
+﻿@page "/Stock/StockPromotionSale"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Param;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB 
+
+<style>
+
+    div.noSelect {
+        -moz-user-select: none; /* Mozilla browsers */
+        -khtml-user-select: none; /* WebKit browsers */
+        user-select: none; /* Standard syntax */
+    }
+    .xx-small {
+        font-size: xx-small;
+    }
+
+    .small {
+        font-size: small;
+    }
+
+    .medium {
+        font-size: medium;
+    }
+
+    .img-fluid {
+        margin: auto;
+    }
+
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+</style>
+ 
+
+
+
+
+<div class="row pt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4>
+                            <a @onclick="Back">
+                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                            </a>
+                        </h4>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+
+                    <div class="col-12 pt-4">
+
+                        <div class="row">
+                            <div class="col-md-2">
+                                <span>คลัง</span>
+                                <TelerikDropDownList @bind-Value="@Filter.LocID"
+                                                     Data="@ListLoc"
+                                                     Filterable=true
+                                                     FilterOperator="@FilterOperator"
+                                                     FilterDebounceDelay="@DebounceDelay"
+                                                     TextField="@nameof(LocationInfo.NameDisplay)"
+                                                     ValueField="@nameof(LocationInfo.LocID)"
+                                                     Width="100%">
+                                </TelerikDropDownList>
+
+                            </div>
+
+                            <div class="col-md-3">
+                                <span>โปรโมชั่น</span>
+                                <TelerikDropDownList Data="@PromotionList"
+                                @bind-Value="@Filter.PromotionID"
+                                                     Filterable=true
+                                                     FilterOperator="@FilterOperator"
+                                                     FilterDebounceDelay="@DebounceDelay"
+                                                     TextField="@nameof(Promotions.ProDesc)"
+                                                     ValueField="@nameof(Promotions.ProID)"
+                                                     Width="100%">
+                                </TelerikDropDownList>
+                            </div>
+                            <div class="col-md-3 pt-4">
+                                <TelerikCheckBox Id="isShowNoZero" @bind-Value="@Filter.ShowNotZero" />
+                                <label for="isShowNoZero">แสดงที่คงเหลือเท่านั้น</label>
+                            </div>
+
+                            <div class="col-md-4 pt-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-3">
+    <div class="col-md-12">
+
+        <iframe src=@PrintUrl style="width:100%;height:700px" frameborder="0"></iframe>
+      
+    </div>
+</div>
+
+ 
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    private StringFilterOperator FilterOperator { get; set; } = StringFilterOperator.Contains;
+
+    private int DebounceDelay { get; set; } = 150;
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+    public string rcom { get; set; } = "";
+    public string com { get; set; } = "";
+    public List<Promotions> PromotionList { get; set; } = new List<Promotions>();
+    string PrintUrl { get; set; } = "";
+    public IEnumerable<LocationInfo> ListLoc;
+    StockBalParam Filter = StockBalanceService.NewItemBalFilterSet();
+      string menuCaption = "สต๊อกคงเหลือตามโปรโมชั่น";
+
+
+    protected override async Task OnInitializedAsync() {
+
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => LoadDropDown());
+        Filter = await Task.Run(() => _stockBalanceService.GetSessionItemBalFiterSet());
+        if (Filter == null) {
+            Filter = StockBalanceService.NewItemBalFilterSet();
+        } 
+        await Task.Run(()=>LoadData(true));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    
+    async Task LoadDropDown() {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID; 
+        var loc_access = login.LogInInfo.UserInLoc.Select(o => o.LocID).ToList();
+        ListLoc = await _stockBalanceService.ListLocID(rcom, com, loc_access);
+        PromotionList = await Task.Run(() => _promotionService.ListPromotion(rcom, com, DateTime.Now.Date));
+        PromotionList.RemoveAll(o => o.ProID == "NO-PROMOTION");
+        await InvokeAsync(StateHasChanged);
+    }
+    async void LoadData(bool isFistLoad) { 
+      
+        try {
+
+            if (Filter == null) {
+                return;
+            }
+            if (string.IsNullOrEmpty(Filter.PromotionID) || string.IsNullOrEmpty(Filter.LocID)) {
+                if (!isFistLoad) {
+                    await Swal.FireAsync("Warning", "กรุณาเลือก คลัง และ โปรโมชั่น", "warning");
+                }
+               
+                return;
+            }
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+            SetDefaultFilter(); 
+            var print_api = await _stockBalanceService.PrintStockPromotion(Filter, login.LogInInfo);
+            if (print_api.Result == "ok") {
+                PrintUrl = print_api.Message2;
+            }
+            await SetActiveControl();
+        } catch   {   } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } 
+    }
+    async void SearchAction() {
+        await Task.Run(() => LoadData(false));
+    }
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+    }
+    void SetDefaultFilter() {
+        Filter.RCom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LogInInfo.CurrentCompany.CompanyID;
+        Filter.LocID = Filter.LocID == null ? "" : Filter.LocID;
+        Filter.Type = Filter.Type == null ? "" : Filter.Type;
+
+        _stockBalanceService.SetSessionItemBalFiterSet(Filter);
+    }
+
+    void GoSelectCustomer() {
+        nav.NavigateTo("Stock/SelectCustomer");
+    }
+     
+
+    void Back() {
+        nav.NavigateTo("Dashboard/FirstBoard");   
+    }
+   
+}

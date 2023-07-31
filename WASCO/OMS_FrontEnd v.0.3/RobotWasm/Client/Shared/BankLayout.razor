@@ -1,0 +1,102 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Pages.Login
+@inherits LayoutComponentBase
+<style>
+    body{
+         background-color: #E4ECF4;
+        overflow: hidden;
+    }
+</style>
+<div Class="container-fluid">
+    <div class="row pb-2 pt-2">
+        <div class="col-12">
+            <div class="card" style="background-color:black;">
+                <div class="card-body py-2">
+                    <div class="row">
+                        <div class="col-6 py-0 px-0">
+                            <img src="img/applogox.png" alt="" style="max-width:4rem;" />&nbsp;
+                            <div class="fixtop-textspan-logo"><strong class="font-SL-yellow">KY POS</strong></div>
+                        </div>
+                        <div class="col-6 py-0 px-2 text-end" style="padding-top: 1.3rem!important;">
+                            <a @onclick="@LogOut">
+                            <i class="fa-solid fa-right-from-bracket" style="font-size:1.3rem; color:#FFD600;"></i>&nbsp;
+                            <strong style="color:#FFD600;">LOGOUT</strong>
+                            </a><br />
+                            <span style="color:white;font-size:small"> @FullName</span>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pb-2 pt-1">
+        <div class="col-12">
+            <div class="card card-info-menu">
+                <div class="card-body py-3">
+                    <div class="row pb-2">
+                        <div class="col-12">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                           @onclick="@ChangeCompany" Class="w-100"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                <i class="fa-solid fa-house-circle-check fa-lg"></i>&nbsp; เปลี่ยนสาขา
+                            </TelerikButton>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-0">@CompanyName</p>
+                            <p class="mb-0">@MacNo</p>
+                            <p class="mb-0">@FullName</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <AuthorizeView>
+    <Authorized>
+     
+    <TelerikRootComponent> 
+    @Body
+    </TelerikRootComponent>
+        </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+</div>
+
+
+
+
+@code {
+    public string CompanyName { get; set; } = "";
+    public string FullName { get; set; } = "";
+    public string MacNo { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(login.CheckLogin);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    async void LoadData() {
+        CompanyName = login.LogInInfo.CurrentRootCompany.Name1;
+        FullName = "ผู้ขาย " + login.LogInInfo.CurrentUserInfo.FullName;
+        MacNo = "รหัสเครื่อง " + login.LogInInfo.CurrentMacNo;
+    }
+
+    void ChangeCompany() {
+        nav.NavigateTo($"POS/ChangeCompany");
+    }
+    async private Task LogOut() {
+        await login.Logout();
+        //nav.NavigateTo("/", true);
+        //nav.NavigateTo("Dashboard/StartBoard", true);
+    }
+    //async private Task Shit() {
+    //    var result = await Http.GetStringAsync("https://admin.disaster.go.th/api/Announcement/GetCountViewInDate?datefrom=20220912&dateto=20220912");
+    //    Console.WriteLine(result);
+    //}
+}

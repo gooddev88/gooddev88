@@ -1,0 +1,18 @@
+﻿@page "/"
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        if (!string.IsNullOrEmpty(user))
+        {
+            nav.NavigateTo("Dashboard/FirstBoard");
+        }
+        else
+        {
+            nav.NavigateTo("/Login");
+            await InvokeAsync(StateHasChanged);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

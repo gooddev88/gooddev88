@@ -1,0 +1,173 @@
+﻿@using RobotWasm.Client.Data.ML.HighChart
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.ThMap
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.BoardParam
+@using System.Globalization
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@inject IJSRuntime jSRuntime;
+
+
+
+<style>
+    .highcharts-figure,
+    .highcharts-data-table table {
+        min-width: 100%;
+        max-width: 100%;
+        margin: 1em auto;
+    }
+
+    #container {
+        height: 400px;
+    }
+
+    .highcharts-data-table table {
+        font-family: Verdana, sans-serif;
+        border-collapse: collapse;
+        border: 1px solid #ebebeb;
+        margin: 10px auto;
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .highcharts-data-table caption {
+        padding: 1em 0;
+        font-size: 1.2em;
+        color: #555;
+    }
+
+    .highcharts-data-table th {
+        font-weight: 600;
+        padding: 0.5em;
+    }
+
+    .highcharts-data-table td,
+    .highcharts-data-table th,
+    .highcharts-data-table caption {
+        padding: 0.5em;
+    }
+
+    .highcharts-data-table thead tr,
+    .highcharts-data-table tr:nth-child(even) {
+        background: #f8f8f8;
+    }
+
+    .highcharts-data-table tr:hover {
+        background: #f1f7ff;
+    }
+</style>
+
+
+<h6>@widgetDesc</h6>
+
+<div class="row">
+
+    <div class="col-12 text-center">
+        @if (xData == null) {
+            <p>ไม่มีข้อมูล</p>
+        } else {
+            @if (xData.Count == 0) {
+                <p>ไม่มีข้อมูล</p>
+            }
+        }
+
+        <div id="div_wg301"></div>
+
+    </div>
+</div>
+@if (isLoading) {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+<div class="row text-end">
+    <div class="col-12">
+        <small style="color:gray">wg301</small>
+    </div>
+</div>
+@code {
+
+    [Parameter] public string BoardID { get; set; }
+    private bool isLoading = false;
+
+
+    public custom_widget_master this_widget = new custom_widget_master();
+    public string widgetDesc { get; set; }
+    List<WG301Data> xData = new List<WG301Data>();
+    private IJSObjectReference _jsModule;
+
+    protected override async Task OnInitializedAsync() {
+
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg301"));
+        widgetDesc = /*this_widget.widget_id + " " + */this_widget.widget_desc;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+        
+                 try {
+                         _jsModule = await jSRuntime.InvokeAsync<IJSObjectReference>("import", "./chart/g10/wg301.js");
+            if (BoardID != null) {
+                await CreateChart();
+            }
+            } catch (Exception) {
+
+            }
+        }
+    }
+
+
+
+    private async Task CreateChart() {
+        try {
+
+            isLoading = true;
+            xData = await Task.Run(() => _g10Service.GetWG301Data());
+            isLoading = false;
+            if (xData.Count == 0) {
+                return;
+            }
+
+            var Series = new List<SeriesElement>();
+            var bar = new SeriesElement();
+            // bar.Color = SeriesElement.RandomColor();
+            bar.Data = new List<object>();
+            bar.Name = "จำนวน อปพร. แยกตามเพศ";
+            //bar.ColorByPoint = true;
+
+            foreach (var d in xData) {
+                var datum = new Datum();
+                if (d.gender == "ชาย") {
+                    datum.Color = "#7B68EE";
+                } else if(d.gender=="หญิง") {
+                    datum.Color = "#FF1493";
+                }else{
+                    datum.Color = "#000000";
+                }
+
+           
+                datum.Name = d.gender;
+                datum.Y = d.count_result;
+                
+
+                bar.Data.Add(datum);
+            }
+            Series.Add(bar);
+            //var x = new XAxis(AxisType.Category);
+
+            var txt = new Title { text = "" };
+            var chart = new ChartData();
+            chart.title = txt;
+            chart.series = Series;
+            await _jsModule.InvokeVoidAsync("wg301", chart);
+
+            await InvokeAsync(StateHasChanged);
+
+        } catch (Exception) {
+
+
+        }
+
+    }
+}
+
+

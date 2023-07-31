@@ -1,0 +1,165 @@
+﻿@page "/upload/UploadPage"
+@using RobotWasm.Client.Data.DA.Xfiles.Model
+@*@inject ISnackbar Snackbar*@
+@inject HttpClient Http
+<PageTitle>Upload And Resize</PageTitle>
+<div class="input-group">
+    <div class="custom-file">
+        <InputFile class="custom-file-input" multiple OnChange="OnChange" accept="image/png, image/jpeg, image/gif,application/pdf" id="inputFile" />
+        <label class="custom-file-label" for="inputFile">Choose file</label>
+    </div>
+    <div class="input-group-append">
+        <button class="btn btn-success" @onclick="Upload" disabled="@isDisabled">Upload</button>
+    </div>
+</div>
+@foreach (var item in upload_file) {
+    if (item.file_type.StartsWith("image")) {
+        <img src="data:@item.file_type;base64,@item.data" />
+    } else {
+        <label>@item.fileName</label>
+        <br />
+    }
+}
+
+@code {
+    // string baseurl = @"https://localhost:4765";
+    ////  string baseurl = @"https://localhost:7159";
+
+
+
+
+
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    string message = "InputFile";
+    bool isDisabled = false;
+
+    async Task OnChange(InputFileChangeEventArgs e) {
+        var files = e.GetMultipleFiles(maximumFileCount: 100); // get the files selected by the users
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+
+        try {
+            foreach (var file in files) {
+                byte[] buf;
+
+                if (file.ContentType.StartsWith("image")) {//เป็นรูปภาพให้ Resize ก่อนอัพโหลด  image/png
+                    var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                    buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+                    using (var stream = resizedFile.OpenReadStream()) {
+                        await stream.ReadAsync(buf); // copy the stream to the buffer
+                    }
+                } else { //เป็น file ธรรมดาให้ขึ้น server เลย
+                    using (var stream = file.OpenReadStream(maxAllowedSize: 99999999)) {//99mb
+                        buf = new byte[file.Size]; // allocate a buffer to fill with the file's data
+                        await stream.ReadAsync(buf); // copy the stream to the buffer
+                    }
+                }
+                string file_id = Guid.NewGuid().ToString().ToLower();
+                upload_file.Add(new FilesInfo {
+                        data = Convert.ToBase64String(buf)
+                                                                 ,
+                        file_type = file.ContentType
+                                                                 ,
+                        fileName = file.Name
+                                                                 ,
+                        app_id = "FileGo"
+                                                                 ,
+                        com_id = ""
+                                                                 ,
+                        rcom_id = ""
+                                                                 ,
+                        doc_cate = ""
+                                                                 ,
+                        file_id = file_id
+                                                                 ,
+                        doc_id = ""
+                                                                 ,
+                        doc_linenum = 0
+                                                                 ,
+                        doc_type = ""
+                                                                 ,
+                        owner_id = user
+                                                                 ,
+                        remark = ""
+
+
+
+                    }
+                                ); // convert to a base64 string!!
+            }
+        } catch (Exception ex) {
+            var ee = ex.Message;
+        }
+        message = "Click UPLOAD to continue";
+    }
+
+    //async Task Upload() {
+    //    string dataEndpointUri = $"{Globals.ApiFilesBaseUrl}/api/xfiles/XFilesService/UploadFileToDB";
+    //    isDisabled = true;
+    //    using (var msg = await Http.PostAsJsonAsync<List<FilesInfo>>(dataEndpointUri, upload_file, System.Threading.CancellationToken.None)) {
+    //        isDisabled = false;
+    //        if (msg.IsSuccessStatusCode) {
+    //            message = $"{upload_file.Count} files uploaded";
+    //            upload_file.Clear();
+    //        }
+    //    }
+    //}
+    async Task Upload() {
+        string dataEndpointUri = $"{Globals.ApiFileGoBaseUrl}/api/xfiles/XFilesService/UploadFileToDB";
+        I_BasicResult update_result = new I_BasicResult();
+        var query = await Task.Run(() => _clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+        if (query.StatusCode != "OK") {
+            update_result.Result = "fail";
+            update_result.Message1 = query.StatusCode;
+        } else {
+            update_result = (I_BasicResult)query.Result;
+            if (update_result.Result == "fail") {
+                ShowMessage(false, update_result.Message1);
+            } else {
+                ShowMessage(true, "Upload Success");
+            }
+        }
+
+    }
+    async void ShowMessage(bool issucess, string msg) {
+        //if (issucess) {
+        //    Snackbar.Add(msg, Severity.Success, config => {
+
+        //    });
+        //} else {
+        //    Snackbar.Add(msg, Severity.Error, config => {
+
+        //    });
+        //}
+
+    }
+
+    #region  oldcode
+    //async public static Task<I_BasicResult>  UploadJaaaa(List<ImageFile> data) {
+    //	I_BasicResult r = new I_BasicResult { Result = "ok", Message1 = "", Message2 = "" };
+    //	string baseurl = @"https://localhost:4765";
+    //	try {
+    //		string dataEndpointUri = $"{baseurl}/api/xfiles/XFiles/UploadFileToDisk";
+    //		HttpClient httpClient = new HttpClient();
+    //		var response = await httpClient.PostAsJsonAsync(dataEndpointUri, data);
+    //		var jsonStr = response.Content.ReadAsStringAsync().Result;
+
+    //		if (response.StatusCode.ToString() != "OK") {
+    //			r.Result = "fail";
+    //			r.Message1 = "shit";
+    //		} else {
+    //                   r = JsonSerializer.Deserialize<I_BasicResult>(jsonStr);
+    //               }
+
+    //           } catch (Exception e) {
+    //               r.Result = "fail";
+    //               if (e.InnerException != null) {
+    //                   r.Message1 = e.InnerException.Message;
+    //               } else {
+    //                   r.Message1 = e.Message;
+    //               }
+    //           }
+    //           return r;
+    //       }
+    #endregion
+
+}

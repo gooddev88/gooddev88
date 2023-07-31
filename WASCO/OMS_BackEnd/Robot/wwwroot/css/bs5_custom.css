@@ -1,0 +1,33 @@
+﻿.card-r {
+    margin-top: 0.1em;
+    padding: 0.1em 0.1em 0.1em !important;
+    border-radius: 1em !important;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.img-circle {
+    width: 65%;
+    border-radius: 50%;
+    margin: 0 auto;
+    box-shadow: 0 0 10px rgba(0,0,0,.2);
+}
+
+.btn-success-r {
+    border-radius: 2em !important;
+    background-color: teal !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    padding: 0.5em 1.5em;
+}
+
+.btn-link-r {
+    text-decoration: none !important;
+}
+
+.btn-warning-r {
+    border-radius: 2em !important;
+    background-color: orangered !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    padding: 0.5em 1.5em;
+}

@@ -1,0 +1,121 @@
+﻿@page "/LoginFromApp/{reqid}"
+@layout PublicLayout
+@using static Robot.Data.ML.I_Result;
+@using Robot.Data
+@using static Robot.Data.DA.LoginCrossApp.LogInCrossAppService
+@inject NavigationManager navigation
+@inject LogInService login
+@inject LogInCrossAppService logInCrossAppService
+@*@using CurrieTechnologies.Razor.SweetAlert2
+@using Blazored.SessionStorage
+@using Robot.Data.DA.LoginCrossApp
+@using Robot.Data.GADB.TT
+@using Robot.Data.FILEDB.TT
+
+
+
+@inject ISessionStorageService sessionStorage
+@inject SweetAlertService Swal
+
+@inject GAEntities db
+@inject FILEEntities dbfile
+@inject AuthenticationStateProvider authStateProvider
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+@using Microsoft.AspNetCore.Http
+@using System.Threading
+
+@inject StateContainer StateContainer
+
+@inject LocalStorageService localStorage*@
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-2 mx-auto">
+            <div class="col-8 pt-1 text-center">
+                <img src="/assets/img/loading-bar.gif" />
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+    [Parameter]
+    public string reqid { get; set; }
+    LogInCrossAppReqX reqInfo = new LogInCrossAppReqX();
+    bool isLoading = true;
+
+    protected override   void OnInitialized() {
+  
+    }
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+       
+          await Task.Run(() => login.CheckLogin());
+        await Task.Run(()=> OnLogin());
+    }
+ 
+
+    async Task OnLogin() {
+        if (!string.IsNullOrEmpty(reqid)) {
+            reqInfo = logInCrossAppService.GetReqInfo(reqid);
+            var result_req = IsValidReq(reqInfo);
+            if (result_req.Result == "fail") { 
+                navigation.NavigateTo($"Login", true);
+            } else {
+                login.LoginInfo= LogInService.Login(reqInfo.Username, "silent","KYPOS",reqInfo.RComID);
+                if (login.LoginInfo.LoginResultInfo == "fail") {
+                    navigation.NavigateTo($"Login", true);
+                } else {
+                    ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(reqInfo.Username); 
+                    navigation.NavigateTo(reqInfo.ForwardToUrl, false);
+                }
+            }
+        }
+        isLoading = false;
+
+    }
+
+    I_BasicResult IsValidReq(LogInCrossAppReqX reqInfo) {
+        I_BasicResult r = new I_BasicResult { Result = "ok", Message1 = "", Message2 = "" };
+        if (reqInfo == null) {
+            r.Result = "fail";
+            r.Message1 = "No request record found.";
+            return r;
+        }
+        if (reqInfo.ExpiryTime <= DateTime.Now) {
+            r.Result = "fail";
+            r.Message1 = "request was expired.";
+            return r;
+        }
+        if (reqInfo.ExpiryTime <= DateTime.Now) {
+            r.Result = "fail";
+            r.Message1 = "request was expired.";
+            return r;
+        }
+        if (reqInfo.UseTime != null) {
+            r.Result = "fail";
+            r.Message1 = "request was used.";
+            return r;
+        }
+        return r;
+    }
+
+}

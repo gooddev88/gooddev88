@@ -1,0 +1,358 @@
+﻿@page "/LINE/ReportSalesSummary"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.ML
+@using Robot.Data.DA.REPORTS.PO
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+@inject POSSaleConverterService POSSaleConverterService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+<style>
+    .btn-link {
+        font-weight: 400 !important;
+        color: #007bff !important;
+        text-decoration: none !important;
+    }
+
+        .btn-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        .btn-link:not(:disabled):not(.disabled).active, .btn-link:not(:disabled):not(.disabled):active, .show > .btn-link.dropdown-toggle {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+    .rz-datepicker-calendar {
+        width: 100%;
+    }
+
+    .rz-colorpicker, .rz-lookup-search input, .rz-spinner,
+    .rz-calendar .rz-inputtext, .rz-multiselect, .rz-dropdown,
+    .mask, .rz-textarea, .rz-textbox {
+        line-height: 1.2;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-2">
+            <div class="col-10 px-2 mx-auto">
+                <div class="row">
+                    <div class="col-12">
+
+                        <div class="row text-center">
+                            <div class="col-12">
+                                <img src="/SALE/assets/img/applogo.png" style="width: 5.625rem;" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <h3 class="font-weight-bold text-dark">
+                                    <label>รายงานสรุปยอดขาย</label>
+                                </h3>
+                            </div>
+                            <div class="col-md-12 text-center">
+                                <label style="font-size:larger;">@login.LoginInfo.CurrentUserInfo.FullName</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <a ID="btnback" style="font-size:medium;" class="btn btn-link text-decoration" @onclick="@Back">
+                                    <span>กลับสู่หน้าหลัก</span>
+                                </a>&nbsp;
+                                <a ID="btnback" style="font-size: medium; color: DeepPink;" class="btn text-decoration" @onclick="@ChangeDate">
+                                    <span>@Convert.ToDateTime(myDate).ToString("dd/MM/yyyy")</span>
+                                </a>
+                            </div>
+                         
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-4" hidden="@IsShowDivChangeDate">
+            <div class="col-md-6 col-sm-11 col-11 mx-auto text-center">
+             
+               
+                <TelerikDatePicker T="DateTime" OnChange="@MyDateChange"   Format="dd MMMM yyyy" ></TelerikDatePicker>
+            </div>
+        </div>
+
+        <div hidden="@IsDivDetail">
+            @if (ListDoc.Count() != 0)
+            {
+                <div class="row pt-3">
+                    <div class="col-11 mx-auto">
+                        @foreach (var l in ListDoc)
+                        {
+                            <div class="card mb-3" style="box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);">
+                                <div class="card-header">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <h5 style="font-weight:bold;">@l.BranchName</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>ยอดสินค้า</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.NettotalAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>vat สินค้า</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.NettotalVatAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>รวมทั้งหมด</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.NettotalAmtIncVat.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>ปัดเศษ</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.RoundDown.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>ยอดรวมหลังปัดเศษ</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.NetTotalAfterRound.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>รวมบิล</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.TotalBill.ToString("N0")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>รวมบิลที่ยกเลิก</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.TotalBill.ToString("N0")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>รวมที่จ่ายเงินสด</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.CashPayAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>รวมที่จ่ายโอน</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.TransferPayAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>ค่าเฉลี่ยต่อบิล</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@Convert.ToDecimal(l.AVGPerBIll).ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <hr class="my-3" style="border-top: 2px dotted;" />
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>GRAB</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.GrabAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>PANDA</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.PandaAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>LINEMAN</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.LineManAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    @*<div class="row" style="flex-wrap: unset;">
+                                    <div class="col-6 text-left">
+                                        <span style="color: black; font-size: small;"><strong>GOJEK</strong> </span>
+                                    </div>
+                                    <div class="col-6 text-right">
+                                        <span style="color: black; font-size: small;">@l.GoJekAmt.ToString("N2")</span>
+                                    </div>
+                                </div>*@
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>ROBINHOOD</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.RobinAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="flex-wrap: unset;">
+                                        <div class="col-6 text-left">
+                                            <span style="color: black; font-size: small;"><strong>SHOPEE</strong> </span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: black; font-size: small;">@l.ShopeeAmt.ToString("N2")</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row pt-5">
+                    <div class="col-12 text-center">
+                        <img src="/SALE/assets/img/filesearch.png" style="width:9rem;" /><br />
+                        <span class="font-weight-bold" style="color:gray;"> ยังไม่มีรายการยอดขาย </span>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+
+@code {
+    bool isLoading = true;
+    DateTime? myDate = DateTime.Now.Date;
+    public string FullName { get; set; } = "";
+    public bool IsShowDivChangeDate { get; set; } = true;
+    public bool IsDivDetail { get; set; } = false;
+
+
+    List<SalesSummary> ListDoc = new List<SalesSummary>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        string uri = nav.Uri;
+        pageHistory.AddPageToHistory(uri);
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+    void LoadData()
+    {
+        SetValue();
+        FullName = login.LoginInfo.CurrentUserInfo.FullName;
+        ListDoc = POReportService.ListReportSalesSummaryl(login.LoginInfo.CurrentRootCompany.CompanyID, "", Convert.ToDateTime(myDate), Convert.ToDateTime(myDate));
+        isLoading = false;
+    }
+
+
+    void SetValue()
+    {
+        if (myDate == null)
+        {
+            myDate = DateTime.Now.Date;
+        }
+    }
+
+    void ChangeDate()
+    {
+        IsShowDivChangeDate = false;
+        IsDivDetail = true;
+        InvokeAsync(StateHasChanged);
+
+    }
+      private void MyDateChange(object theUserInput)
+    {
+        // the handler receives an object that you may need to cast to the type of the component
+        // if you do not provide a Value, you must provide the Type parameter to the component
+        myDate =  (DateTime)theUserInput; 
+      
+        IsShowDivChangeDate = true;
+        IsDivDetail = false;
+        LoadData();
+        InvokeAsync(StateHasChanged);
+    }
+    //void OnChange(DateTime? value, string name, string format)
+    //{
+    //    dtDate = value;
+    //    IsShowDivChangeDate = true;
+    //    IsDivDetail = false;
+    //    LoadData();
+    //    InvokeAsync(StateHasChanged);
+    //}
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"Menu/LineMenuReport", false);    
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

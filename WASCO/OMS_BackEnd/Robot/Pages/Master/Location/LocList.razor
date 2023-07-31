@@ -1,0 +1,266 @@
+﻿@page "/Master/Location/LocList"
+
+@using System.Text.Json
+@using System.Text
+
+@using Blazorise
+@using Robot.Data.DA.Document;
+@using Robot.Data.DA.HR;
+@using static Robot.Data.ML.I_Result;
+
+@inject LocService locService
+
+
+<style>
+    thead tr {
+        background-color: #f3f3f3 !important;
+        color: black !important;
+        text-align: left !important;
+    }
+
+    th, td {
+        padding: 12px 15px !important;
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: #f3f3f3 !important;
+    }
+
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #08a1a1 !important;
+    }
+
+    .table-active.bg-primary {
+        background-color: #08a1a1 !important;
+        color: #ffffff !important;
+    }
+</style>
+
+ 
+
+        <div class="row">
+
+            <div class="col-12 text-end">
+                <a @onclick="@NewDoc" class="text-decoration-none">
+                    <i class="fas fa-plus-circle fa-lg"></i>เพิ่มคลัง
+                </a>
+            </div>
+        </div>
+
+
+<div class="row pt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4>
+                            <a @onclick="Back">
+                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                            </a>
+                        </h4>
+                    </div>
+
+                </div>
+
+
+
+
+
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+
+                    <div class="col-12 pt-4">
+
+                        <div class="row">
+                      @*      <div class="col-md-3 col-12">
+                                <span>คลัง</span>
+                                <TelerikDropDownList @bind-Value="@Filter.LocID"
+                                                 Data="@ListLoc"
+                                                 TextField="@nameof(LocationInfo.LocID)"
+                                                 ValueField="@nameof(LocationInfo.Name)"
+                                                 ItemHeight="35"
+                                                 Filterable="true"
+                                                 Size="ThemeConstants.DropDownList.Size.Large"
+                                                 Width="100%">
+                                </TelerikDropDownList>
+                            </div>*@
+
+                            <div class="col-4 pt-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+        <div class="row pt-1">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="20"
+                             Navigable="true">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(LocationInfo.LocID)" Title="แก้ไข" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                            var data = context as LocationInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+
+                <GridColumn Field=@nameof(LocationInfo.LocID) Title="รหัสคลัง" Width="110px" />
+                <GridColumn Field=@nameof(LocationInfo.LocCode) Title="Loc Code" Width="150px" />
+                <GridColumn Field=@nameof(LocationInfo.Name) Title="ชื่อคลัง" Width="150px" />
+                
+                       @* <GridColumn Field=@nameof(LocationInfo.CreatedBy) Title="สร้างโดย" Width="150px" />
+                <GridColumn Field=@nameof(LocationInfo.CreatedDate) Title="วันที่สร้าง" DisplayFormat="{0:dd/MM/yyyy  HH:mm:ss}" Width="150px" />*@
+                        <GridColumn Field=@nameof(LocationInfo.ModifiedBy) Title="แก้ไขโดย" Width="150px" />
+                <GridColumn Field=@nameof(LocationInfo.ModifiedDate) Title="วันที่แก้ไข" DisplayFormat="{0:dd/MM/yyyy  HH:mm:ss}" Width="150px" />
+
+
+                    </GridColumns>
+                </TelerikGrid>
+
+
+            </div>
+        </div>
+
+        <div class="demo-container">
+            <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                                    Text="ระบบกำลังประมวลผล ....."
+                                    Visible="@isLoading"
+                                    LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+        </div>
+@code {
+    [Parameter] public string topic { get; set; } = "";
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    LocService.I_LocationInfoSetFiterSet Filter = LocService.NewFilterSet();
+    List<LocationInfo> DocList = new List<LocationInfo>();
+    public IEnumerable<LocationInfo> ListLoc;
+    public LocationInfo SelectLoc { get; set; }
+    protected override async Task OnInitializedAsync() {
+
+        await Task.Run(LoadDropDownList);
+        Filter = await Task.Run(() => locService.GetSessionLocationInfoFiterSet());
+        if (Filter == null) {
+            Filter = LocService.NewFilterSet();
+        }
+
+        await Task.Run(() => login.CheckLogin());
+
+        pageHistory.AddPageToHistory(nav.Uri);
+
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task LoadDropDownList() {
+
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var loc_access = login.LoginInfo.UserInLoc.Select(o=>o.LocID).ToList();
+        ListLoc = LocService.ListLocID(rcom, com, loc_access);
+
+    }
+
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList = LocService.ListDoc(Filter);
+
+
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "171");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "171")) {
+
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "171")) {
+            isShowNew = false;
+        }
+    }
+
+
+    private void SetDefaultFilter() {
+        Filter.Rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+        Filter.LocID = Filter.LocID == null ? "" : Filter.LocID;
+        locService.SetSessionLocationInfoFiterSet(Filter);
+    }
+
+    async void Edit(LocationInfo data) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var modified_by = login.LoginInfo.CurrentUser;
+        var modified_date = DateTime.Now.Date;
+        isLoading = true;
+
+        await sessionStorage.SetItemAsync(LocService.sessionActiveId, data.ID);
+        locService.DocSet = locService.GetDocSet(data.ID,rcom,com);
+        nav.NavigateTo($"Master/Location/LocDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+ 
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async void NewDoc() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        await sessionStorage.RemoveItemAsync(LocService.sessionActiveId);
+        locService.DocSet = locService.NewTransaction(rcom,com);
+        nav.NavigateTo($"Master/Location/LocDetail", false);
+    }
+
+
+    public void Back() {
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+
+}

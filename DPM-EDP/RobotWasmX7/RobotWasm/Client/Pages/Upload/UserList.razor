@@ -1,0 +1,44 @@
+﻿@page "/upload/UserList"
+
+@using System.Net.Http.Json;
+@using RobotWasm.Client.Data.DA.Data 
+@inject HttpClient _httpClient
+<MudTable ServerData="@(new Func<TableState, Task<TableData<UserInfo>>>(LoadUser))" @ref="table">
+    <ToolBarContent>Todo List</ToolBarContent>
+    <HeaderContent>
+        <MudTh>Username</MudTh>
+        <MudTh>EmpCode</MudTh>
+        <MudTh>FullName</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Username</MudTd>
+        <MudTd DataLabel="Item Name">@context.EmpCode</MudTd>
+        <MudTd DataLabel="Is Completed">@context.FullName</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        @*<MudTablePager PageSizeOptions="pageSizeOptions"></MudTablePager>*@
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 15 }" RowsPerPageString="your-own-text" />
+    </PagerContent>
+</MudTable>
+
+@code{
+
+
+    private MudTable<UserInfo> table;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        table.SetRowsPerPage(5);
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+    public async Task<TableData<UserInfo>> LoadUser(TableState state)
+    {
+        string URL = $"{Globals.ApiLogInBaseUrl}/api/user/UserService/ListUser?skip={(state.Page + 1)}&take={state.PageSize}&sort=''&fillter=''";
+
+        var response = await _httpClient.GetFromJsonAsync<UserInfoPagination<List<UserInfo>>>(URL);
+ 
+ 
+        return new TableData<UserInfo>() { Items = response.Data, TotalItems = response.TotalRecords };
+    }
+}

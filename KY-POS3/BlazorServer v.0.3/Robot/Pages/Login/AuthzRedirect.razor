@@ -1,0 +1,27 @@
+﻿@*@using Robot.Data
+@inject AuthenticationStateProvider authStateProvider*@
+
+
+@*@inject NavigationManager Navigation
+
+
+@using Robot.Data
+@using Robot.Data.DA.LoginCrossApp
+@inject LogInService login
+@inject LogInCrossAppService LogInCrossAppService*@
+
+@code {
+
+ 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateTask;
+        ((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        nav.NavigateTo("Login", true);
+ 
+    }
+
+}

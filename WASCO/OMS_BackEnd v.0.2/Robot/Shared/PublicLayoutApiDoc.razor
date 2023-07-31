@@ -1,0 +1,76 @@
+﻿@using Robot.Components
+@using Robot.Pages
+@inherits LayoutComponentBase
+
+    <style>
+    /*.container-lg {
+        max-width: 1460px;
+    }*/
+
+    .bg-dark {
+        background-color: darkslategrey !important;
+    }
+
+    .darkslategrey-white {
+        background-color: darkslategrey !important;
+        color: white !important;
+    }
+</style>
+
+<ReconnectDialog> </ReconnectDialog>
+
+                <nav class="navbar fixed-top navbar-expand navbar-light bg-light" style="background-color:#696cff !important;">
+        <div class="container justify-content-start">
+            <a class="text-decoration-none" href="ApiDoc/ApiDocList">
+                                <img src="/assets/img/dpmlogo_circle.png" style="width: 40px;" />&nbsp;&nbsp;
+                                <span style="color: white;">กรมป้องกันและบรรเทาสาธารณภัย</span>
+                                </a>
+        </div>
+    </nav>
+
+<TelerikRootComponent>
+    <div class="container-fluid" style="padding-top: 60px;">
+        @Body
+    </div>
+</TelerikRootComponent>
+@*        <Layout Sider Class="b-docs">
+            <LayoutSider>
+                <LayoutSiderContent>
+                    <Bar @ref="@sideBar" Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark"
+                         Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Hide">
+
+                         </Bar>
+                         </LayoutSiderContent>
+                          </LayoutSider>
+
+            <Layout>
+                <LayoutHeader ElementId="docs-layout-header">
+                    <Bar Class="b-top-bar" @ref="@topBar" @bind-Visible="@topBarVisible"
+                         Breakpoint="Breakpoint.Desktop" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark">
+                         <BarToggler Bar="@sideBar" Border="Border.Is0" />
+                        <BarBrand Display="Display.None.InlineBlock.OnDesktop">
+                            <BarItem Class="ps-5">
+                                <a class="text-decoration-none" href="ApiDoc/ApiDocList">
+                                <img src="/assets/img/dpmlogo_circle.png" style="width: 40px;" />&nbsp;&nbsp;
+                                <span style="color: white;">กรมป้องกันและบรรเทาสาธารณภัย</span>
+                                </a>
+                            </BarItem>
+                        </BarBrand>
+                    </Bar>
+                </LayoutHeader>
+                <LayoutContent Padding="Padding.Is0.OnX.Is4.OnY.Is2.OnWidescreen" Class="mt-1">
+                    <Container Breakpoint="Breakpoint.Widescreen">
+                        <TelerikRootComponent>
+                            <div class="container-fluid">
+                        @Body
+                        </div>
+                        </TelerikRootComponent>
+                    </Container>
+                </LayoutContent>
+            </Layout>
+        </Layout>*@
+
+        @code {
+
+
+        }

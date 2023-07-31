@@ -1,0 +1,56 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RobotWasm.Shared.Data.GaDB {
+    public partial class CompanyInfo {
+        public int ID { get; set; }
+        public string RCompanyID { get; set; }
+        public string CompanyID { get; set; }
+        public string GroupCode { get; set; }
+        public string ComCode { get; set; }
+        public string BrnCode { get; set; }
+        public string ParentID { get; set; }
+        public string ShortCode { get; set; }
+        public string TypeID { get; set; }
+        public string Name1 { get; set; }
+        public string Name2 { get; set; }
+        public string TaxID { get; set; }
+        public string BillAddr1 { get; set; }
+        public string BillAddr2 { get; set; }
+        public string AddrFull { get; set; }
+        public string AddrFull2 { get; set; }
+        public string AddrNo { get; set; }
+        public string AddrTanon { get; set; }
+        public string AddrTumbon { get; set; }
+        public string AddrAmphoe { get; set; }
+        public string AddrProvince { get; set; }
+        public string AddrPostCode { get; set; }
+        public string AddrCountry { get; set; }
+        public string Tel1 { get; set; }
+        public string Tel2 { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string Fax { get; set; }
+        public string BankCode { get; set; }
+        public string BookBankNo { get; set; }
+        public string BookBankName { get; set; }
+        public string PromptPay { get; set; }
+        public string PromptPayAccType { get; set; }
+        public string QrPaymentData { get; set; }
+        public string? StockType { get; set; }
+        public string SalePersonID { get; set; }
+        public string Remark1 { get; set; }
+        public string Remark2 { get; set; }
+        public bool? IsWH { get; set; }
+        public bool? IsVatRegister { get; set; }
+        public string PriceTaxCondType { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public string ModifiedBy { get; set; }
+        public DateTime? ModifiedDate { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

@@ -1,0 +1,1 @@
+http://me.disaster.go.th:8000/swagger/ui/index

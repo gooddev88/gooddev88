@@ -1,0 +1,131 @@
+﻿@page "/Q/QFlood/{group_id}"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+
+    .deeppink{
+        color:deeppink;
+    }
+
+        .shadow {
+        border-radius: 10px;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+
+</style>
+
+<div class="text-center pb-3 pt-2">
+    <h4 class="fw-bold">แบบสอบถาม</h4>
+</div>
+
+@if (!isLoading) {
+
+    <div class="row pb-3 pt-4">
+        <div class="col-6">
+            <h5>พบ @count_result_search รายการ</h5>
+        </div>
+        <div class="col-6 text-end">
+            <TelerikTextBox PlaceHolder="คำค้นหา" Class="box-sd-inputsearch" ValueChanged="@OnTextChangedData"></TelerikTextBox>
+        </div>
+    </div>
+
+
+    @if (ListVillage.Count() > 0) {
+        <div class="row">
+            @foreach (var l in ListVillage.Skip((Page - 1) * PageSize).Take(PageSize).ToList()) {
+                <div class="col-12">
+                    <div class="card mb-2 shadow">
+                        <div class="card-body">
+                            <a class="text-decoration-none text-dark" style="cursor: pointer !important" onclick="@(() =>ToFloodDetail(l.mcode))">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label style="font-size:large;">
+                                            <span style="font-size:large;">@l.mname</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-12">
+                                        <label style="font-size:smaller;">
+                                            ต.@l.tname อ.@l.aname จ.@l.pname
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <TelerikPager @bind-PageSize="@PageSize" Total="@TotalCount" ButtonCount="7" @bind-Page="@Page"></TelerikPager>
+    } else {
+        <div class="row pt-5">
+            <div class="col-12 text-center" style="color:darkgray;">
+                <i class="fa-solid fa-note-sticky fa-3x"></i> <br />
+                <h5>  ไม่พบข้อมูล ...</h5>
+            </div>
+        </div>
+    }
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string group_id { get; set; }
+    private bool isLoading = false;
+    public List<a_mm> ListVillage = new List<a_mm>();
+    string count_result_search = "0";
+    string SearchText = "";
+
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 30;
+    public int TotalCount { get; set; }
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => LoadData());
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadData() {
+        ListVillage = await _qfloodService.ListVillage(SearchText);
+        count_result_search = ListVillage.Count().ToString("n0");
+        TotalCount = ListVillage.Count();
+        //_qService.DocSet = await Task.Run(() => _qService.GetDocSet(user, group_id));
+    }
+
+    async void ToFloodDetail(string mcode) {
+        await sessionStorage.SetItemAsync(Globals.ActiveID_MCODE,mcode);
+        //_qfloodService.DocSet = await _qfloodService.GetDocSet(mcode);
+        nav.NavigateTo($"Q/QFloodDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+        public async void OnTextChangedData(object Search) {
+        if (Search != null) {
+            SearchText = Search.ToString();
+            await Task.Run(LoadData);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+}

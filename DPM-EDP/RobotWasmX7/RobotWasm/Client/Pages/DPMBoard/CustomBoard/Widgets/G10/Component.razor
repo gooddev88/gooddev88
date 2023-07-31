@@ -1,0 +1,261 @@
+﻿@inject IJSRuntime jSRuntime;
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@using Telerik.Blazor
+@*@inject IMarkerFactory _MarkerFactory
+@inject ICircleMarkerFactory _CircleMarkerFactory*@
+@*<style>
+
+    .main {
+        height: calc(100% - var(--navbar-height));
+        display: grid;
+        grid-template-rows: 0.1fr 0.9fr;
+        grid-template-columns: 1fr minmax(400px, 0.25fr);
+        gap: 1rem;
+        background: var(--gray-two);
+        padding-left: 2rem;
+        padding-right: 2rem;
+        padding-bottom: 4rem;
+        padding-top: 1rem;
+    }
+
+        .main .top-container {
+            grid-column: 1/ span 2;
+            display: flex;
+            align-items: center;
+        }
+
+            .main .top-container .page-header {
+                font-size: 3rem;
+                font-weight: bold;
+                margin-left: 0.5rem;
+                margin-bottom: 0 !important;
+                color: inherit;
+            }
+
+        .main .map-wrapper {
+            grid-row: 2;
+            grid-column: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        .main .side-panel {
+            grid-row: 2;
+            grid-column: 2;
+            background: var(--white);
+            box-shadow: 0px 3px 6px var(--gray-three);
+            border-radius: var(--border-radius-base);
+            padding: 2rem var(--horizontal-outer-padding);
+        }
+
+            .main .side-panel .header {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+
+    #mapId {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: var(--border-radius-base) !important;
+    }
+
+        #mapId > div.leaflet-control-container > div.leaflet-top.leaflet-left > div {
+            border: 1px solid #E9E9E9;
+            box-shadow: 0px 3px 6px #00000029;
+            border-radius: 8px;
+            background: var(--white);
+        }
+
+            #mapId > div.leaflet-control-container > div.leaflet-top.leaflet-left > div > a.leaflet-control-zoom-in,
+            #mapId > div.leaflet-control-container > div.leaflet-top.leaflet-left > div > a.leaflet-control-zoom-out {
+                color: var(--green-four);
+                background: transparent;
+            }
+
+</style>
+*@
+<style>
+    #mapId {
+        height: 400px;
+    }
+</style>
+<h6>@widgetDesc</h6>
+<Map @ref="mapRef" MapOptions="@mapOptions"></Map>
+<a @onclick="async () => await AddMarkers()"> AddMarkers</a>
+
+@code {
+
+    [Parameter] public string? BoardID { get; set; }
+
+
+    bool isLoading = false;
+    public string? widgetDesc { get; set; } 
+    public List<BubbleModel> xData { get; set; } = new List<BubbleModel>(); 
+    public custom_widget_master this_widget = new custom_widget_master();
+
+    //shit
+    private double firstLat = 50.24;
+    private double secondLat = 50.30;
+    private double firstLng = 18.62;
+    private double secondLng = 18.75;
+    private LatLng GetRandomLatLng() {
+        Random random = new Random();
+        double lat = random.NextDouble() * (this.secondLat - this.firstLat) + this.firstLat;
+        double lng = random.NextDouble() * (this.secondLng - this.firstLng) + this.firstLng;
+        return new LatLng(lat, lng);
+    }
+    //end shit
+
+
+    //public async Task AddCircleMarkers() {
+    //    this.circleMarker1 = await _CircleMarkerFactory.CreateAndAddToMap(this.fifteenthLatLng, this.mapRef, circleMarkerOptionsInit);
+    //    this.circleMarker2 = await _CircleMarkerFactory.CreateAndAddToMap(this.sixteenthLatLng, this.mapRef, circleMarkerOptionsInit);
+
+    //    await circleMarker1.BindPopup("Hi! This is a popup");
+    //    await circleMarker1.TogglePopup();
+    //    await circleMarker2.BindPopup("Hi! This is a popup");
+    //}
+
+    //   public async Task<CircleMarker> CreateAndAddToMap(LatLng latLng, Map map, CircleMarkerOptions options)
+    //{
+    //    CircleMarker circleMarker = await this.Create(latLng, options);
+    //    await circleMarker.AddTo(map);
+    //    return circleMarker;
+    //}
+
+    //public Map mapRef;
+    //public MapOptions mapOptions;
+    private CircleMarker circleMarker1;
+    private CircleMarker circleMarker2;
+    private LatLng fifteenthLatLng;
+    private LatLng sixteenthLatLng;
+    private CircleMarkerOptions circleMarkerOptionsInit;
+    private LatLng center;
+    public Marker marker1;
+    public Marker marker2;
+    public LatLng firstMarkerLatLng;
+    public LatLng secondMarkerLatLng;
+
+    public Map mapRef;
+    public MapOptions mapOptions = new MapOptions() {
+            DivId = "mapId",
+            Center = new LatLng(50.279133, 18.685578),
+            Zoom = 7,
+            UrlTileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            SubOptions = new MapSubOptions() {
+                Attribution = "&copy; <a lhref='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+                TileSize = 512,
+                ZoomOffset = -1,
+                MaxZoom = 19,
+            }
+        };
+
+
+
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg114"));
+        widgetDesc =/*this_widget.widget_id+" "+ */this_widget.widget_desc;
+        List<WG114Data> query = await Task.Run(() => _g10Service.GetWG114Data(BoardID));
+        LoadChart(query);
+        //   await Task.Run(() => Init());
+        center = new LatLng(13.923716741632795, 100.37464032431606);
+        firstMarkerLatLng = new LatLng(20.065656241915708, 99.97133696019164);
+        secondMarkerLatLng = new LatLng(8.137304058865748, 99.51749088862424);
+        await InvokeAsync(StateHasChanged);
+
+    }
+    //async public Task Init() {
+    //    //circleMarkerOptionsInit = new CircleMarkerOptions() {
+    //    //        Radius = 30,
+    //    //        Color = "red"
+    //    //    };
+    //    center = new LatLng(50.279133, 18.685578);
+    //    fifteenthLatLng = new LatLng(15.480712521473524, 103.10233290939497);
+    //    sixteenthLatLng = new LatLng(50.270142, 18.641009);
+    //    mapOptions = new MapOptions() {
+    //            DivId = "mapId",
+    //            Center = center,
+    //            Zoom = 8,
+    //            UrlTileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    //            SubOptions = new MapSubOptions() {
+    //                Attribution = "&copy; <a lhref='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+    //                MaxZoom = 18,
+    //                TileSize = 512,
+    //                ZoomOffset = -1,
+    //            }
+    //        };
+    //}
+    List<Marker> markers = new List<Marker>();
+    protected async Task AddMarkers() {
+
+
+        //marker1 = await MarkerFactory.CreateAndAddToMap(firstMarkerLatLng, mapRef);
+        //marker2 = await MarkerFactory.CreateAndAddToMap(secondMarkerLatLng, mapRef);
+        //await this.marker1.BindPopup("Hi! This is a popup");
+        ////await this.marker1.OpenPopup(firstMarkerLatLng);
+        //await this.marker2.BindPopup("Hi! This is a popup 2");
+        ////await this.marker2.OpenPopup(secondMarkerLatLng);
+        //await this.marker2.TogglePopup();
+
+        foreach (var x in xData) {
+            Marker marker = await MarkerFactory.CreateAndAddToMap(new LatLng(x.LatLng[0], x.LatLng[1]), mapRef);
+            markers.Add(marker);
+
+            //Marker marker = await MarkerFactory.CreateAndAddToMap(new LatLng(x.LatLng[0],x.LatLng[1]), mapRef);
+            //await  marker.BindPopup(x.City);
+            //await marker.TogglePopup();
+        }
+        StateHasChanged();
+
+    }
+    List<Marker> myMarks = new List<Marker>();
+    private void LoadChart(List<WG114Data> data) {
+        BubbleModel n = new BubbleModel();
+        xData = new List<BubbleModel>();
+        // data = data.Take(15).ToList();
+        foreach (var d in data) {
+            var exist = xData.Where(o => o.City == d.province).FirstOrDefault();
+            //if ((d.lat>=5 &&d.lat<=21) || (d.lon>=98 && d.lon<=106)) {
+            //}
+            if (exist == null) {
+                n.LatLng = new double[] { d.lat, d.lon };
+                n.City = d.province;
+                n.Country = "Thailand";
+                n.Population_2010 = d.count_result;
+                xData.Add(n);
+            } else {
+                exist.Population_2010 = exist.Population_2010 + d.count_result;
+            }
+        }  
+    }
+
+
+
+    public List<BubbleModel> BubbleData { get; set; } = new List<BubbleModel>()
+               {
+        new BubbleModel()
+        {
+            LatLng = new double[] { 13.687797811827286, 100.35372299122878}, City = "Atlanta", Country = "United States of America", Population_2010 = 4510
+        },
+        new BubbleModel()
+        {
+            LatLng = new double[] {15.66486543326949, 101.87252573997857}, City = "Austin", Country = "United States of America", Population_2010 = 1160
+        },
+
+    };
+
+    public class BubbleModel {
+        public double[] LatLng { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public int Population_2010 { get; set; }
+    }
+
+}
+

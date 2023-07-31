@@ -1,0 +1,189 @@
+﻿@page "/POSREPORTS/PO/ReportPODetailByStore/{comid}/{venid}/{podate}/{rcom}/{isshowpendingonly}"
+@using System.Globalization
+@using Robot.Data.DA.REPORTS.PO
+
+@*@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.ML;
+@using Robot.Data.DA.User
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA.POSSY
+@using Blazored.LocalStorage
+@using Blazored.SessionStorage
+@using Robot.Data.DA.REPORTS.PO
+@using System.Globalization
+
+@inject SweetAlertService Swal
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+@inject LogInService login*@
+@inject PageHistoryState pageHistory
+
+
+<style>
+
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-3 px-3">
+            <div class="col-12 text-center">
+                <a ID="btnback" class="btn btn-secondary w-100 text-white" @onclick="@Back">
+                    <span style="font-size: 1.5rem;">
+                        <i class="fas fa-chevron-circle-left"></i>&nbsp;รายการวัตถุดิบ
+                    </span>
+                </a>
+            </div>
+        </div>
+
+
+        <div class="row px-3 pt-3">
+            <div class="col-12">
+
+                <div class="card">
+                    <div class="card-body pb-0 px-2">
+                        <div class="row pb-1">
+                            <div class="col-12 text-center">
+                                <h4 class="font-weight-bold">@txtVenName</h4>
+                            </div>
+                        </div>
+                        <div class="row pb-1">
+                            <div class="col-12 text-center">
+                                <h6>@txtpoDate</h6>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x: auto; width: 100%">
+                            <table class="table table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th scope="col">รายการ</th>
+                                        <th scope="col">หน่วย</th>
+                                        <th scope="col">ราคา</th>
+                                        <th scope="col">ปริมาณ</th>
+                                        <th scope="col">จำนวนเงิน</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var l in datalist)
+                                    {
+                                        <tr>
+                                            <th>@l.Name</th>
+                                            <td>@l.Unit</td>
+                                            <td>@l.Price.ToString("n2")</td>
+                                            <td>@l.Qty.ToString("n2")</td>
+                                            <td>@l.Amt.ToString("n2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-11 mx-auto px-0 text-right">
+                            <h4>@SumtotalLine</h4>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+@code {
+    [Parameter]
+    public string comid { get; set; }
+    [Parameter]
+    public string venid { get; set; }
+    [Parameter]
+    public string podate { get; set; }
+    [Parameter]
+    public string rcom { get; set; }
+    [Parameter]
+    public string isshowpendingonly { get; set; }
+
+    bool isLoading = true;
+    public string SumtotalLine { get; set; } = "";
+    public string txtVenName { get; set; } = "";
+    public string txtpoDate { get; set; } = "";
+    public List<PORequestSummaryByStoreInDetail> datalist { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (datalist == null)
+        {
+            datalist = new List<PORequestSummaryByStoreInDetail>();
+        }
+        string uri = nav.Uri;
+        pageHistory.AddPageToHistory(uri);
+        //if (login.LoginInfo == null)
+        //{
+        //    login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        //    if (login.LoginInfo == null)
+        //    {
+        //        nav.NavigateTo("Login");
+        //    }
+        //}
+        await Task.Run(LoadData);
+    }
+
+
+    void LoadData()
+    {
+        if (venid == "other")
+        {
+            venid = "";
+        }
+        var venInfo = VendorService.GetVendorInfo(rcom, venid);
+        if (venInfo == null)
+        {
+            venInfo = new VendorInfo { VendorID = "", FullNameTh = "ผู้ขายอื่นๆ" };
+        }
+        var newpoDate = DateTime.ParseExact(podate, "yyyyMMdd", CultureInfo.InvariantCulture);
+        var com = CompanyService.GetComInfoByComID(comid);
+        datalist = POReportService.ListPOByStoreInDetail(newpoDate, rcom, comid, venid, Convert.ToInt32(isshowpendingonly)).Where(o=>o.Qty!=0).ToList();
+
+        txtVenName = venInfo.FullNameTh;
+        txtpoDate = $"รายการสั่งของสาขา{com.Name1}  {com.Name2} ประจำวันที่ " + newpoDate.ToString("dd/MM/yyyy");
+        SumtotalLine = "รวม " + datalist.Sum(o => o.Amt).ToString("N2");
+        isLoading = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+     
+            var url = pageHistory.GetGoBackPage();
+            nav.NavigateTo(url);
+            await InvokeAsync(StateHasChanged); 
+   
+    }
+
+
+}

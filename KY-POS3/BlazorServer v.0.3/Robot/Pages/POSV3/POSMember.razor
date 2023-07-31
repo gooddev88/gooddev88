@@ -1,0 +1,216 @@
+﻿@page "/POSV3/POSMember"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+@inject POSSaleConverterService pOSSaleConverterService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject CustomerService customerService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<style>
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-1 col-sm-3 col-3 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <img src="/SALE/assets/img/doorlogo.png" style="max-width:3rem;" />
+                                </a>&nbsp;
+                            </div>
+                            <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-left">
+                                <strong style="font-size:2rem; color:crimson;">สมาชิก</strong>
+                            </div>
+                            <div class="col-md-3 col-sm-3 col-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+            <div class="row mx-0 pt-2">
+                <div class="col-12">
+                    <div class="input-group">
+                        <DxTextBox Id="txtSearch"
+                                   @bind-Text="@SearchText"
+                                   BindValueMode="BindValueMode.OnInput"
+                                   Enabled="true"
+                                   ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto"
+                                   NullText="ค้นหาด้วยเบอร์โทรหรือชื่อ"
+                                   SizeMode="SizeMode.Large">
+                        </DxTextBox>
+                        <div class="input-group-append">
+                            <a @onclick="@SearchAction" class="btn btn-info btn-lg text-white">
+                                <span>ค้นหา</span>
+                            </a>&nbsp;
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (ListMember.Count() != 0)
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <RadzenDataList WrapItems="true" AllowPaging="true" Data="@ListMember" TItem="CustomerInfo">
+                            <Template Context="l">
+                                <div class="card w-100 p-2 mb-0">
+                                    <div class="card-body py-0 px-2" style="width: 100%;">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <a class="btn w-100" style="height: auto;" @onclick="@(() => GoToPOSSale(l))">
+                                                    <div class="row">
+                                                        <div class="col-12 text-left">
+                                                            <span style="font-size: medium; color: #fa8231;">คุณ @l.FullNameTh</span>&nbsp;
+                                                            ( <span style="font-size: medium; color: #fa8231;">@l.CustomerID</span> )
+                                                            <br />
+                                                            <span style="font-size:small">วันที่สมัครสมาชิก @Convert.ToDateTime(l.CreatedDate).ToString("dd/MM/yyyy H:mm")</span>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </Template>
+                        </RadzenDataList>
+                        <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" Count="count" PageSize="@pageSize" PageNumbersCount="10" PageChanged="@PageChanged" />
+
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row pt-5">
+                    <div class="col-12 text-center">
+                        @*<img src="/SALE/assets/img/filesearch.png" style="width:9rem;" /><br />*@
+                        <h3 class="font-weight-bold" style="color:gray;"> ... ไม่พบสมาชิก ... </h3>
+                        <a @onclick="@GoToRegisterMember" class="btn btn-success text-white">
+                            <span>สร้างสมาชิก</span>
+                        </a>
+                    </div>
+                </div>
+            }
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+
+@code {
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string SearchText { get; set; } = null;
+
+    string pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+    int pageSize = 50;
+    int count=0;
+
+    CustomerInfo Member = new CustomerInfo();
+    IEnumerable<CustomerInfo> ListMember;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+
+    void SetVaue()
+    {
+        if (SearchText == null)
+        {
+            SearchText = "";
+        }
+    }
+
+    void LoadData()
+    {
+     
+        SetVaue();
+        ListMember = customerService.ListDocMember(SearchText,0, pageSize);
+        isLoading = false;
+    }
+
+    
+
+    async void SearchAction()
+    {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToPOSSale(CustomerInfo data)
+    {
+        posService.DocSet.Head.CustomerID = data.CustomerID;
+        posService.DocSet.Head.CustomerName = data.FullNameTh;
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToRegisterMember()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        customerService.DocSet = customerService.NewTransaction();
+
+        nav.NavigateTo($"POSV3/RegisterMember", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

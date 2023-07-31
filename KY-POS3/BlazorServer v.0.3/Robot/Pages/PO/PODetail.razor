@@ -1,0 +1,1032 @@
+﻿@page "/PO/PODetail/{menu}"
+
+@using Robot.POS.DA;
+@using Telerik.Blazor.Components.Upload;
+@using static Robot.Data.ML.I_Result;
+@using static Robot.Data.DA.CompanyService;
+@using static Robot.POS.DA.POS_POService;
+@using static Robot.Data.DA.ItemService;
+
+@inject ItemService itemService
+@inject CompanyService companyService
+@inject POS_POService POS_poService
+
+
+<style>
+     /*ซ่อนเพิ่มลบตัวเลข TelerikNumericTextBox*/
+    .k-input-spinner {
+        display: none;
+    }
+
+    .small {
+        font-size: small;
+    }
+
+    .pt-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    /*ซ่อนเพิ่มลบตัวเลข TelerikNumericTextBox*/
+    .k-input-spinner {
+        display: none;
+    }
+
+    /*เปลี่ยนสี TelerikNumericTextBox Enabled*/
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .form-control {
+        height: calc(1.8125rem + 2px);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+        border-color: black !important;
+    }
+
+
+    table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th, td {
+        text-align: left;
+        padding: 8px;
+        border: 1px solid black; /* เพิ่มเส้นขั้นระหว่างเซลล์ */
+    }
+
+    tr:nth-child(even) {
+        background-color: white;
+    }
+
+    th {
+        background-color: #7b68ee;
+        color: white;
+        border: 1px solid black; /* เพิ่มเส้นขั้นระหว่างเซลล์ */
+    }
+
+    /* เพิ่มเส้นขั้นระหว่างแถว */
+    tr:not(:first-child) {
+        border-top: 1px solid black;
+    }
+
+    /* เพิ่มเส้นขั้นระหว่างคอลัมน์ */
+    td:not(:first-child) {
+        border-left: 1px solid black;
+    }
+</style>
+<div class="row pt-3">
+    <div class="col-md-12 col-6">
+        <Button Color="Color.Dark" @onclick="@Back" Class="text-white ">
+            <i class="fas fa-reply-all"></i>&nbsp;
+            <span>กลับ</span>
+        </Button>
+    </div>
+    <div class="col-md-12 col-6">
+
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class="w-100 py-2"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+            <i class="fas fa-save fa-lg"></i>&nbsp;บันทึกข้อมูล
+        </TelerikButton>
+
+    </div>
+    <div class="col-md-6 pt-3 col-12">
+        <h4>แจ้งปัญหา IT</h4>
+    </div>
+    <div class="col-md-6 pt-3 col-12 text-end">
+
+        @switch (POS_poService.DocSet.head.Status) {
+            case "new":
+                <span style="font-size:large;" class="badge rounded-pill bg-primary">@POS_poService.DocSet.head.Status</span>
+                break;
+            case "in_operation":
+                <span style="color: black;font-size:large;" class="badge rounded-pill bg-warning">@POS_poService.DocSet.head.Status</span>
+                break;
+            case "finish_success":
+                <span style="background-color: #00ba19 !important;font-size:large;" class="badge rounded-pill bg-success">@POS_poService.DocSet.head.Status</span>
+                break;
+            case "finish_fail":
+                <span style="font-size:large;" class="badge rounded-pill bg-danger">@POS_poService.DocSet.head.Status</span>
+                break;
+            default:
+                <span style="font-size:large;" class="badge rounded-pill bg-primary">@POS_poService.DocSet.head.Status</span>
+                break;
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+
+                <div class="card-title">
+
+
+                    <span>เลขที่แจ้ง</span> <span1>
+                        @if (txtpoid == "") {
+                            <b>++NEW++</b>
+                        } else {
+                            <b>@txtpoid</b>
+                        }&nbsp;&nbsp;
+                    </span1>
+                    <p><span>วันที่แจ้ง</span> <span1><b>@Convert.ToDateTime(POS_poService.DocSet.head.PODate).ToString("dd/MM/yyyy")</b></span1></p>
+
+                    <span>ส่งไปศูนย์กระจายสินค้า</span>
+                    <p class="card-text">@POS_poService.DocSet.head.VendorName</p>
+                    <div class="col-md-12">
+                        <span>ที่อยู่เปิดบิล 1</span>
+                        <TelerikTextArea @bind-Value="@POS_poService.DocSet.head.Remark1"
+                                         AutoSize="true"
+                                         Class="w-100"
+                                         PlaceHolder="">
+                        </TelerikTextArea>
+                    </div>
+
+                </div>
+
+
+
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<div class="row pt-4">
+    <div class="col-12">
+
+        <div class="row">
+            <div class="col-6">
+                <h4 class="fw-bold">รายการสินค้า</h4>
+            </div>
+
+        </div>
+        <div class="row">
+
+
+            <div class="col-md-4">
+                <span>สินค้า</span>
+
+
+                <TelerikComboBox Value="@SelectItemID"
+                                 Data="@ListItem"
+                                 ScrollMode="@DropDownScrollMode.Virtual"
+                                 ValueField="@(nameof(ItemInfo.ItemID))"
+                                 TextField="@(nameof(ItemInfo.Name1))"
+                                 Width="100%" PageSize="10" ItemHeight="35"
+                                 ValueChanged="@( (string v) => ValueChangeItem(v) )"
+                                 Filterable="true"
+                                 FilterOperator="@StringFilterOperator.Contains">
+                    <ComboBoxSettings>
+                        <ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>
+                    </ComboBoxSettings>
+                    <HeaderTemplate>
+                        <div class="fw-bold py-2">&nbsp;&nbsp; สกินค้า & ประเภท & รายละเอียด & หน่วย</div>
+                    </HeaderTemplate>
+                    <ItemTemplate>
+                        <span>@($"{context.ItemID} ({context.Name1}) ({context.TypeID}) ({context.UnitID})")</span>
+                    </ItemTemplate>
+                </TelerikComboBox>
+            </div>
+
+
+             <div class="col-md-2">
+                <span>ที่เก็บ</span>
+                <TelerikDropDownList Data="@cboLocation"
+                                     @bind-Value="SelectLocID"
+                                     TextField="@nameof(LocationInfo.LocCode)"
+                                     ValueField="@nameof(LocationInfo.LocID)"
+                                     Width="100%">
+                </TelerikDropDownList>
+            </div>
+
+
+            <div class="col-md-2">
+                <span>จำนวน</span>
+                <TelerikNumericTextBox Decimals="2" Format="N2"
+                                       Class="text-end pe-2" @bind-Value="SelectQty"></TelerikNumericTextBox>
+            </div>
+
+
+            <div class="col-md-2">
+                <span>หน่วย</span>
+                <TelerikTextBox @bind-Value="@SelectUnit"
+                                Size="ThemeConstants.DropDownList.Size.Small" />
+            </div>
+
+
+            <div class="col-1 ">
+                <Button Color="Color.Secondary" @onclick="@AddItem">
+                    <i class="fas fa-plus-circle fa-lg"></i>&nbsp;
+                    เพิ่ม
+                </Button>&nbsp;&nbsp;
+
+            </div>
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-12">
+                @*  <TelerikGrid Data=@POS_poService.DocSet.line
+                Pageable="true"
+                Groupable="false"
+                Sortable="true"
+                Resizable="true"
+                Reorderable="true"
+                RowDraggable="true"
+                PageSize="20"
+                @ref="@GridRefLine"
+                Navigable="true">
+
+                <GridColumns>
+                <GridColumn Field=@nameof(vw_POS_POLine.Name) Title="ชื่อสินค้า" Width="120px" />
+                <GridColumn Field=@nameof(vw_POS_POLine.Qty) Title="จำนวน" Width="130px" DisplayFormat="{0:N0}" />
+                <GridColumn Field=@nameof(vw_POS_POLine.Unit) Title="หน่วยซื้อ" Width="120px" />
+
+                </GridColumns>
+                </TelerikGrid>*@
+            </div>
+        </div>
+        <div class="row pt-2">
+
+
+
+            <div class="col-md-12">
+                @foreach (var item in POS_poService.DocSet.line) {
+                    <div class="row pb-1">
+                        <div class="col-md-12">
+                            <div class="row ">
+                                <div class="col-md-12">
+                                    <div class="row">
+                                        <div class="col-lg-8 col-md-8 col-sm-8 col-5 pt-2 text-left">
+                                            <div class ="row pt-2" >
+                                                <span style="color: black; font-size: 22px;">
+
+                                                </span>
+                                            </div>
+
+                                            <div class="row pt-2">
+                                                  <span style="color: gray; font-size: small;">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-2">
+                                                            <label for="price">ราคาทุน:</label>
+                                                            <input id="price" class="form-control" type="number" value="@item.Price.ToString("n2")" onchange="args => textbalqtychange(item, args)" />
+                                                        </div>
+                                                        <div class="form-group col">
+                                                            <label for="unit">หน่วย:</label>
+                                                            <span id="unit">@item.Unit</span>
+                                                        </div>
+                                                    </div>
+                                                <div class="col-md-3 pt-2">
+                                                    <input class="form-control col-2" type="number" value="@item.Price.ToString("n2")" disabled="@read_only_balqty" onchange="args => textbalqtychange(item, args)" /> @item.Unit
+                                                </div>
+                                            </span>
+                                            </div>
+
+                                          
+                                        </div>
+                                        <div class="col-lg-4 col-md-4 col-sm-4 col-4 text-right">
+                                            <div class="row pb-2 pt-1">
+                                                <div class="col-md-7 pr-0 pt-2">
+                                                        <span style="font-size:large;color:black">ซื้อ <input class="form-control" type="number" value="@item.Qty.ToString("n2")" disabled="@read_only_qty" @onchange="args=> textqtychange(item,args)" />  </span>                                                       
+                                                </div>
+                                            </div>
+                                            <div class="row pb-2 pt-1">
+                                                    <span class="far fa-trash-alt fa-lg" @onclick="@(() => DeleteLine(item))"> </span>
+                                                    </div>
+
+
+                                            <div class="row">
+                                                <span>FGK > @item.FGName เหลือ @item.FGBalQty.ToString("n2") สั่ง @item.FGOrdQty.ToString("n2") เหลือหลังส่ง @(item.FGQtyRemainAfterOrder.HasValue ? item.FGQtyRemainAfterOrder.Value.ToString("n2") : "0.00")</span>
+                                               </div>
+                                           
+                                            
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+
+                }
+            </div>
+
+
+
+        </div>
+
+        @*        @if (SelectItemID != null) {
+
+
+        @foreach (var item in SelectItemID) {
+
+        <div class="d-flex flex-row bd-highlight mb-3">
+        <input type="text" value="@SelectQty" @onchange="orderqty=> qtychange(orderqty)" />
+
+
+
+        </div>
+        }
+        }*@
+
+    </div>
+</div>
+
+<div class="row pt-4">
+    <div class="row">
+
+
+        <div class="col-md-4">
+            <span>สินค้า(FGK)</span>
+
+
+            <TelerikComboBox Value="@SelectItemFGID"
+                             Data="@ListItemFG"
+                             ScrollMode="@DropDownScrollMode.Virtual"
+                             ValueField="@(nameof(ItemInfo.ItemID))"
+                             TextField="@(nameof(ItemInfo.Name1))"
+                             Width="100%" PageSize="10" ItemHeight="35"
+                             ValueChanged="@( (string v) => ValueChangeFGItem(v) )"
+                             Filterable="true"
+                             FilterOperator="@StringFilterOperator.Contains">
+                <ComboBoxSettings>
+                    <ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>
+                </ComboBoxSettings>
+                <HeaderTemplate>
+                    <div class="fw-bold py-2">&nbsp;&nbsp; สกินค้า & ประเภท & รายละเอียด & หน่วย</div>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <span>@($"{context.ItemID} ({context.Name1}) ({context.TypeID}) ({context.UnitID})")</span>
+                </ItemTemplate>
+            </TelerikComboBox>
+        </div>
+
+        <div class="col-md-2">
+            <span>จำนวน</span>
+            <TelerikNumericTextBox Decimals="2" Format="N2"
+                                   Class="text-end pe-2" @bind-Value="SelectQtyFG"></TelerikNumericTextBox>
+        </div>
+
+
+        <div class="col-md-2">
+            <span>ที่เก็บ</span>
+            <TelerikDropDownList Data="@cboLocation_POFGLine"
+                                 @bind-Value="SelectLocFGID"
+                                     TextField="@nameof(LocationInfo.LocCode)"
+                                     ValueField="@nameof(LocationInfo.LocID)"
+                                     Width="100%">
+                </TelerikDropDownList>
+        </div>
+
+
+
+        <div class="col-1 ">
+            <Button Color="Color.Secondary" @onclick="@AddItemFG">
+                <i class="fas fa-plus-circle fa-lg"></i>&nbsp;
+                เพิ่ม
+            </Button>&nbsp;&nbsp;
+
+        </div>
+    </div>
+    <div class="col-12">
+
+        <div class="row">
+            <div class="col-md-6">
+                <h4 class="fw-bold">รายการสินค้า</h4>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="d-flex flex-row">
+                <div class="col-md-12">
+                    <table border="2">
+                        <tr>
+                            <th width="400px">สินค้า(FGK))</th>
+                            <th width="200px">ที่เก็บ</th>
+                            <th width="200px">จำนวนรับสินค้าง</th>
+                            <th width="400px">หน่วย</th>
+                            <th width="200px">จำนวนสั่ง</th>
+                            <th width="200px">เหลือ</th>
+                            <th width="200px">เหลือหลังส่ง</th>
+                            <th width="200px">มูลค่า</th>
+                        </tr>
+                        @foreach (var l in @POS_poService.DocSet.FGLine) {
+                            <tr>
+                                <td>@l.FgName</td>
+                                <td>@l.ToLocID</td>
+                                <td>
+                                    <input class="form-control" type="number" Value="@l.FgQty.ToString("n2")" disabled="@read_only_fgqty" @onchange="args=> textFgQtychange(l,args)" />
+                                    
+                                </td>
+                                <td>@l.FgUnit</td>
+                                <td>@(l.OrdQty.HasValue ? l.OrdQty.Value.ToString("n2") : "0.00")</td>
+                                <td>@(l.BalQty.HasValue ? l.BalQty.Value.ToString("n2") : "0.00")</td>
+                                <td>@(l.FGQtyRemainAfterOrder.HasValue ? l.FGQtyRemainAfterOrder.Value.ToString("n2") : "0.00")</td>
+                                <td>@l.FgAmt.ToString("n2")</td>
+                            </tr>
+                        }
+
+
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @*        <div class="row pt-2">
+        <div class="col-md-12">
+        <TelerikGrid Data=@POS_poService.DocSet.lineBom
+        Pageable="true"
+        Groupable="false"
+        Sortable="true"
+        Resizable="true"
+        Reorderable="true"
+        RowDraggable="true"
+        PageSize="20"
+
+        @ref="@GridRefLineBom"
+        Navigable="true">
+
+        <GridColumns>
+
+        <GridColumn Field=@nameof(POS_ORDERBomLine.FgName) Title="ราการสั่ง(FGK)" Width="130px" />
+        <GridColumn Field=@nameof(POS_ORDERBomLine.FgQty) Title="จำนวนสั่ง" Width="200px" DisplayFormat="{0:N0}" />
+        <GridColumn Field=@nameof(POS_ORDERBomLine.FgUnit) Title="หน่วยสั่ง" Width="130px" />
+        <GridColumn Field=@nameof(POS_ORDERBomLine.RmItemName) Title="รายการซื้อ(RMK)" Width="120px" />
+        <GridColumn Field=@nameof(POS_ORDERBomLine.RmQty) Title="จำนวนซื้อ" Width="130px" DisplayFormat="{0:N0}" />
+        <GridColumn Field=@nameof(POS_ORDERBomLine.RmUnit) Title="หน่วยซื้อ" Width="120px" />
+
+        </GridColumns>
+        </TelerikGrid>
+        </div>
+        </div>*@
+    </div>
+</div>
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+
+@code {
+
+    [Parameter] public string menu { get; set; } = "";
+
+    public static string txtpoid { get; set; }
+    public TelerikGrid<vw_POS_POLine> GridRefLine { get; set; }
+    public TelerikGrid<POS_ORDERBomLine> GridRefLineBom { get; set; }
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    public bool isEnable { get; set; } = true;
+
+    bool isLoading = true;
+    bool isShow_open = false;
+    bool isShow_accept = false;
+    bool isShow_shipping = false;
+    bool isShow_receive = false;
+    bool isShow_delet_line = false;
+    bool read_only_qty = false;
+    bool read_only_shipqty = false;
+    bool read_only_grqty = false;
+    bool read_only_balqty = false;
+    bool read_only_fgqty = false;
+
+    public IEnumerable<ItemInfo> ListItem;
+    public ItemInfo SelectItem { get; set; }
+    public IEnumerable<ItemInfo> ListItemFG;
+    public ItemInfo SelectItemFG { get; set; }
+    public List<LocationInfo> cboLocation = new List<LocationInfo>();
+    public LocationInfo SelectedValue { get; set; }
+    
+    public List<LocationInfo> cboLocation_POFGLine = new List<LocationInfo>();
+    public LocationInfo SelectedValueFG { get; set; }
+
+    string SelectItemID = "";
+    string SelectItemFGID = "";
+    string SelectItemame = "";
+    string SelectLocID = "";
+    string SelectLocFGID = "";
+    int SelectQty = 0;
+    int SelectQtyFG = 0;
+    string SelectUnit = "";
+
+    protected override async Task OnInitializedAsync() {
+
+        LoadDropDown();
+        await Task.Run(() => LoadData());
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+
+        CheckPermission();
+        BindData();
+
+        SetActiveControl();
+        @if (menu == "2001") {
+            isEnable = true;
+        } else {
+            isEnable = false;
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    async Task CheckPermission() {
+        var menux = LogInService.GetMenuInfo(login.LoginInfo, "menu");
+        menuCaption = menux.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menux.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, menu)) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, menu)) {
+
+        }
+
+    }
+
+    public void BindData() {
+
+        var h = POS_poService.DocSet.head;
+        var l = POS_poService.DocSet.line;
+        txtpoid = h.POID;
+        if (string.IsNullOrEmpty(txtpoid)) {
+            txtpoid = h.POID;
+        }
+    }
+
+
+    private void BindLocation() {
+        var h = POS_poService.DocSet.head;
+
+
+        List<string> exclude_loc = new List<string> { "INTRANSIT", "RETURN" };
+        var loc = POS_POService.ListStockLocation("", h.ComID, h.RComID);
+        cboLocation = loc.Where(o => !exclude_loc.Contains(o.LocID)).ToList();
+        cboLocation_POFGLine = POS_POService.ListStockLocation("", h.ComID, h.RComID);
+
+    }
+
+
+    async Task CheckIsRefresh() {
+        if (POS_poService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(POS_POService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                POS_poService.DocSet = POS_POService.GetDocSetByID(docid, rcom);
+            } else {
+                string doctype = "PO";
+                POS_poService.DocSet = POS_POService.NewTransaction(doctype, rcom,user);
+                txtpoid = "";
+                POS_poService.DocSet.head.DocType = await sessionStorage.GetItemAsync<string>(POS_POService.sessionDocType);
+            }
+        }
+    }
+
+
+
+    async Task SetActiveControl() {
+        var h = POS_poService.DocSet.head;
+
+        switch (h.Status) {
+            case "OPEN"://เบิกสินค้า
+                isShow_open = true;
+                isShow_accept = false;
+                isShow_shipping = false;
+                isShow_receive = false;
+                isShow_delet_line = true;
+                read_only_balqty = false;
+                //read_only_orderqty = false;
+                break;
+            case "ACCEPTED"://จัดเตรียมสินค้า
+                isShow_open = false;
+                isShow_accept = false;
+                isShow_shipping = false;
+                isShow_receive = false;
+                isShow_delet_line = false;
+                read_only_balqty = true;
+                read_only_shipqty = false;
+                break;
+            case "SHIPPING"://ส่งสินค้า
+                isShow_open = false;
+                isShow_accept = false;
+                isShow_shipping = true;
+                isShow_receive = false;
+                isShow_delet_line = true;
+                read_only_balqty = true;
+                read_only_grqty = false;
+                break;
+            case "RECEIVED"://รับสินค้า
+                isShow_open = false;
+                isShow_accept = false;
+                isShow_shipping = false;
+                isShow_receive = true;
+                isShow_delet_line = true;
+                read_only_balqty = true;
+                break;
+            case "CANCEL"://cancel
+                isShow_open = true;
+                isShow_accept = true;
+                isShow_shipping = false;
+                isShow_receive = false;
+                isShow_delet_line = false;
+                read_only_balqty = true;
+                break;
+
+        }
+
+        await CheckPermission();
+    }
+
+
+    public async Task LoadDropDown() {
+        var u = login.LoginInfo;
+
+        ListItem = await Task.Run(() => ItemService.ListItemInfo("RMK", u.CurrentRootCompany.CompanyID));
+        ListItemFG = await Task.Run(() => ItemService.ListItemInfo("FGK", u.CurrentRootCompany.CompanyID));
+        BindLocation();
+    }
+
+
+    public void Back() {
+
+        nav.NavigateTo($"PO/POList/{menu}", false);
+
+    }
+
+    public void ValueChangeItem(string value) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        if (!string.IsNullOrEmpty(value)) {
+            var itemid = value.ToString();
+
+            var data = ItemService.GetItemInfo(rcom, itemid);
+            if (data != null) {
+
+                SelectItemID = data.ItemID;
+                SelectUnit = data.UnitID;
+                SelectItemame = data.Name1;
+
+            }
+        } else {
+            SelectItemID = "";
+        }
+    }
+
+    public void ValueChangeFGItem(string value) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        if (!string.IsNullOrEmpty(value)) {
+            var itemid = value.ToString();
+
+            var data = ItemService.GetItemInfo(rcom, itemid);
+            if (data != null) {
+
+                SelectItemFGID = data.ItemID;
+
+                SelectUnit = data.UnitID;
+                SelectItemame = data.Name1;
+
+            }
+        } else {
+            SelectItemID = "";
+        }
+    }
+
+    //async List<vw_POS_POLine> qtychange(decimal orderqty) {
+    //    //var u = POS_poService.DocSet.line.Where(o => o.ItemID == item.ItemID).FirstOrDefault();
+    //    //u.Qty = Convert.ToDecimal(string)args.Value;
+
+
+    //    var u = Convert.ToDecimal(POS_poService.DocSet.line.FirstOrDefault().Qty);
+
+    //}
+
+
+    private bool ValidLineData() {
+
+        //SelectItemID = SelectItemID == null ? "" : SelectItemID;
+        //SelectItemame = SelectItemame == null ? "" : SelectItemame;
+        //SelectUnit = SelectUnit == null ? "" : SelectUnit;
+        //SelectQty = SelectQty == null ? 0 : SelectQty;
+
+
+        if (string.IsNullOrEmpty(SelectItemID)) {
+            string msg = "ระบุ สินค้า";
+            Swal.FireAsync("", msg, "error");
+            return false;
+        }
+        return true;
+    }
+
+
+
+    public async void AddItem() {
+
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+        if (!ValidLineData()) {
+            return;
+        }
+        var h = POS_poService.DocSet.head;
+        vw_POS_POLine my_line = POS_POService.NewLine(POS_poService.DocSet,user);
+        my_line.ItemID = SelectItemID;
+        my_line.Unit = SelectUnit;
+        my_line.ToLocID = SelectLocID;
+        var item = POSItemService.GetItem(my_line.ItemID, rcom);
+        var stk = POSStockService.GetBalanceByUnit(my_line.ItemID, h.ComID, rcom, my_line.Unit);
+
+        my_line.Name = item.Name1;
+        my_line.Unit = item.UnitID;
+
+        //my_line.GrUnit = item.UnitID;
+
+        if (SelectUnit != "") {
+            my_line.Unit = SelectUnit;
+            //my_line.GrUnit = SelectUnit;
+        }
+        my_line.Qty = SelectQty;
+        my_line.Price = item.Cost;
+        my_line.Amt = my_line.Qty * my_line.Price;
+        my_line.BalQty = stk.QtyBalInToUnit;
+        my_line.OnOrdQty = Convert.ToDecimal(stk.QtyOnOrdInToUnit);
+
+
+        POS_poService.DocSet = POS_POService.NewLineByItem(POS_poService.DocSet, my_line,my_line.ItemID);
+        POS_poService.DocSet.line = POS_poService.DocSet.line;
+        if(POS_poService.DocSet != null) {
+            POS_POService.CalRevertBom(my_line.LineNum, POS_poService.DocSet);
+        }
+
+            
+        //itemlines = POS_poService.DocSet.line;
+        await InvokeAsync(StateHasChanged);
+        ResetControl();
+        GridBinding();
+
+    }
+    public async void AddItemFG() {
+
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUser;
+        //if (!ValidLineData()) {
+        //    return;
+        //}
+        var h = POS_poService.DocSet.head;
+        //vw_POS_POFGLine my_lineFG = POS_POService.NewFGLine(POS_poService.DocSet);
+        //my_lineFG.FgItemID = SelectItemFGID;
+        //my_lineFG.FgUnit = SelectUnit;
+        //my_lineFG.ToLocID = SelectLocFGID;
+        //my_lineFG.FgQty = SelectQtyFG;
+        //my_lineFG.OrdQty = SelectQtyFG;
+
+        //var item = POSItemService.GetItem(my_lineFG.FgItemID, rcom);
+        //var stk = POSStockService.GetBalanceByUnit(my_lineFG.FgItemID, h.ComID, rcom, my_lineFG.FgUnit);
+
+        //my_lineFG.FgName = item.Name1;
+        //my_lineFG.FgUnit = item.UnitID;
+        ////my_line.GrUnit = item.UnitID;
+
+        //if (SelectUnit != "") {
+        //    my_lineFG.FgUnit = SelectUnit;
+        //    //my_line.GrUnit = SelectUnit;
+        //}
+
+        //my_lineFG.Price = item.Cost;
+        //my_lineFG.FgAmt = my_lineFG.FgQty * my_lineFG.Price;
+        //my_lineFG.BalQty = stk.QtyBalInToUnit;
+        ////my_lineFG.OnOrdQty = Convert.ToDecimal(stk.QtyOnOrdInToUnit);
+
+
+        //POS_poService.DocSet = POS_POService.NewFGLineByItem(POS_poService.DocSet, my_lineFG, my_lineFG.FgItemID);
+        //POS_poService.DocSet.line = POS_poService.DocSet.line;
+        ////itemlines = POS_poService.DocSet.line;
+   
+
+
+
+
+        var pol = POS_POService.NewFGLine(POS_poService.DocSet);
+        pol.FgItemID = SelectItemFGID;
+        var itemfg = POSItemService.GetItem(pol.FgItemID, rcom);
+        pol.ToLocID = SelectLocFGID;
+        pol.FgName = itemfg.Name1;
+        pol.FgUnit = itemfg.UnitID;
+        pol.Price = Convert.ToDecimal(itemfg.Cost);
+        pol.VendorID = itemfg.VendorID;
+
+        pol.FgQty = SelectQtyFG;
+        var r = POS_POService.NewPoFGLineByItem(POS_poService.DocSet, pol, pol.FgItemID);
+
+        await InvokeAsync(StateHasChanged);
+        ResetControl();
+        GridBinding();
+    }
+
+    async Task textbalqtychange(vw_POS_POLine item, ChangeEventArgs args) {
+        var u = POS_poService.DocSet.line.Where(o => o.ItemID == item.ItemID).FirstOrDefault();
+
+        decimal balqty = u.BalQty;
+        decimal.TryParse(args.Value.ToString(), out balqty);
+        u.BalQty = balqty;
+        //   u.Qty = 0;
+    }
+
+    async Task textFgQtychange(vw_POS_POFGLine l, ChangeEventArgs args) {
+        var u = POS_poService.DocSet.FGLine.Where(o => o.LineNum == l.LineNum).FirstOrDefault();
+        decimal fgqty = u.FgQty;
+        decimal.TryParse(args.Value.ToString(), out fgqty);
+        u.FgQty = fgqty;
+        //   u.Qty = 0;
+    }
+    async Task textshipqtychange(vw_POS_POLine item, ChangeEventArgs args) {
+        var u = POS_poService.DocSet.line.Where(o => o.ItemID == item.ItemID).FirstOrDefault();
+
+        decimal shipqty = u.ShipQty;
+        decimal.TryParse(args.Value.ToString(), out shipqty);
+        u.ShipQty = shipqty;
+        //   u.Qty = 0;
+    }
+    async Task textqtychange(vw_POS_POLine item, ChangeEventArgs args) {
+        var u = POS_poService.DocSet.line.Where(o => o.ItemID == item.ItemID).FirstOrDefault();
+        decimal qty = u.Qty;
+        decimal.TryParse(args.Value.ToString(), out qty);
+        u.Qty = qty;
+        //   u.Qty = 0;
+    }
+    async Task textgrqtychange(vw_POS_POLine item, ChangeEventArgs args) {
+        var u = POS_poService.DocSet.line.Where(o => o.ItemID == item.ItemID).FirstOrDefault();
+
+        decimal grqty = u.GrQty;
+        decimal.TryParse(args.Value.ToString(), out grqty);
+        u.GrQty = grqty;
+        //   u.Qty = 0;
+    }
+    private void ResetControl() {
+        SelectQty = 0;
+        SelectItemID = "";
+    }
+    private void GridBinding() {
+        var h = POS_poService.DocSet.head;
+
+        if (new List<string> { "OPEN", "ACCEPTED" }.Contains(h.Status) && menu == "2003") {
+            //กำจะบันทึกจัดส่งให้ Default Qty ให้ก่อน
+            foreach (var l in POS_poService.DocSet.line) {
+                l.ShipQty = l.Qty;
+                //l.ShipdAmt = l.OrdAmt;
+            }
+        }
+
+        if (new List<string> { "SHIPPING" }.Contains(h.Status) && menu == "2004") {
+            //กำจะบันทึกรับให้ Default QtyShip จะ GRQty ให้ก่อน
+            foreach (var l in POS_poService.DocSet.line) {
+                l.GrQty = l.ShipQty;
+                l.GrAmt = l.ShipdAmt;
+            }
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private void DeleteLine(vw_POS_POLine item) {
+        POS_poService.DocSet.line.RemoveAll(o => o.ItemID == item.ItemID);
+        POS_poService.DocSet.FGLine.RemoveAll(o => o.FgItemID == item.ItemID);
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    //protected void grdline_ItemCommand(object sender, ListViewCommandEventArgs e) {
+
+    //        int id = Convert.ToInt32(e.CommandArgument);
+    //        POS_POService.DeleteBOMLine(id);
+    //        //SORequestService.DeleteLine(id);
+    //        //SORequestService.ClearPendingLine("");
+    //        GridBinding();
+
+    //}
+    bool ValidData() {
+        //if (cboCompany.SelectedValue == "") {
+        //    ShowPopAlert("Warning", "ระบุ สาขาที่ส่ง", false, "");
+        //    return false;
+        //}
+        return true;
+    }
+
+
+
+    void OnSave() {
+
+        if (!ValidData()) {
+            return;
+        }
+        Save();
+
+    }
+
+
+
+    //private void Save() {
+
+    //    var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    var com = login.LoginInfo.CurrentCompany.CompanyID;
+    //    var user = login.LoginInfo.CurrentUser;
+
+    //    var rs = POS_POService.Save("", doc, user);
+    //    if (rs.Result != "ok") {
+    //        Swal.FireAsync("", rs.Message1, "error");
+
+    //        return;
+    //    } else {
+    //        POS_poService.DocSet = POS_POService.GetDocSetByID(docid, rcom);
+    //        BindData();
+    //        Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+    //        InvokeAsync(StateHasChanged);
+    //    }
+    //}
+
+    private void Save() {
+
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var isnew = PrepairDataSave();
+        var h = POS_poService.DocSet.head;
+        var user = login.LoginInfo.CurrentUser;
+
+        if (isnew) {
+            POS_POService.Save("insert", POS_poService.DocSet, user);
+        } else {
+            POS_POService.Save("update", POS_poService.DocSet, user);
+        }
+
+        if (POS_poService.DocSet.OutputAction.Result == "ok") {//save successufull
+            if (isnew) {
+                //POS_POService.IsNewDoc = true;
+
+            } else {
+                switch (menu) {
+                    case "2001"://เบิกสินค้า
+
+                        break;
+                    case "2002"://จัดเตรียมสินค้า
+                        POS_POService.SetStatusAccepted(h.POID, rcom, user);
+                        break;
+                    //case "2003"://ส่งสินค้า
+                    //    POS_POService.SetStatusShipping(POS_poService.DocSet, h.OrdID, rcom, user);
+                    //    break;
+                    case "2004"://รับสินค้า
+                        POS_POService.SetStatusReceive( h.POID, rcom, user);
+                        break;
+                }
+                //ShowPopAlert("Success", "บันทึกสำเร็จ", true, "");
+
+
+            }
+            POS_poService.DocSet = POS_POService.GetDocSetByID(h.POID, rcom);
+            LoadData();
+            InvokeAsync(StateHasChanged);
+
+        } else {
+            //ShowPopAlert("Error", POS_poService.DocSet.OutputAction.Message1, false, "");
+        }
+    }
+
+
+    private bool PrepairDataSave() {
+
+        var h = POS_poService.DocSet.head;
+        h.ComID = POS_poService.DocSet.head.VendorID;
+        bool isnewrecord = h.POID == "" ? true : false;
+        if (isnewrecord) {
+            h.POID = IDRuunerService.GetNewIDV2("PO", h.RComID, h.ComID, h.PODate, true, "th")[1];
+        }
+        //h.FrLocID = cboCompany.SelectedValue;
+        //h.Remark1 = txtRemark1.Text;
+
+
+        return isnewrecord;
+    }
+
+}

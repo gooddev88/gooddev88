@@ -1,0 +1,172 @@
+﻿@page "/Master/UserGroupList"
+
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using RobotWasm.Shared.Data.GaDB
+@using Blazorise
+<style>
+</style>
+
+@if (!isLoading)
+{
+
+    <div class="row pt-2">
+        <div class="col-6 pt-2">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="Dashboard/StartBoard">@menuGroupCaption</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="Master/UserGroupList">@menuCaption</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+        </div>
+        <div class="col-6 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@NewDoc" Class=""
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                <i class="fa-solid fa-circle-plus"></i>&nbsp; ++NEW++
+            </TelerikButton>
+        </div>
+    </div>
+
+    @* --ค้นหา--*@
+    <Accordion>
+        <Collapse Visible="@collapse1Visible">
+            <CollapseHeader>
+                <Heading Size="HeadingSize.Is1">
+                    <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                </Heading>
+            </CollapseHeader>
+            <CollapseBody>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                            <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                        </div>
+                    </div>
+                </div>
+            </CollapseBody>
+        </Collapse>
+    </Accordion>
+
+
+    <div class="row pt-2">
+        <div class="col-md-12">
+            <TelerikGrid Data=@DocList
+                     Pageable="true"
+                     Groupable="false"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true"
+                     PageSize="30"
+                     Navigable="true">
+                <GridToolBarTemplate>
+                    <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                </GridToolBarTemplate>
+
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field="@nameof(UserGroupInfo.UserGroupID)" Title="แก้ไข" Editable="false" Width="80px">
+                        <Template>
+                            @{
+                                var data = context as UserGroupInfo;
+                            <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(UserGroupInfo.UserGroupID)" Title="รหัสกลุ่ม" Width="160px" />
+                <GridColumn Field="@nameof(UserGroupInfo.GroupName)" Title="ชื่อกลุ่ม" Width="180px" />
+                <GridColumn Field="@nameof(UserGroupInfo.Sort)" Title="จัดเรียง" DisplayFormat="{0:N0}" Width="150px" />
+                <GridColumn Field=@nameof(UserGroupInfo.CreatedDate) Title="วันที่สร้าง" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                <GridColumn Field=@nameof(UserGroupInfo.CreatedBy) Title="สร้างโดย" Width="150px" />
+            </GridColumns>
+        </TelerikGrid>
+    </div>
+</div>
+
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<UserGroupInfo> DocList = new List<UserGroupInfo>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData()
+    {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        DocList = await _userGroupService.ListDoc(SearchText, rcom);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl()
+    {
+        await CheckPermission();
+    }
+    async Task CheckPermission()
+    {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "9003");
+        menuCaption = menu.Name;
+        menuGroupCaption = UserService.GetMenuGroup(login.LogInInfo, menu.GroupID).Name;
+    }
+
+    async void Edit(UserGroupInfo select_data)
+    {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        isLoading = true;
+        await sessionStorage.SetItemAsync(Globals.ActiveID_USERGROUP, select_data.UserGroupID);
+        _userGroupService.DocSet = await Task.Run(() => _userGroupService.GetDocSet(select_data.UserGroupID, rcom));
+        nav.NavigateTo($"Master/UserGroupDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc()
+    {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        await sessionStorage.RemoveItemAsync(Globals.ActiveID_USERGROUP);
+        _userGroupService.DocSet = UserGroupService.NewTransaction(rcom);
+        nav.NavigateTo($"Master/UserGroupDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction()
+    {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        nav.NavigateTo($"Dashboard/StartBoard", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

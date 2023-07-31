@@ -1,0 +1,106 @@
+﻿@page "/Login/ChangeRCom"
+ 
+<style>
+    .fix-center {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" /> 
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+           <div class="row pb-1 pt-5">
+            <div class="col-md-6 col-sm-12 col-12 pt-2 pb-2 text-center mx-auto">
+                <div class="card text-white bg-white mb-3">
+                    <div class="card-header"><h2 style="color:black">เปลี่ยนบริษัท</h2></div>
+                    <div class="card-body">
+                        @if (rcoms.Count == 0) {
+                            <div class="row ">
+                                <div class="col-12 text-center">
+                                    <h2>ไม่มีสาขา</h2>
+                                </div>
+                            </div>
+
+                        } else {
+                            foreach (var r in rcoms) {
+                                <a class="btn p-0 w-100" @onclick="@(async () => await SelectRcom(r))">
+                                    <div class="row ">
+                                        <div class="col-2">
+                                            <img class="me-3" src="/assets/img/menulogo.png" alt="" width="48" height="48">
+                                        </div>
+                                        <div class="col-10 text-start">
+                                            <p class="card-text" style="color:black">@r</p>
+                                        </div>
+                                    </div>
+                                    <hr />
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div> 
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool firstRender = true;
+    bool isLoading = true;
+    string companyname = "";
+    List<string> rcoms = new List<string>();
+
+    protected override async Task OnInitializedAsync() {
+    
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+    }
+
+    protected override void OnInitialized() {    
+    }
+
+    void LoadData() {
+        rcoms = LogInService.ListUserInRCompany(login.LoginInfo.CurrentUser);
+        isLoading = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    async Task SelectRcom(string rcom) {
+        var rcomInfo = CompanyService.GetRCompanyInfo(rcom);
+
+
+        isLoading = true;
+        login.LoginInfo = LogInService.Login(login.LoginInfo.CurrentUser, "silent", "OMS", rcomInfo.CompanyID);
+        if (login.LoginInfo.LoginResult == "ok") {
+            await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+            ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(login.LoginInfo.CurrentUser);
+
+            isLoading = false;
+            var url=  login.GetFirstBoardUrl();
+            nav.NavigateTo(url);
+          
+        } else {
+            isLoading = false;
+            await Swal.FireAsync("", "ชื่อหรือรหัสผ่านไม่ถูกต้อง", "error");
+        } 
+    }
+
+
+
+}

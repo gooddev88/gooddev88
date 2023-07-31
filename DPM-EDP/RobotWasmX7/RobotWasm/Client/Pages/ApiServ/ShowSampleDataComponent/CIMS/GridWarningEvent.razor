@@ -1,0 +1,255 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.CIMS
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>WarningEvent</h4>
+        <h5>ข้อมูเหตุการณ์การแจ้งเตือนภัย (Warning Event)</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+ 
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata" 
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="false" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.dataid))" Title="dataid" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.fk_table_2895))" Title="fk_table_2895" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.event_label))" Title="event_label" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_type))" Title="evt_type" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.event_status))" Title="event_status" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.start_dt))" Title="start_dt" DisplayFormat="{0:dd/MM/yyyy}" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.end_dt))" Title="end_dt" DisplayFormat="{0:dd/MM/yyyy}" Width="120px" />
+                            @*<GridColumn Field="@(nameof(WarningEventDataSet.DataRow.start_dt))" Title="start_dt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.end_dt))" Title="end_dt" Width="120px" />*@
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.description))" Title="description" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pte))" Title="evt_pte" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nbi))" Title="evt_nbi" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_npt))" Title="evt_npt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_skn))" Title="evt_skn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_spk))" Title="evt_spk" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_kri))" Title="evt_kri" Width="120px" />
+
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_aya))" Title="evt_aya" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_atg))" Title="evt_atg" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pri))" Title="evt_pri" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_skw))" Title="evt_skw" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cco))" Title="evt_cco" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nyk))" Title="evt_nyk" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_sri))" Title="evt_sri" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pkn))" Title="evt_pkn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pbi))" Title="evt_pbi" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_rbr))" Title="evt_rbr" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_skm))" Title="evt_skm" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nma))" Title="evt_nma" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cpm))" Title="evt_cpm" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_brm))" Title="evt_brm" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_srn))" Title="evt_srn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_kkn))" Title="evt_kkn" Width="120px" />
+
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ret))" Title="evt_ret" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_mkm))" Title="evt_mkm" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pnb))" Title="evt_pnb" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_utt))" Title="evt_utt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_lpg))" Title="evt_lpg" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_lpn))" Title="evt_lpn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cmi))" Title="evt_cmi" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_msn))" Title="evt_msn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_sni))" Title="evt_sni" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cpn))" Title="evt_cpn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nst))" Title="evt_nst" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_plg))" Title="evt_plg" Width="120px" />
+
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ska))" Title="evt_ska" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_stn))" Title="evt_stn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ptn))" Title="evt_ptn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_yla))" Title="evt_yla" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nwt))" Title="evt_nwt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ubn))" Title="evt_ubn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ssk))" Title="evt_ssk" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_yst))" Title="evt_yst" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_acr))" Title="evt_acr" Width="120px" />
+
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_udn))" Title="evt_udn" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nki))" Title="evt_nki" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nbp))" Title="evt_nbp" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_lei))" Title="evt_lei" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cri))" Title="evt_cri" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pyo))" Title="evt_pyo" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_nan))" Title="evt_nan" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pre))" Title="evt_pre" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cnt))" Title="evt_cnt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_uti))" Title="evt_uti" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_sbr))" Title="evt_sbr" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_lri))" Title="evt_lri" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cti))" Title="evt_cti" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_trt))" Title="evt_trt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_ryg))" Title="evt_ryg" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_cbi))" Title="evt_cbi" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pkt))" Title="evt_pkt" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_rng))" Title="evt_rng" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_pna))" Title="evt_pna" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_kbi))" Title="evt_kbi" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_trg))" Title="evt_trg" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_bkk))" Title="evt_bkk" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.evt_publish_dt))" Title="evt_publish_dt" DisplayFormat="{0:dd/MM/yyyy}" Width="120px" />
+                            <GridColumn Field="@(nameof(WarningEventDataSet.DataRow.entrydate))" Title="entrydate" DisplayFormat="{0:dd/MM/yyyy}" Width="120px" />
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public List<WarningEventDataSet.DataRow> data_set { get; set; }
+    public List<WarningEventDataSet.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.Where(o =>
+         (
+            o.event_label.ToLower().Contains(search)
+            || o.evt_type.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=WarningEvent");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<List<WarningEventDataSet.DataRow>>(url));
+            if (query.StatusCode != "OK") {
+                return;
+            }
+            data_set = (List<WarningEventDataSet.DataRow>)query.Result;
+            ndata = data_set;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

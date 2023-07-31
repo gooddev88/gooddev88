@@ -1,0 +1,85 @@
+﻿@page "/DPMBoard/ExclusiveBoard/TableauBoardMainPageShow/{board_id}"
+ 
+ 
+@using RobotWasm.Client.Data.DA.Tableau
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.ThMap
+
+<style>
+    .embed-container {
+        position: relative;
+        padding-bottom: 70.75%;
+        height: 0;
+        overflow: hidden;
+    }
+
+        .embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+    .caption1 {
+        font-size: 1.6rem;
+        display: block;
+    }
+
+    .caption2 {
+        font-size: 1.4rem;
+        display: block;
+    }
+</style>
+
+
+        <div class="row pt-3">
+        <div class="col-12 text-end">
+            <span style="color:gray">v.1.0.2</span>
+    </div>
+</div>
+<ScrollMenu type="standard"></ScrollMenu>
+@if (!isLoading) {
+
+
+    <div class="embed-container"> 
+        <object data="@board_url"
+            style="width:100%;height:100vh;"
+            type="text/html">
+        </object> 
+    </div>
+
+        <div class="row pt-3">
+        <div class="col-12 text-end">
+            <a @onclick="@CreateError" class="btn btn-link text-decoration-none">
+                <i class="fas fa-redo"></i>&nbsp;Create Error
+            </a>
+            <a @onclick="@ReloadPage" class="btn btn-link text-decoration-none">
+                <i class="fas fa-redo"></i>&nbsp;อัพเดทเว็บไซต์
+            </a>
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+@code {
+    [Parameter] public string board_id { get; set; }
+    private bool isLoading = false;
+    private string board_url = "";
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        board_url = await Task.Run(() => _tableauService.GetBoardUrl(board_id));
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected void ReloadPage()
+    {
+        jsRuntime.InvokeVoidAsync("window.location.reload");
+    }
+    async void CreateError() {
+        throw new Exception("I'm Error!");
+    }
+}

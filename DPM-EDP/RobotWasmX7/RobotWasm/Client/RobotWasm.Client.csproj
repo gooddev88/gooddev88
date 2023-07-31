@@ -1,0 +1,113 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\DA\Board\G20\**" />
+    <Compile Remove="Data\DA\MasterType\**" />
+    <Compile Remove="Pages\DPMBoard\DpmPortal\**" />
+    <Compile Remove="Pages\Upload\**" />
+    <Content Remove="Data\DA\Board\G20\**" />
+    <Content Remove="Data\DA\MasterType\**" />
+    <Content Remove="Pages\DPMBoard\DpmPortal\**" />
+    <Content Remove="Pages\Upload\**" />
+    <EmbeddedResource Remove="Data\DA\Board\G20\**" />
+    <EmbeddedResource Remove="Data\DA\MasterType\**" />
+    <EmbeddedResource Remove="Pages\DPMBoard\DpmPortal\**" />
+    <EmbeddedResource Remove="Pages\Upload\**" />
+    <None Remove="Data\DA\Board\G20\**" />
+    <None Remove="Data\DA\MasterType\**" />
+    <None Remove="Pages\DPMBoard\DpmPortal\**" />
+    <None Remove="Pages\Upload\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+  
+ 
+  
+    <Compile Remove="Data\DA\Xfiles\Model\FilesInfo.cs" />
+    <Compile Remove="Data\DA\Xfiles\Model\vw_files.cs" />
+    <Compile Remove="Data\DA\Xfiles\Model\xfiles.cs" />
+    <Compile Remove="Data\DA\Xfiles\XFilesService.cs" />
+    <Compile Remove="Pages\DPMBoard\CustomBoard\Widgets\MyDataCountry.cs" />
+    <Compile Remove="Service\Api\PaginatedResult.cs" />
+    <Compile Remove="Service\Api\ResultExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\DPMBoard\A01\DashBoard_Backup.razor" />
+    <Content Remove="Pages\DPMBoard\A01\Widgets\EventLocationMapGeoSf.razor" />
+    <Content Remove="Pages\DPMBoard\A01\Widgets\EventLocationMapGeoSfOpenStreetMap.razor" />
+    <Content Remove="Pages\DPMBoard\CustomBoard\Widgets\WG102_ComponentBackup.razor" />
+    <Content Remove="Pages\DPMBoard\StandardBoard.razor" />
+    <Content Remove="Pages\IndexBackup.razor" />
+    <Content Remove="Pages\Menu\Portal\PortalMenu.razor" />
+    <Content Remove="Pages\Sample\Sync\SyncMap.razor" />
+    <Content Remove="wwwroot\chart\g10\Zwg106.js" />
+    <Content Remove="wwwroot\chart\thmap\map201.js" />
+    <Content Remove="wwwroot\css\TCustom.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Pages\ApiServ\ShowSampleDataComponent\DPMPortal\GridDPM003.razor" />
+    <None Include="Pages\ApiServ\ShowSampleDataComponent\FactoryShowSampleData.razor" />
+    <None Include="wwwroot\chart\thmap\th-all.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+ 
+
+	  <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+ 
+
+	  <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
+ 
+
+	  <PackageReference Include="Blazorise.Bootstrap5" Version="1.0.6" />
+ 
+
+	  <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.0.6" />
+ 
+
+	  <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.2.1" />
+ 
+
+	  <PackageReference Include="FisSst.BlazorMaps" Version="1.0.1" />
+ 
+
+	  <PackageReference Include="Markdig" Version="0.30.3" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.5" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.2" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.2" PrivateAssets="all" />
+	  <PackageReference Include="Telerik.UI.for.Blazor" Version="3.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\RobotWasm.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\DA\Data\NewFolder\" />
+    <Folder Include="Data\DA\Xfiles\Model\" />
+    <Folder Include="Pages\Menu\Portal\" />
+    <Folder Include="Pages\Sample\Sync\" />
+    <Folder Include="wwwroot\Document\" />
+  </ItemGroup>
+
+</Project>

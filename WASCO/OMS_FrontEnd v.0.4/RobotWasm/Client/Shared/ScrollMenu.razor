@@ -1,0 +1,93 @@
+﻿@page "/Shared/ScrollMenu/{type}"
+
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using Blazorise
+
+<style>
+
+.top-menu{
+    position: initial;
+    top: 70px;
+    width: 100%;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1;
+}
+
+@@media only screen and (min-width: 290px) {
+    div.top-menu {
+        justify-content:flex-start !important;
+    }
+}
+
+@@media only screen and (min-width: 700px) {
+    div.top-menu {
+        justify-content:center !important;
+    }
+}
+
+.samll {
+    font-size:small;
+}
+
+</style>
+
+@if (menu != null) {
+    <div class="top-menu justify-content-center">
+<nav class="navbar navbar-expand navbar bg-tranparent justify-content-center pt-0">
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                @foreach (var m in menu.Where(o => o.board_type == type).OrderBy(o => o.sort)) {
+                    <Tooltip Text="@m.description" Placement="TooltipPlacement.Bottom">
+                    <li class="nav-item">
+                        <NavLink class="nav-link px-3 text-center" href="@m.page">
+                            <img src="@m.img_path" class="rounded-circle" alt="" width="70" height="70">
+                           <p class="text-dark samll mt-1 mb-0">@m.description</p>
+                        </NavLink> 
+                    </li>
+                    </Tooltip>
+                }
+            </ul>
+        </div>
+    </nav>
+    </div>
+    }
+
+@code {
+    
+    [Parameter] public string type { get; set; }
+
+        public bool isLoading { get; set; } = false;
+    public List<board_master>? menu;
+
+        protected override async Task OnInitializedAsync() {
+             await LoadBoard();
+        //await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+         await LoadBoard();
+    }
+
+    async Task LoadBoard() {
+        try {
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            var res = await Http.GetAsync($"api/Board/GetMasterBoardMenu");
+
+            menu = JsonSerializer.Deserialize<List<board_master>>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+        } catch(Exception ex) {
+            var x = ex.Message;
+        } finally {
+        }      
+    }
+
+        protected override void OnInitialized() {
+        LoadData();
+    }
+}

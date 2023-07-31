@@ -1,0 +1,556 @@
+﻿@page "/Leave/UserLeaveList"
+
+@using Robot.Data.DA.Leave
+@using Robot.Data.ML
+@using static Robot.Data.DA.Leave.LeaveService
+@using Telerik.DataSource;
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Robot.PrintOut.Leave
+@inject LeaveService leaveService
+<style>
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Menu/MenuMaster/MASTER">@menuGroupCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Leave/UserLeaveList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+
+            @if (login.CanOpen(login.LoginInfo, "171")) {
+                <div class="col-6 text-end">
+                                            @if (login.CanEdit(login.LoginInfo, "171")) {
+                    <a class="text-decoration-none" @onclick="@btnMoveQuotaLeaveDay">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        ยกยอดวันลาหยุดพักผ่อน 
+                    </a>
+            }&nbsp;
+                    <a class="text-decoration-none" @onclick="@GoToAddLeave">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        สร้างใบลา
+                    </a>
+                    
+                </div>
+            }
+          @*  @if (login.CanEdit(login.LoginInfo, menu)) {
+                <div class="col-6 text-end" hidden="hidden">
+                    <a class="btn btn-warning" @onclick="@GoToAddQuota">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        เพิ่มโควต้าวันลา
+                    </a>
+                </div>
+            }*@
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is1">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody Class="mb-0">
+                    <div class="row">
+                        @*<div class="col-md-2 col-12">
+                            <span>สถานะ</span>
+                            <TelerikComboBox @bind-Value="@Filter.Status"
+                                             Data="@ListStatus"
+                                             Placeholder=""
+                                             ItemHeight="35"
+                                             TextField="@nameof(SelectOption.Description)"
+                                             ValueField="@nameof(SelectOption.Value)"
+                                             Filterable="true"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>*@
+                      @*  <div class="col-md-2 col-12">
+                            <span>กลุ่มหน่วยงาน</span>
+                            <TelerikComboBox 
+                                             Data="@ListComGroup"
+                                             ValueField="@(nameof(CompanyInfo.CompanyID))"
+                                             TextField="@(nameof(CompanyInfo.Name1))"
+                                             @bind-Value="@Filter.ComGroup" OnChange="@SelectedComGroupChanged"
+                                             Width="100%"
+                                             PageSize="10"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             ItemHeight="35"
+                                             Filterable="true"
+                                             FilterOperator="@StringFilterOperator.Contains">
+                                <ComboBoxSettings>
+                                    <ComboBoxPopupSettings Height="300px"></ComboBoxPopupSettings>
+                                </ComboBoxSettings>
+                                <ItemTemplate>
+                                    <span>@($"{context.CompanyID} ({context.Name1})")</span>
+                                </ItemTemplate>
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-md-2 col-12">
+                            <span>หน่วยงาน</span>
+                                <TelerikComboBox 
+                                             Data="@ListCompany"
+                                             ValueField="@(nameof(CompanyInfo.CompanyID))"
+                                             TextField="@(nameof(CompanyInfo.Name1))"
+                                             Width="100%"
+                                             PageSize="10"
+                                             @bind-Value="@Filter.Department" OnChange="@SelectedCompanyChanged"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             ItemHeight="35"
+                                             Filterable="true"
+                                             FilterOperator="@StringFilterOperator.Contains">
+                                <ComboBoxSettings>
+                                    <ComboBoxPopupSettings Height="300px"></ComboBoxPopupSettings>
+                                </ComboBoxSettings>
+                                <ItemTemplate>
+                                    <span>@($"{context.CompanyID} ({context.Name1})")</span>
+                                </ItemTemplate>
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-md-2 col-12">
+                            <span>ส่วนงาน</span>
+                            <TelerikComboBox @bind-Value="@Filter.SubDepartment"
+                                             Data="@ListDepartment"
+                                             Placeholder=""
+                                             TextField="@nameof(CompanyProjectInfo.Name1)"
+                                             ValueField="@nameof(CompanyProjectInfo.ProjectID)"
+                                             ItemHeight="35"
+                                             Filterable="true"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-md-2 col-12" hidden="hidden">
+                            <span>ตำแหน่ง</span>
+                               <TelerikComboBox @bind-Value="@Filter.Position"
+                                             Data="@ListPosition"
+                                             Placeholder=""
+                                             TextField="@nameof(MasterTypeLine.Description1)"
+                                             ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                             ItemHeight="35"
+                                             Filterable="true"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             Width="100%">
+                            </TelerikComboBox>      
+                        </div>*@
+                        <div class="col-md-3 col-12">
+                            <div class="input-group">
+                                  <TextEdit @bind-Text="@Filter.SearchText" PlaceHolder="พิมพ์เพื่อค้นหา" Size="Size.Small" />
+                                <div class="input-group-append">
+                                    <a @onclick="@SearchAction" class="btn btn-success btn-sm">
+                                        ค้นหา
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="10"
+                             Navigable="true">
+                    <GridColumns>   
+                            <GridColumn Field="@nameof(I_LeaveGridDisplay.LeaveID)" Title="อนุมัติ" Editable="false" Width="65px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+                                    <button class="btn btn-sm text-success" @onclick="@(() => Approve(data))"><i class="fa-regular fa-circle-check" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.LeaveID)" Title="ไม่อนุมัติ" Editable="false" Width="75px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+                                    <button class="btn btn-sm text-danger" @onclick="@(() => Rejected(data))"><i class="fa-regular fa-circle-xmark" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                                <GridColumn Field="@nameof(I_LeaveGridDisplay.Status)" Title="สถานะ" Editable="false" Width="110px">
+                                <Template>
+                                    @{
+                                        var data = context as I_LeaveGridDisplay;
+                                        @switch (data.Status.ToUpper()) {
+                                            case "PENDING":
+                                                <span class="badge rounded-pill bg-warning" style="width:80px;color:black;">รออนุมัติ</span>
+                                                break;
+                                            case "APPROVED_LEVEL1":
+                                                <span class="badge rounded-pill bg-info" style="width:80px">อนุมัติระดับ 1</span>
+                                                break;
+                                            case "APPROVED_LEVEL2":
+                                                <span class="badge rounded-pill bg-info" style="width:80px">อนุมัติระดับ 2</span>
+                                                break;
+                                            case "APPROVED":
+                                                <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติ</span>
+                                                break;
+                                            case "REJECT":
+                                                <span class="badge rounded-pill bg-danger" style="width:80px">ไม่อนุมัติ</span>
+                                                break;
+                                            case "CANCEL":
+                                                <span class="badge rounded-pill bg-danger" style="width:80px">ยกเลิก</span>
+                                                break;
+                                            default:
+                                                <span class="badge rounded-pill bg-warning" style="width:80px;color:black;">รออนุมัติ</span>
+                                                break;
+                                        }
+                                    }
+                                </Template>
+                            </GridColumn>
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.LeaveID) Title="รหัส" Width="110px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.LeaveType) Title="ประเภทการลา" Width="100px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.FullName) Title="ชื่อ-สกุล" Width="160px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.Department) Title="หน่วยงาน" Width="80px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.SubDepartment) Title="ส่วนงาน" Width="100px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.Position) Title="ตำแหน่ง" Width="150px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.DateLeave) Title="ช่วงวันที่ลา" Width="180px" />
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Reason)" Title="เหตุผลการลา" Width="220px" />
+                              <GridColumn Field="@nameof(I_LeaveGridDisplay.HasCer)" Title="มีใบรับรอง" Width="100px" /> 
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Approved)" Title="ผู้อนุมัติ" Width="180px" />
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.LeaveID)" Title="เปิด" Editable="false" Width="70px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa-solid fa-magnifying-glass" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    LeaveService.I_LeaveFiterSet Filter = LeaveService.NewFilterSet();
+    List<I_LeaveGridDisplay> DocList = new List<I_LeaveGridDisplay>();
+
+    List<CompanyInfo> ListComGroup = new List<CompanyInfo>();
+    List<CompanyInfo> ListCompany = new List<CompanyInfo>();
+    List<CompanyProjectInfo> ListDepartment = new List<CompanyProjectInfo>();
+    List<MasterTypeLine> ListPosition = new List<MasterTypeLine>();
+    //List<SelectOption> ListStatus = new List<SelectOption>();
+
+    protected override async Task OnInitializedAsync() {
+
+    }
+
+    protected override async Task OnParametersSetAsync() {
+        Filter = await Task.Run(() => leaveService.GetSessionLeaveFiterSet());
+        if (Filter == null) {
+            Filter = LeaveService.NewFilterSet();
+        }
+        await Task.Run(() => login.CheckLogin());
+        if (!login.CanOpen(login.LoginInfo, "171")) {
+            nav.NavigateTo($"Dashboard/PersonBoardDesktop/{"171"}", false);
+        }
+
+        LoadDropDownList();
+        await Task.Run(LoadData);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async void LoadData() {
+        SetDefaultFilter();
+
+        var x_DocList = LeaveService.ListDocUserLeaveForApprove(Filter);
+
+        DocList = FillText(x_DocList);
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public List<I_LeaveGridDisplay> FillText(List<vw_HRLeave> input) {
+        List<I_LeaveGridDisplay> result = new List<I_LeaveGridDisplay>();
+        foreach (var l in input) {
+            I_LeaveGridDisplay n = new I_LeaveGridDisplay();
+            n.Rcom = l.RComID;
+            n.Com = l.ComID;
+            n.LeaveID = l.LeaveID;
+            n.DocType = l.DocType;
+            n.LeaveType = l.LeaveType;
+            n.Day = l.LeaveDay.ToString("N0") + "Day";
+            n.DateLeave = LeaveService.ConvertTobuddhistDate( l.DateFrom).ToString("dd/MM/yyyy") + " - " + LeaveService.ConvertTobuddhistDate( l.DateTo).ToString("dd/MM/yyyy");
+            n.StatusL1 = l.ApproveStatusL1;
+            if (l.ApprovedDateL1!=null) {
+            n.ApprovedL1 = string.IsNullOrEmpty(l.ApprovedByL1) ? "" : l.ApprovedByL1 + " วันที่ " + LeaveService.ConvertTobuddhistDate( Convert.ToDateTime(l.ApprovedDateL1)).ToString("dd/MM/yyyy");    
+            }
+            
+            n.Status = l.ApproveStatus;
+            if (l.ApprovedDate!=null) {
+            n.Approved = string.IsNullOrEmpty(l.ApprovedBy) ? "" : l.ApprovedBy + " วันที่ " + LeaveService.ConvertTobuddhistDate( Convert.ToDateTime(l.ApprovedDate)).ToString("dd/MM/yyyy");    
+            }
+            
+            n.FullName = l.FullName;
+            n.Position = l.PositionID;
+            n.Department = l.DepartmentID;
+            n.SubDepartment = l.SubDepartmentID;
+            n.IsLockCreateCancelDoc = l.IsLockCreateCancelDoc;
+            n.Reason = l.Remark;
+
+            result.Add(n);
+        }
+        return result;
+    }
+
+
+    async Task CheckPermission() {
+
+        var Menu = LogInService.GetMenuInfo(login.LoginInfo,"171");
+        menuCaption = Menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, Menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo,"171")) {//
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo,"171")) {
+            isShowNew = false;
+        }
+    }
+    void LoadDropDownList() {
+        var uirc = login.LoginInfo.UserInRCompany;
+        var uic = login.LoginInfo.UserInCompany;
+        ListCompany =  CompanyService.ListBranch(uic,"");
+        ListPosition = MasterTypeService.ListType("", "JOB POSITION", false);
+        ListComGroup = CompanyService.ListCompanyGroup(uic,uirc);
+        //ListStatus = LeaveService.ListStatus();
+    }
+
+    private void SelectedComGroupChanged(object value) {
+        if (value != null) {
+            var groupcom = value.ToString();
+
+            Filter.ComGroup = groupcom;
+            var uic = login.LoginInfo.UserInCompany;
+            ListCompany = CompanyService.ListBranch(uic, groupcom);
+        }
+    }
+
+    private void SelectedCompanyChanged(object theUserInput) {
+        if (theUserInput != null) {
+            var com = theUserInput.ToString();
+
+            string company = "";
+            if (com != null) {
+                company = com;
+            }
+
+            Filter.Department = com;
+
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            ListDepartment = CompanyService.ListCompanyProjectByDepartment(com, rcom);
+        }
+    }
+    public List <string> GetPermissionLevel() {
+        var haslv1 = login.CanEdit(login.LoginInfo, "172");
+        var haslv2 = login.CanEdit(login.LoginInfo, "173");
+        var haslv3 = login.CanEdit(login.LoginInfo, "174");
+        List<string> result = new List<string>();
+
+        if (haslv3) {
+            // result.Add("APPROVED");
+            result.Add("APPROVED_LEVEL2");
+        }
+        if (haslv2) {
+            result.Add("APPROVED_LEVEL1");
+        }
+        if (haslv1) {
+            result.Add("PENDING");
+        }
+        return result;
+
+        //"PENDING"
+        //"APPROVED_LEVEL1"
+        //"APPROVED_LEVEL2"
+        //"APPROVED"
+        //"REJECTED"
+        //"CANCEL"
+    }
+    public bool IsSuperLevel() {
+        bool issuperLevel = false; 
+        var haslv2 = login.CanEdit(login.LoginInfo, "173");
+        var haslv3 = login.CanEdit(login.LoginInfo, "174");
+        List<string> result = new List<string>();
+
+        if (haslv3 || haslv2) {
+            issuperLevel = true;
+        }
+        return issuperLevel;
+
+    }
+
+    private void SetDefaultFilter() {
+        //if (Filter.SubDepartment == null) {
+        //    Filter.SubDepartment = "";
+        //}
+        //if (Filter.Department == null) {
+        //    Filter.Department = "";
+        //}
+        //if (Filter.Position == null) {
+        //    Filter.Position = "";
+        //}
+        //if (Filter.ComGroup==null) {
+        //    Filter.ComGroup = "";
+        //}
+        var user =login.LoginInfo.CurrentUserInfo;
+        Filter.Department = user.DepartmentID;
+        Filter.SubDepartment = user.SubDepartmentID;
+        Filter.IsSupLevel = IsSuperLevel();
+        Filter.Status = GetPermissionLevel();
+        Filter.UIC = login.LoginInfo.UserInCompany;
+        //leaveService.SetSessionLeaveFiterSet(Filter);
+    }
+
+    async void Edit(I_LeaveGridDisplay select) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, select.LeaveID);
+        leaveService.DocSet = leaveService.GetDocSet(select.Rcom, select.LeaveID);
+        nav.NavigateTo($"Leave/LeaveDetail/1", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Approve(I_LeaveGridDisplay select) {
+        isLoading = true;
+        try {
+            await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, select.LeaveID);
+            leaveService.DocSet = leaveService.GetDocSet(select.Rcom, select.LeaveID);
+
+
+            string action = "APPROVED";
+            var max_level = GetMaxLevel();
+            var leave = leaveService.DocSet.Leave;
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var approver = login.LoginInfo.CurrentUser;
+
+            var rs = LeaveService.LeaveApprove(leave.LeaveID, rcom, approver, max_level, action);
+            if (rs.Result != "ok") {
+                await Swal.FireAsync("", rs.Message1, "error");
+                return;
+            } else {
+                await Swal.FireAsync("", "ดำเนินการสำเร็จ", "success");
+                leaveService.DocSet = leaveService.GetDocSet(leave.RComID, leave.LeaveID);
+
+                LoadData();
+        }
+        } catch  { 
+        }finally{
+                    isLoading = false;
+        }     
+    }
+
+        async void Rejected(I_LeaveGridDisplay select) {
+        isLoading = true;
+        try {
+            await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, select.LeaveID);
+            leaveService.DocSet = leaveService.GetDocSet(select.Rcom, select.LeaveID);
+
+
+            string action = "REJECTED";
+            var max_level = GetMaxLevel();
+            var leave = leaveService.DocSet.Leave;
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var approver = login.LoginInfo.CurrentUser;
+
+            var rs = LeaveService.LeaveApprove(leave.LeaveID, rcom, approver, max_level, action);
+            if (rs.Result != "ok") {
+                await Swal.FireAsync("", rs.Message1, "error");
+                return;
+            } else {
+                await Swal.FireAsync("", "ดำเนินการสำเร็จ", "success");
+                leaveService.DocSet = leaveService.GetDocSet(leave.RComID, leave.LeaveID);
+
+                LoadData();
+        }
+        } catch  { 
+        }finally{
+                    isLoading = false;
+        }     
+    }
+
+     public string GetMaxLevel() {
+        var haslv1 = login.CanEdit(login.LoginInfo, "172");
+        var haslv2 = login.CanEdit(login.LoginInfo, "173");
+        var haslv3 = login.CanEdit(login.LoginInfo, "174");
+        if (haslv3) {
+            return "L3";
+        } else if (haslv2) {
+            return "L2";
+        } else if (haslv1) {
+            return "L1";
+        } else {
+            return "X";
+        }
+
+        //"PENDING"
+        //"APPROVED_LEVEL1"
+        //"APPROVED_LEVEL2"
+        //"APPROVED"
+        //"REJECTED"
+        //"CANCEL"
+    }
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //async void GoToAddQuota() {
+    //    nav.NavigateTo($"Leave/QuotaInJobPosition", false);
+    //}
+    async void GoToAddLeave() {
+        nav.NavigateTo($"Leave/AdminAddLeave", false);
+    }
+
+    async void btnMoveQuotaLeaveDay() {
+        nav.NavigateTo($"Leave/MoveQuotaLeaveDay", false);
+    }
+    
+
+
+}

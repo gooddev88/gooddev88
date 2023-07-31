@@ -1,0 +1,112 @@
+﻿@using FisSst.BlazorMaps
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@using System.Diagnostics
+
+
+<h6>@widgetDesc</h6>
+<Map @ref="mapRef" MapOptions="@mapOptions"></Map>
+
+<style>
+    #mapId {
+        height: 700px;
+    }
+</style>
+ 
+<a @onclick="@AddMarkers"> Add Marker2</a>
+
+<div class="row text-end">
+    <div class="col-12">
+        <small style="color:gray">wg114</small>
+    </div>
+</div>
+@code {
+    [Parameter] public string? BoardID { get; set; }
+    [Inject]
+    private ICircleFactory CircleFactory { get; init; }
+    bool isLoading = false;
+    public string? widgetDesc { get; set; }
+    public List<BubbleModel> xData { get; set; } = new List<BubbleModel>();
+    public custom_widget_master this_widget = new custom_widget_master();
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg114"));
+        widgetDesc = this_widget.widget_desc;
+        List<WG114Data> query = await Task.Run(() => _g10Service.GetWG114Data(BoardID));
+        LoadChart(query); 
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+
+    //shit
+    private List<Circle> circles = new List<Circle>(); 
+    private Stopwatch stopwatch = new Stopwatch(); 
+
+    //end shit
+
+    private Map? mapRef;
+    private MapOptions mapOptions = new MapOptions() {
+            DivId = "mapId",
+            Center = new LatLng(14.32063597589227, 100.27742638372985),
+            Zoom = 6,
+            UrlTileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            SubOptions = new MapSubOptions() {
+                Attribution = "&copy; <a lhref='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+                TileSize = 512,
+                ZoomOffset = -1,
+                MaxZoom = 19,
+            }
+        };
+
+
+
+
+
+    async Task LoadChart(List<WG114Data> data) {
+        var max_acci_count = data.Max(o => o.count_result);
+        xData = new List<BubbleModel>(); 
+        foreach (var d in data) {
+            var exist = xData.Where(o => o.City == d.province).FirstOrDefault(); 
+            if (exist == null) {
+                BubbleModel n = new BubbleModel();
+                n.LatLng = new LatLng { Lat = d.lat, Lng = d.lon };
+                n.City = d.province;
+                n.Country = "Thailand";
+                n.Count_result = d.count_result;
+                n.Circle_size = 80000;
+                if (max_acci_count>0) {
+                    n.Circle_size = Convert.ToInt32( 80000 * n.Count_result / max_acci_count);
+                }
+                xData.Add(n);
+            } else {
+                exist.Count_result = exist.Count_result + d.count_result;
+            }
+        }
+        Task delay = Task.Delay(4000);
+        await AddMarkers();
+    }
+
+    private async Task AddMarkers() {
+   
+        foreach (var x in xData) { 
+            Circle marker = await this.CircleFactory.CreateAndAddToMap(x.LatLng, this.mapRef,  
+                 new CircleOptions() {
+                         Radius = x.Circle_size,FillColor="red"
+                     });
+            await marker.BindTooltip(x.City + " อุบัติเหตุ " + x.Count_result);
+            this.circles.Add(marker);
+
+
+        } 
+        StateHasChanged();
+    }
+    public class BubbleModel {
+        public LatLng LatLng { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public int Circle_size { get; set; }
+        public int Count_result { get; set; }
+    }
+}

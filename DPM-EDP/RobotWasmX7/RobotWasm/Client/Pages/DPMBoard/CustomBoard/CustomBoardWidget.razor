@@ -1,0 +1,221 @@
+﻿@page "/DPMBoard/CustomBoard/CustomBoardWidget/{boardid}"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Client.Pages.DPMBoard.A01;
+
+@using RobotWasm.Client.Pages.DPMBoard.A01.Widgets
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.DPMBaord.CustomBoard
+@using RobotWasm.Shared.Data.ML.Shared
+ 
+<style>
+
+    .active-border {
+        /*border: medium solid #0EDBCF;*/
+        border: medium solid #5DC90A;
+    }
+
+</style>
+
+@if (!isLoading) {
+
+    <div class="row">
+        <div class="col-md-12 text-center">
+
+            <h4 Class="text-start font-weight-light">
+                <a @onclick="Back">
+                    <i class="fas fa-angle-double-left"></i>   @BoardCaption
+                </a>
+            </h4>
+
+
+
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="col-12">
+
+
+            <div class="row">
+
+                @if (WidgetMasters != null) {
+                    @foreach (var item in WidgetMasters) {
+                        <div class="col-md-4 pt-1 pl-1 pr-1 pb-1">
+
+                            <div class="card @(item.is_select ? "active-border" : "")">
+                                <div class="card-body">
+                                    <a @onclick="@(async () => await SelectWidgetForAddToBaord(item))">
+                                        <div class="row">
+                                            <div class="col-md-2">
+                                                <div class="wrapper vcenter-item">
+                                                    @if (item.is_select) {
+                                                        <img src="img/icon/check-box.png" style="width: 40px;" />
+                                                    } else {
+                                                        <img src="img/icon/square.png" style="width: 30px;" />
+                                                    }
+                                                    @*@if (item.is_select) {
+                                                        <img src="img/icon/check.svg" style="width: 60px;" />
+                                                    } else {
+                                                        <img src="img/icon/uncheck.svg" style="width: 60px;" />
+                                                    }*@
+                                                </div>
+
+                                            </div>
+                                            <div class="col-md-10">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div style="max-height:180px; overflow: auto;">
+                                                            <TileFactory WidgetID="@item.widget_id" BoardID="@item.board_id"></TileFactory>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+
+            </div>
+
+            <div Class="row pt-4 pb-2">
+                <div class="col-md-12 text-end">
+        
+                        <TelerikButton @onclick="@(Back)" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                            <i class="fa-solid fa-chart-column"></i>&nbsp;กลับหน้าบอร์ด
+                        </TelerikButton>
+                        <TelerikButton @onclick="@(() => AddWidget())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                            <i class="fas fa-check-circle"></i>&nbsp;บันทึกวิตเจ็ต
+                        </TelerikButton>
+
+               
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+
+@code {
+    [Parameter] public string boardid { get; set; }
+
+
+    public List<custom_widget_master_select> WidgetMasters = new List<custom_widget_master_select>(); 
+    public string BoardCaption = "";
+    private bool isLoading = false;
+
+
+
+    protected override void OnInitialized() { 
+        base.OnInitialized();
+    }
+    protected override async Task OnInitializedAsync() {
+
+        isLoading = true;
+        await Task.Run(login.CheckLogin);
+        await Task.Run(LoadWidgetMaster);
+
+        isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async public Task SelectWidgetForAddToBaord(custom_widget_master_select item) {
+        item.is_select = !item.is_select; 
+    }
+
+    protected async Task LoadWidgetMaster() {
+        try {
+            isLoading = true;
+            if (_customBoardService.BoardDocset == null) {
+                _customBoardService.BoardDocset = await Task.Run(() => _customBoardService.GetCustomBoard(boardid));
+            }
+            BindData();
+            WidgetMasters = await Task.Run(() => _customBoardService.ListWidgetMaster(boardid));
+
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            //var xxx = ex.Message;
+        }
+    }
+    private void BindData() {
+        BoardCaption = _customBoardService.BoardDocset.CustomBoard.board_name;
+    }
+    async Task Back() {
+        _customBoardService.BoardDocset = await Task.Run(() => _customBoardService.GetCustomBoard(boardid));
+        if (_customBoardService.BoardDocset.CustomWidgets.Count == 0) {
+            nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardList");
+        } else {
+            nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardShow/{boardid}");
+        }
+    }
+
+    #region widget management
+
+
+    async Task AddWidget() {
+        try {
+
+            var select_widget = WidgetMasters.Where(o => o.is_select == true).ToList();
+            var r = await Task.Run(() => _customBoardService.AddWidget(select_widget));
+
+            if (r.Result == "fail") { 
+                await Swal.FireAsync("Wanring", r.Message1, SweetAlertIcon.Info);
+            } else {
+
+                await Swal.FireAsync("Success", "เพิ่มวิตเจ็ตสำเร็จ", SweetAlertIcon.Success);
+            }
+
+            Back();
+        } catch (Exception ex) {
+        }
+    }
+    //async Task SaveWidget(bool isSaveForDefault) {
+    //    try {
+    //        var user = login.LogInInfo.CurrentUser;
+
+    //        List<custom_widget_master_select> savewidg = new List<custom_widget_master_select>();
+    //        var user_in_board = user;
+    //        if (isSaveForDefault) {
+    //            user_in_board = "DEFAULT_LAYOUT";
+    //        }
+    //        foreach (var w in _customBoardService.BoardDocset.CustomWidgets) {
+    //            w.username = _customBoardService.BoardDocset.CustomBoard.username; ;
+    //            w.board_id = _customBoardService.BoardDocset.CustomBoard.board_id;
+    //        }
+    //        var r = await Task.Run(() => _customBoardService.SaveWidget(_customBoardService.BoardDocset.CustomWidgets));
+
+    //        if (r.Result == "fail") { 
+    //            await Swal.FireAsync("Wanring", r.Message1, SweetAlertIcon.Info);
+    //        } else { 
+    //            await Swal.FireAsync("Success", "บันทึกสำเร็จ", SweetAlertIcon.Success);
+    //            Back();
+    //        }
+    //    } catch (Exception ex) {
+    //    }
+    //}
+ 
+    #endregion
+
+    }

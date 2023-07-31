@@ -1,0 +1,346 @@
+﻿@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent.Budget
+@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent.CIMS
+@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent.DPMPortal
+@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent.Data
+@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent.BoardData.Widget.G10
+
+
+@switch (apiID) {
+    case "DPM003":
+        <GridDPM003></GridDPM003>
+        break;
+    case "DPM004":
+        <GridDPM004></GridDPM004>
+        break;
+    case "DPM005":
+        <GridDPM005></GridDPM005>
+        break;
+    case "DPM006":
+        <GridDPM006></GridDPM006>
+        break;
+    case "DPM008":
+        <GridDPM008></GridDPM008>
+        break;
+    case "DPM009":
+        <GridDPM009></GridDPM009>
+        break;
+    case "DPM010":
+        <GridDPM010></GridDPM010>
+        break;
+    case "DPM011":
+        <GridDPM011></GridDPM011>
+        break;
+    case "DPM012":
+        <GridDPM012></GridDPM012>
+        break;
+    case "DPM013":
+        <GridDPM013></GridDPM013>
+        break;
+    case "DPM014":
+        <GridDPM014></GridDPM014>
+        break;
+    case "DPM015":
+        <GridDPM015></GridDPM015>
+        break;
+    case "DPM016":
+        <GridDPM016></GridDPM016>
+        break;
+    case "DPM017":
+        <GridDPM017></GridDPM017>
+        break;
+    case "DPM018":
+        <GridDPM018></GridDPM018>
+        break;
+    case "DPM019":
+        <GridDPM019></GridDPM019>
+        break;
+    case "DPM020":
+        <GridDPM020></GridDPM020>
+        break;
+    case "EST006":
+        <GridEST006></GridEST006>
+        break;
+    case "EST007":
+        <GridEST007></GridEST007>
+        break;
+    case "EST008":
+        <GridEST008></GridEST008>
+        break;
+    case "NRD001":
+        <GridNRD001></GridNRD001>
+        break;
+    // CIMS
+    case "WarningEvent":
+        <GridWarningEvent></GridWarningEvent>
+        break;
+    case "WarningPublish":
+        <GridWarningPublish></GridWarningPublish>
+        break;
+    case "Expense":
+        <GridExpense></GridExpense>
+        break;
+    case "IDP":
+        <GridIDP></GridIDP>
+        break;
+    case "Help":
+        <GridHelp></GridHelp>
+        break;
+    case "Shelter":
+        <GridShelter></GridShelter>
+        break;
+    case "Hospital":
+        <GridHospital></GridHospital>
+        break;
+    case "Contact":
+        <GridContact></GridContact>
+        break;
+    // Budget
+    case "Department":
+        <GridDepartment></GridDepartment>
+        break;
+    case "OverallBudget":
+        <GridOverallBudget></GridOverallBudget>
+        break;
+    case "BudgetTransfer":
+        <GridBudgetTransfer></GridBudgetTransfer>
+        break;
+    case "BudgetExpense":
+        <GridBudgetExpense></GridBudgetExpense>
+        break;
+    case "Organization":
+        <GridOrganization></GridOrganization>
+        break;
+    // Data
+    case "DATA101":
+        <GridData101></GridData101>
+        break;
+    case "DATA102":
+        <GridData102></GridData102>
+        break;
+    case "DATA103":
+        <GridData103></GridData103>
+        break;
+    case "DATA104":
+        <GridData104></GridData104>
+        break;
+    // tda
+    case "DATA201":
+        <GridData201></GridData201>
+        break;
+    case "DATA202":
+        <GridData202></GridData202>
+        break;
+    case "DATA203":
+        <GridData203></GridData203>
+        break;
+    case "DATA204":
+        <GridData204></GridData204>
+        break;
+    case "DATA205":
+        <GridData205></GridData205>
+        break;
+    case "DATA206":
+        <GridData206></GridData206>
+        break;
+    // Data News
+    case "DATA301":
+        <GridData301></GridData301>
+        break;
+    case "DATA302":
+        <GridData302></GridData302>
+        break;
+    case "DATA303":
+        <GridData303></GridData303>
+        break;
+    case "DATA304":
+        <GridData304></GridData304>
+        break;
+    case "DATA305":
+        <GridData305></GridData305>
+        break;
+    case "DATA306":
+        <GridData306></GridData306>
+        break;
+    // Data leave
+    case "DATA401":
+        <GridData401></GridData401>
+        break;
+    case "DATA402":
+        <GridData402></GridData402>
+        break;
+    case "DATA403":
+        <GridData403></GridData403>
+        break;
+    case "DATA404":
+        <GridData404></GridData404>
+        break;
+    case "DATA405":
+        <GridData405></GridData405>
+        break;
+    case "DATA406":
+        <GridData406></GridData406>
+        break;
+    case "DATA601":
+        <GridData601></GridData601>
+        break;
+    case "DATA602":
+        <GridData602></GridData602>
+        break;
+    case "DATA603":
+        <GridData603></GridData603>
+        break;
+    case "DATA604":
+        <GridData604></GridData604>
+        break;
+    case "DATA605":
+        <GridData605></GridData605>
+        break;
+    case "DATA606":
+        <GridData606></GridData606>
+        break;
+    // Data dss
+    case "DATA501":
+        <GridData501></GridData501>
+        break;
+    case "DATA502":
+        <GridData502></GridData502>
+        break;
+    case "DATA503":
+        <GridData503></GridData503>
+        break;
+    case "DATA504":
+        <GridData504></GridData504>
+        break;
+    case "DATA505":
+        <GridData505></GridData505>
+        break;
+    case "DATA506":
+        <GridData506></GridData506>
+        break;
+    case "DATA507":
+        <GridData507></GridData507>
+        break;
+    case "DATA508":
+        <GridData508></GridData508>
+        break;
+    case "DATA509":
+        <GridData509></GridData509>
+        break;
+    case "DATA550":
+        <GridData550></GridData550>
+        break;
+    case "DATA551":
+        <GridData551></GridData551>
+        break;
+    case "DATA570":
+        <GridData570></GridData570>
+        break;
+    case "DATA571":
+        <GridData571></GridData571>
+        break;
+    case "DATA561":
+        <GridData561></GridData561>
+        break;
+    // WG G10
+    case "WG101":
+        <GridWG101></GridWG101>
+        break;
+    case "WG102":
+        <GridWG102></GridWG102>
+        break;
+    case "WG103":
+        <GridWG103></GridWG103>
+        break;
+    case "WG104":
+        <GridWG104></GridWG104>
+        break;
+    case "WG105":
+        <GridWG105></GridWG105>
+        break;
+    case "WG106":
+        <GridWG106></GridWG106>
+        break;
+    case "WG107":
+        <GridWG107></GridWG107>
+        break;
+    case "WG108":
+        <GridWG108></GridWG108>
+        break;
+    case "WG109":
+        <GridWG109></GridWG109>
+        break;
+    case "WG110":
+        <GridWG110></GridWG110>
+        break;
+    case "WG111":
+        <GridWG111></GridWG111>
+        break;
+    case "WG112":
+        <GridWG112></GridWG112>
+        break;
+    case "WG113":
+        <GridWG113></GridWG113>
+        break;
+    case "WG114":
+        <GridWG114></GridWG114>
+        break;
+    case "WG115":
+        <GridWG115></GridWG115>
+        break;
+    case "WG116":
+        <GridWG116></GridWG116>
+        break;
+    case "WG117":
+        <GridWG117></GridWG117>
+        break;
+    case "WG118":
+        <GridWG118></GridWG118>
+        break;
+    case "WG119":
+        <GridWG119></GridWG119>
+        break;
+    case "WG120":
+        <GridWG120></GridWG120>
+        break;
+    case "WG201":
+        <GridWG201></GridWG201>
+        break;
+    case "WG202":
+        <GridWG202></GridWG202>
+        break;
+    case "WG301":
+        <GridWG301></GridWG301>
+        break;
+    case "WG302":
+        <GridWG302></GridWG302>
+        break;
+    case "WG303":
+        <GridWG303></GridWG303>
+        break;
+    case "WG304":
+        <GridWG304></GridWG304>
+        break;
+    case "WG305":
+        <GridWG305></GridWG305>
+        break;
+    case "WG401":
+        <GridWG401></GridWG401>
+        break;
+    case "WG402":
+        <GridWG402></GridWG402>
+        break;
+    case "WG403":
+        <GridWG403></GridWG403>
+        break;
+    case "WG404":
+        <GridWG404></GridWG404>
+        break;
+    case "WG507":
+        <GridWG507></GridWG507>
+        break;
+    default:
+        break;
+}
+@code {
+    [Parameter] public string apiID { get; set; }
+}

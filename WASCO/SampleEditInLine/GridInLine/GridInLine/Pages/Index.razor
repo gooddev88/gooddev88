@@ -1,0 +1,84 @@
+﻿@page "/"
+
+@using static GridInLine.Data.TestService;
+
+
+@if (_testService.menu != null && _testService.myoption != null) {
+
+
+    @foreach (var item in _testService.menu) {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="checkbox" @key="item">
+                    <input type="checkbox" id="@item.MenuID" checked="@item.IsSelect" @onchange="args=> checkedChanged(item,args)">
+                    <label for="@item.MenuID">@item.MenuID - @item.Name</label>
+                </div><br />
+            </div>
+        </div>
+        <div class="d-flex flex-row bd-highlight mb-3">
+            <input type="text" value="@item.Remark" @onchange="args=> textchange(item,args)" />
+   
+            <TelerikDropDownList Value="@item.Ontop"
+                         Data="@_testService.myoption"
+                         TextField="Desc"
+                         ValueField="value"
+                         ValueChanged="@((string v) => selectChanged(v, item.MenuID))" />
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <span>ตัวเลขอย่างเดียว</span>
+                <input type="number" value="@item.Qty" @onchange="args=> textqtychange(item,args)" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button @onclick="@(e => DeleteLine(e, item))">
+                 Delete
+                </button>
+            </div>
+        </div>
+
+    }
+}
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        LoadData();
+    }
+
+
+
+    private void LoadData() {
+        _testService.myoption = _testService.CreateOption();
+        if (_testService.menu == null) {
+            _testService.menu = _testService.CreateTextList();
+        }
+    }
+
+    async Task textchange(MyMenu item, ChangeEventArgs args) {
+        var u = _testService.menu.Where(o => o.MenuID == item.MenuID).FirstOrDefault();
+        u.Remark = (string)args.Value; 
+    }
+    async Task textqtychange(MyMenu item, ChangeEventArgs args) {
+        var u = _testService.menu.Where(o => o.MenuID == item.MenuID).FirstOrDefault();
+        decimal qty = u.Qty;
+        decimal.TryParse( args.Value.ToString(),out qty);
+        u.Qty = qty;
+
+    }
+
+    private void DeleteLine(  MouseEventArgs e,MyMenu item ) {
+        _testService.menu.RemoveAll(o => o.MenuID == item.MenuID);
+        StateHasChanged();
+    }
+    async Task checkedChanged(MyMenu item, ChangeEventArgs args) {
+        var u = _testService.menu.Where(o => o.MenuID == item.MenuID).FirstOrDefault();
+        u.IsSelect = (bool)args.Value;
+    }
+
+    async Task selectChanged(string value, string menuid) {
+        var u = _testService.menu.Where(o => o.MenuID == menuid).FirstOrDefault();
+        var v = _testService.myoption.Where(o => o.value == value).FirstOrDefault();
+        u.Ontop = v.value;
+    }
+}

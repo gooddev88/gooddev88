@@ -1,0 +1,439 @@
+﻿@page "/PublishDocument/PopupEditPublishDocument/{source}"
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.PublishDoc.I_PublishDoc_DocSet
+@using Blazorise
+
+<style>
+
+    /*custom btn */
+    .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+    /*custom btn */
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-window {
+        left: 0pxx !important;
+        width: 0pxx !important;
+        height: 600pxx !important;
+        min-width: 120pxx !important;
+        min-height: 100pxx !important;
+    }
+
+    /*start telerik upload*/
+
+    .k-upload-files {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .k-form-hint {
+        display: block;
+        margin-top: 1em;
+    }
+
+    .demo-section > .kd-demo-heading {
+        padding-bottom: 0;
+        margin-bottom: 1em;
+    }
+
+    .k-file-success {
+        display: none !important;
+    }
+    /*end  telerik upload*/
+
+    /*start basic upload*/
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+    /*end  basic upload*/
+
+</style>
+
+
+@if (!isLoading) {
+
+
+    <div class="row">
+        <div class="col-12">
+            <h3>@_publishDocService.DocSet.head.title</h3>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-12">
+            <span>ข้อความ</span>
+            <TelerikTextArea @bind-Value="@_publishDocService.DocSet.head.message"
+                         AutoSize="true"
+                         Class="w-100"
+                         PlaceHolder="">
+            </TelerikTextArea>
+        </div>
+    </div>
+
+
+    @if (_publishDocService.DocSet != null) {
+        @if (!string.IsNullOrEmpty(_publishDocService.DocSet.head.data_key)) {
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="fw-bold">อัพโหลดไฟล์</h5>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+
+                            <div class="row pt-3">
+                                <div class="col-12">
+                                    <div class="file-input-zone">
+                                        <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                        </InputFile>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                    </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    @if (!isUploading) {
+                        <div class="row pt-3">
+                            <div class="col-md-12">
+
+                                @foreach (var l in @_publishDocService.DocSet.line) {
+                                    @*<div class="row">
+                                        <div class="col-md-12">
+                                        <h5>ชื่อไฟล์ @l.filename</h5>
+                                        </div>
+                                        </div>*@
+                                    <div class="row">
+                                        <div class="col-9">
+                                            <span style="font-size:medium;" class="fw-bold">ชื่อไฟล์ @l.filename</span>
+                                            <TelerikTextBox PlaceHolder="รายละเอียด" @bind-Value="@l.file_description" />
+                                        </div>
+                                        <div class="col-3 text-start ps-0 pt-3">
+                                            <a class="btn text-decoration-none bdr-50" @onclick="@(() => OnDeleteLine(l))">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <hr class="my-2" />
+                                }
+                            </div>
+                        </div>
+                    } else {
+                        <div class="loader-container">
+                            <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        }
+    }
+
+    <div class="row pt-2">
+        <div class="col-12 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@OnSave"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                <i class="fa-solid fa-floppy-disk ga-lg"></i>&nbsp; บันทึก/แก้ไข
+            </TelerikButton>
+        </div>
+    </div>
+
+
+    <TelerikDialog @bind-Visible="@dialog_Visible" Class="col-2" ShowCloseButton="false" Title="">
+        <DialogContent>
+            <div class="text-center">
+                @if (Error_dialog == "error") {
+                    <i style="color:#f27474;" class="fa-regular fa-circle-xmark fa-3x"></i>
+                } else {
+                    <i style="color:#37b400;" class="fa-regular fa-circle-check fa-3x"></i>
+                }
+                <br /><br />
+                <span style="text-align: center;">@Caption_dialog</span>
+            </div>
+        </DialogContent>
+        <DialogButtons>
+            <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" OnClick="@(() => { dialog_Visible = false; })">OK</TelerikButton>
+        </DialogButtons>
+    </TelerikDialog>
+
+
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    [Parameter] public string source { get; set; }
+    private bool isLoading = false;
+    private bool isUploading = false;
+    bool collapse1Visible = true;
+
+    string Caption = "แก้ไขเอกสาร";
+
+    //dialog
+    private bool dialog_Visible { get; set; } = false;
+    string Caption_dialog = "";
+    string Error_dialog = "";
+
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+
+    IEnumerable<vw_api_cate> DocList;
+
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public TelerikGrid<vw_xfile_ref> TrFileGrid { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_publishDocService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_DataKey);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _publishDocService.DocSet = await _publishDocService.GetDocSet(docid);
+                } else {
+                    _publishDocService.DocSet = PublishDocService.NewTransaction();
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+    }
+
+    protected async Task LoadData() {
+        BindData();
+    }
+
+    public async void BindData() {
+        var h = _publishDocService.DocSet.head;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnSave() {
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        bool isnew = false;
+        var h = _publishDocService.DocSet.head;
+        h.modified_by = user;
+        string strPayload = JsonSerializer.Serialize(_publishDocService.DocSet);
+        string url = $"api/PublishDoc/SavePublishDoc?action={isnew}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                Caption_dialog = r.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            } else {
+                _publishDocService.DocSet = await _publishDocService.GetDocSet(h.data_key);
+                await sessionStorage.SetItemAsync(Globals.ActiveID_DataKey, h.data_key);
+                BindData();
+                Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+                Error_dialog = "success";
+                dialog_Visible = true;
+                _publishDocService.ListDocSet = await Task.Run(() => _publishDocService.GetListPublishDoc());
+                if (source == "Manual") {
+                    nav.NavigateTo($"PublishDocument/Manual", false);
+                } else {
+                    nav.NavigateTo($"PublishDocument/MainPublication", false);
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    #region upload file
+
+    public async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = _publishDocService.DocSet.head;
+        if (string.IsNullOrEmpty(h.data_key)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+        string user = login.LogInInfo.CurrentUser;
+        try {
+            string fileid = "";
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = await _filego.NewFilesInfoPostgres("PUBLISH_DOC", "DPM", "", h.data_key);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                fileid = nfile.file_id;
+                upload_file.Add(nfile);
+            }
+
+            var data = await _filego.SaveToFileGo(upload_file, user);
+            if (data.Result == "ok") {
+                bool isnew = true;
+                var DocLine = PublishDocService.NewLine();
+
+                DocLine.data_key = h.data_key;
+                DocLine.file_id = fileid;
+                DocLine.sort = await _publishDocService.GenSort();
+
+                string strPayload = JsonSerializer.Serialize(DocLine);
+                string url = $"api/PublishDoc/SaveDocLine?action={isnew}";
+                var response = await Http.PostAsJsonAsync(url, strPayload);
+                var status = response.StatusCode;
+                if (status.ToString().ToLower() != "ok") {
+                } else {
+                    var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+                    if (r.Result == "fail") {
+                        Caption_dialog = r.Message1;
+                        Error_dialog = "error";
+                        dialog_Visible = true;
+                    } else {
+                        BindData();
+                        Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+                        Error_dialog = "success";
+                        dialog_Visible = true;
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+            } else {
+                Caption_dialog = data.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            }
+            _publishDocService.DocSet = await _publishDocService.GetDocSet(h.data_key);
+            _publishDocService.ListDocSet = await Task.Run(() => _publishDocService.GetListPublishDoc());
+            if (source == "Manual") {
+                nav.NavigateTo($"PublishDocument/Manual", false);
+            } else {
+                nav.NavigateTo($"PublishDocument/MainPublication", false);
+            }
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    #endregion
+
+    async void OnSaveLine(vw_publish_doc_line data) {
+        var h = _publishDocService.DocSet.head;
+        string strPayload = JsonSerializer.Serialize(data);
+        string url = $"api/PublishDoc/SaveDocLine?action={false}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                Caption_dialog = r.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            } else {
+                _publishDocService.DocSet = await _publishDocService.GetDocSet(h.data_key);
+                _publishDocService.ListDocSet = await Task.Run(() => _publishDocService.GetListPublishDoc());
+                BindData();
+                Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+                Error_dialog = "success";
+                dialog_Visible = true;
+                if (source == "Manual") {
+                    nav.NavigateTo($"PublishDocument/Manual", false);
+                } else {
+                    nav.NavigateTo($"PublishDocument/MainPublication", false);
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    async void OnDeleteLine(vw_publish_doc_line data) {
+        var h = _publishDocService.DocSet.head;
+        var rr = await Task.Run(() => _filego.DeleteFileByFileIdPostgres("DPM", "", "PUBLISH_DOC", h.data_key, data.file_id, login.LogInInfo.CurrentUser));
+        if (rr.Result == "ok") {
+            var rs = await _publishDocService.DeleteDocLine(data.file_id);
+            if (rs.Result == "ok") {
+                Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+                Error_dialog = "success";
+                dialog_Visible = true;
+                _publishDocService.DocSet = await _publishDocService.GetDocSet(h.data_key);
+                _publishDocService.ListDocSet = await Task.Run(() => _publishDocService.GetListPublishDoc());
+                if (source == "Manual") {
+                    nav.NavigateTo($"PublishDocument/Manual", false);
+                } else {
+                    nav.NavigateTo($"PublishDocument/MainPublication", false);
+                }
+                await InvokeAsync(StateHasChanged);
+            } else {
+                Caption_dialog = rs.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            }
+        } else {
+            Caption_dialog = rr.Message1;
+            Error_dialog = "error";
+            dialog_Visible = true;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

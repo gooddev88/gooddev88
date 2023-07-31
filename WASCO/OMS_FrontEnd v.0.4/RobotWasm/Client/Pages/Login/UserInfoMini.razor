@@ -1,0 +1,120 @@
+﻿@page "/Login/UserInfoMini"
+@layout MainLayout
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using RobotWasm.Client.Helper.DeviceHelper;
+@inject IJSRuntime JSRuntime
+
+<style>
+
+    .container {
+        /*padding: 1rem;*/
+    }
+
+    .image {
+        border: 1px solid #ddd;
+        border-radius: 1.5rem;
+        padding: 5px;
+        display: block;
+        width: 100%;
+    }
+
+    /*    .overlay{
+            position:absolute;
+            top:0;
+            bottom:0;
+            left:0;
+            right:auto;
+            width:100%;
+            height:100%;
+            opacity:0;
+            transition: .5s ease;
+            background-color:rgba(255,255,255,0.9);
+        }*/
+
+    .caption {
+        font-size: 1rem;
+        font-weight: bold;
+        /* position: absolute; */
+        /* top: 60%; */
+        /* left: 50%; */
+        /* transform: translate(50%,-50%); */
+        text-align: center;
+    }
+
+    /*    .thumbnail:hover{
+            transform: translate(-4px);
+        }
+
+        .img-container:hover .overlay {
+            opacity: 1;
+        }*/
+</style>
+
+@*<div class="row p-2 top-navbar">
+    <img src="/img/wasco_logo.png" style="width: calc(3.5em + 3vmin);" />&nbsp;
+    <div class="fixtop-textspan-logo"><span class="text-white" style="font-size:larger;">Wasco Co.,Ltd.</span></div>
+</div>*@
+
+<div class="row pt-3 pb-3">
+    <div class="col-md-12 text-center">
+        @if (login.LogInInfo != null) {
+            <span>สวัสดี &nbsp; <b style="font-size:large;">@UserLogin_FullName</b></span>
+        }
+    </div>
+</div>
+
+@*<div class="container">*@
+<div class="row pt-3"> 
+    <div class="col-md-3 col-sm-4 col-6 mx-auto">
+        <a class="btn p-0 text-decoration-none thumbnail" @onclick="@OnLogOut">
+            <div class="img-container">
+                <img src="/img/Home/exit.png" class="image" />
+                <div class="overlay pt-1">
+                    <p class="caption">ออกจากระบบ</p>
+                </div>
+            </div>
+        </a>
+    </div>
+ 
+</div>
+@*</div>*@
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+@code {
+    string UserLogin_FullName = "";
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async void LoadData() {
+        UserLogin_FullName = login.LogInInfo.CurrentUserInfo?.FullName;
+    }
+
+    async void OnLogOut() {
+        await login.Logout();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnSelectBrandProduct() {
+        nav.NavigateTo("Order/SelectBrandProduct");
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

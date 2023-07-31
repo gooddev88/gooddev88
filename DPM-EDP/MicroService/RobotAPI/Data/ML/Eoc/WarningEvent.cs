@@ -1,0 +1,82 @@
+﻿namespace RobotAPI.Data.ML.Eoc {
+    public class WarningEvent {
+
+        public string dataid { get; set; }
+        public string fk_table_2895 { get; set; }
+        public string event_label { get; set; }
+        public string evt_type { get; set; }
+        public string event_status { get; set; }
+        public string start_dt { get; set; }
+        public string end_dt { get; set; }
+        public string description { get; set; }
+        public string evt_pte { get; set; }
+        public string evt_nbi { get; set; }
+        public string evt_npt { get; set; }
+        public string evt_skn { get; set; }
+        public string evt_spk { get; set; }
+        public string evt_kri { get; set; }
+        public string evt_aya { get; set; }
+        public string evt_atg { get; set; }
+        public string evt_pri { get; set; }
+        public string evt_skw { get; set; }
+        public string evt_cco { get; set; }
+        public string evt_nyk { get; set; }
+        public string evt_sri { get; set; }
+        public string evt_pkn { get; set; }
+        public string evt_pbi { get; set; }
+        public string evt_rbr { get; set; }
+        public string evt_skm { get; set; }
+        public string evt_nma { get; set; }
+        public string evt_cpm { get; set; }
+        public string evt_brm { get; set; }
+        public string evt_srn { get; set; }
+        public string evt_kkn { get; set; }
+        public string evt_ret { get; set; }
+        public string evt_mkm { get; set; }
+        public string evt_pnb { get; set; }
+        public string evt_utt { get; set; }
+        public string evt_lpg { get; set; }
+        public string evt_lpn { get; set; }
+        public string evt_cmi { get; set; }
+        public string evt_msn { get; set; }
+        public string evt_sni { get; set; }
+        public string evt_cpn { get; set; }
+        public string evt_nst { get; set; }
+        public string evt_plg { get; set; }
+        public string evt_ska { get; set; }
+        public string evt_stn { get; set; }
+        public string evt_ptn { get; set; }
+        public string evt_yla { get; set; }
+        public string evt_nwt { get; set; }
+        public string evt_ubn { get; set; }
+        public string evt_ssk { get; set; }
+        public string evt_yst { get; set; }
+        public string evt_acr { get; set; }
+        public string evt_udn { get; set; }
+        public string evt_nki { get; set; }
+        public string evt_nbp { get; set; }
+        public string evt_lei { get; set; }
+        public string evt_cri { get; set; }
+        public string evt_pyo { get; set; }
+        public string evt_nan { get; set; }
+        public string evt_pre { get; set; }
+        public string evt_cnt { get; set; }
+        public string evt_uti { get; set; }
+        public string evt_sbr { get; set; }
+        public string evt_lri { get; set; }
+        public string evt_cti { get; set; }
+        public string evt_trt { get; set; }
+        public string evt_ryg { get; set; }
+        public string evt_cbi { get; set; }
+        public string evt_pkt { get; set; }
+        public string evt_rng { get; set; }
+        public string evt_pna { get; set; }
+        public string evt_kbi { get; set; }
+        public string evt_trg { get; set; }
+        public string evt_bkk { get; set; }
+        public string evt_publish_dt { get; set; }
+        public string entrydate { get; set; }
+
+
+    }
+}

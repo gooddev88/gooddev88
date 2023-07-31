@@ -1,0 +1,46 @@
+﻿@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.BoardParam
+@using System.Globalization
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@inject IJSRuntime jSRuntime;
+
+
+@*<a onclick="@CreateChart" >Create chart</a>*@
+<h6>@widgetDesc</h6>
+<div id="div_wg101" class="amchart"></div>
+
+@code {
+    [Parameter] public string BoardID { get; set; }
+     
+    public custom_widget_master this_widget = new custom_widget_master();
+    public string widgetDesc { get; set; }
+    List<WG101Data> xData = new List<WG101Data>();
+    private IJSObjectReference _jsModule;
+ 
+    protected override async Task OnInitializedAsync() {
+        //this_widget = _customBoardService.BoardDocset.CustomWidgets.Where(o => o.widget_id == "wg101").FirstOrDefault(); ;
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg101"));
+        widgetDesc = this_widget.widget_desc; 
+        _jsModule = await jSRuntime.InvokeAsync<IJSObjectReference>("import", "./amchart/g10/wg101.js");
+        if (BoardID != null) {
+            xData = await Task.Run(() => _g10Service.GetWG101Data(BoardID)); 
+            await CreateChart();
+        }
+    }
+ 
+    private async Task CreateChart() { 
+        List<ChartData> chart = new List<ChartData>();
+        foreach (var d in xData) {
+            chart.Add(new ChartData { countrow = d.Count_Result, province = d.Province });
+        } 
+        await _jsModule.InvokeVoidAsync("wg101", chart);
+    }
+
+
+    public class ChartData {
+        public string province { get; set; }
+        public int countrow { get; set; } 
+    }
+ }
+
+

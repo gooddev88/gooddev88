@@ -1,0 +1,116 @@
+﻿@page "/Menu/SubMenu/{menugroup}"
+
+
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+
+        .btn-light:focus {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        @*
+            <Breadcrumb Mode="BreadcrumbMode.Auto" Class="pt-2">
+            <BreadcrumbItem>
+            <BreadcrumbLink Active To="Dashboard/StartBoard">@menuCaption</BreadcrumbLink>
+            </BreadcrumbItem>
+            </Breadcrumb>*@
+
+        <div class="row pb-1 pt-3">
+            <div class="col-md-1 col-sm-3 col-3 text-left">
+                <a ID="btnback" class="btn w-100 " @onclick="@Back">
+                    <i class="fas fa-chevron-left fa-2x"></i>
+                </a>
+            </div>
+            <div class="col-md-10 col-sm-6 col-6 pt-1 text-center mx-0">
+                <strong style="font-size:xx-large;">@menuGroupCaption</strong>
+            </div>
+        </div>
+
+        <div class="row pb-3 pt-4">
+            <div class="col-12">
+                <div class="row">
+
+                    @foreach (var m in menus) {
+                        @if (login.CanOpen(xlogin, m.MenuID)) {
+                            <div class="col-md-3 col-sm-6 col-6 p-1">
+                                <a href="@m.Url" class="w-100 btn btn-light">
+                                    <div class="pb-2"> <i class="@m.Icon" style="font-size:2rem"></i> </div>
+                                    <h5>@m.Name</h5>
+                                    <span style="font-size:small">
+                                        @m.Desc2
+                                    </span>
+                                </a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    [Parameter] public string menugroup { get; set; }
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+    bool firstRender = true;
+    bool isLoading = true;
+    List<UserMenu> menus = new List<UserMenu>();
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        xlogin = login.LoginInfo;
+        await Task.Run(LoadData);
+    }
+
+    async Task LoadData() {
+        menus = await Task.Run(() => LogInService.ListMenuInParent(login.LoginInfo, menugroup));
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menugroup).Name;
+    }
+
+    void Back() {
+        nav.NavigateTo("Menu/MainMenu");
+    }
+}

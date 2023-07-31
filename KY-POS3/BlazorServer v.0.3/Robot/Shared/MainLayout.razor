@@ -1,0 +1,37 @@
+﻿@using CurrieTechnologies.Razor.SweetAlert2
+@using Blazored.SessionStorage
+@using Robot.Data.GADB.TT
+@using Robot.Data.FILEDB.TT
+@using Robot.Data
+@using Robot.Pages.Login
+@using Blazored.LocalStorage
+@using Robot.Pages
+
+@inherits LayoutComponentBase
+@inject NavigationManager nav
+@inject LogInService login
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+
+<ReconnectDialog> </ReconnectDialog> 
+<AuthorizeView>
+    <Authorized>
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                @Body
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    void LogOut(string id) {
+        nav.NavigateTo("Logout", false);
+    }
+    }
+
+
+ 

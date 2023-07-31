@@ -1,0 +1,62 @@
+﻿ 
+
+
+@using Blazored.SessionStorage 
+@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage 
+
+ 
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.JSInterop
+@using System.Threading.Tasks;
+@using Robot.Data.DA.Order.SO;
+@using Robot.Data.DA.Stock;
+@using Robot.Service.FileGo.Model;
+@using Blazored.LocalStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Service.Api
+@using Robot.Service.FileGo
+@using Tools
+@using Robot
+@using Robot.Data.DA.Login
+@using Robot.Shared
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA.DataHelper
+@using Robot.Data.DA
+@using Robot.Data.DA.Master
+@using Blazored.Modal.Services
+@using Blazored.Modal
+@using BlazorPro.Spinkit
+@using Blazorise
+ 
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Telerik.Blazor.Components.Editor
+@using Telerik.FontIcons
+@using Telerik.SvgIcons
+
+@using FisSst.BlazorMaps
+@*@using Blazorise.Snackbar*@
+
+@inject IHostingEnvironment hostingEnvironment
+@inject LogInService login
+@inject AuthenticationStateProvider authStateProvider
+@inject IJSRuntime JsRuntime
+@inject SweetAlertService Swal
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+
+@inject ProtectedSessionStorage protectedSessionStore
+@inject ProtectedLocalStorage protectedLocalStore
+@inject PageHistoryState pageHistory 
+@inject StateContainer StateContainer
+@inject ClientService clientService
+@inject SOService _soService 
+@inject FileGo fileGo 
+@inject StkAdjustService stkAdjustService

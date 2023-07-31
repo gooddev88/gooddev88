@@ -1,0 +1,105 @@
+﻿
+using System;
+
+
+namespace RobotAPI.Data.DA.ModelM{
+
+    public class POSINVHeadM
+    {
+        public int ID { get; set; }
+        public string INVID { get; set; }
+        public string INVUnqHID { get; set; }
+        public string INVFullID { get; set; }
+        public string CompanyID { get; set; }
+        public string DocTypeID { get; set; }
+        public string MacNo { get; set; }
+        public string MacTaxNo { get; set; }
+        public DateTime INVDate { get; set; }
+        public string INVRefID { get; set; }
+        public string INVPeriod { get; set; }
+        public string ReasonID { get; set; }
+        public string TableID { get; set; }
+        public string CustomerID { get; set; }
+        public string CustomerName { get; set; }
+        public string CustAccGroup { get; set; }
+        public string CustTaxID { get; set; }
+        public string CustBranchID { get; set; }
+        public string CustBranchName { get; set; }
+        public string POID { get; set; }
+        public string BillAddr1 { get; set; }
+        public string BillAddr2 { get; set; }
+        public string ShipToLocID { get; set; }
+        public string ShipToLocName { get; set; }
+        public string ShipToAddr1 { get; set; }
+        public string ShipToAddr2 { get; set; }
+        public string SalesID1 { get; set; }
+        public string SalesID2 { get; set; }
+        public string ContactTo { get; set; }
+        public string Currency { get; set; }
+        public decimal RateExchange { get; set; }
+        public string RateBy { get; set; }
+        public DateTime? RateDate { get; set; }
+        public string CreditTermID { get; set; }
+        public DateTime? PayDateDate { get; set; }
+        public string LastDocStepID { get; set; }
+        public string LastDocStepName { get; set; }
+        public DateTime? LastDocStepDate { get; set; }
+        public string LastDocStepStatus { get; set; }
+        public string LastDocStepActionBy { get; set; }
+        public string ApproveBy { get; set; }
+        public string ApproveStatus { get; set; }
+        public DateTime? ApproveDate { get; set; }
+        public decimal Qty { get; set; }
+        public decimal QtyReturn { get; set; }
+        public decimal NetTotalAmt { get; set; }
+        public decimal NetTotalVatAmt { get; set; }
+        public decimal NetTotalAmtIncVat { get; set; }
+        public decimal BaseNetTotalAmt { get; set; }
+        public decimal OntopDiscPer { get; set; }
+        public decimal OntopDiscAmt { get; set; }
+        public string DiscCalBy { get; set; }
+        public decimal VatRate { get; set; }
+        public string VatTypeID { get; set; }
+        public string TaxTypeID { get; set; }
+        public decimal? TaxRate { get; set; }
+        public decimal? TaxAmt { get; set; }
+        public DateTime PayDueDate { get; set; }
+        public DateTime? PostDate { get; set; }
+        public string Remark1 { get; set; }
+        public string Remark2 { get; set; }
+        public string LocID { get; set; }
+        public string SubLocID { get; set; }
+        public string ShipID { get; set; }
+        public DateTime? ShipDate { get; set; }
+        public string SOID { get; set; }
+        public DateTime? SODate { get; set; }
+        public string BillingID { get; set; }
+        public DateTime? BillingDate { get; set; }
+        public string RVID { get; set; }
+        public DateTime? RVDate { get; set; }
+        public string PayID { get; set; }
+        public DateTime? PayDate { get; set; }
+        public int PayCount { get; set; }
+        public DateTime? PayClearingDate { get; set; }
+        public DateTime? PayCompletedDate { get; set; }
+        public decimal PayAmount { get; set; }
+        public decimal PayCompletedAmt { get; set; }
+        public decimal? RemainInvAmt { get; set; }
+        public string CHQNo { get; set; }
+        public int? CountLine { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string ModifiedBy { get; set; }
+        public DateTime? ModifiedDate { get; set; }
+
+        public bool IsFullOffset { get; set; }
+        public bool? IsLink { get; set; }
+        public string LinkBy { get; set; }
+        public DateTime? LinkDate { get; set; }
+        public string Status { get; set; }
+        public bool IsPrint { get; set; }
+        public DateTime? PrintDate { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+}

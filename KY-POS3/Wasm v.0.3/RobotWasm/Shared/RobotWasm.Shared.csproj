@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\DimsDB\**" />
+    <Compile Remove="Data\ML\ApiMaster\**" />
+    <Compile Remove="Data\ML\DocHead\**" />
+    <Compile Remove="Data\ML\DPMBaord\**" />
+    <Compile Remove="Data\ML\Master\ApiCate\**" />
+    <Compile Remove="Data\ML\Master\News\**" />
+    <Compile Remove="Data\ML\POS\**" />
+    <Compile Remove="Data\ML\Q\**" />
+    <EmbeddedResource Remove="Data\DimsDB\**" />
+    <EmbeddedResource Remove="Data\ML\ApiMaster\**" />
+    <EmbeddedResource Remove="Data\ML\DocHead\**" />
+    <EmbeddedResource Remove="Data\ML\DPMBaord\**" />
+    <EmbeddedResource Remove="Data\ML\Master\ApiCate\**" />
+    <EmbeddedResource Remove="Data\ML\Master\News\**" />
+    <EmbeddedResource Remove="Data\ML\POS\**" />
+    <EmbeddedResource Remove="Data\ML\Q\**" />
+    <None Remove="Data\DimsDB\**" />
+    <None Remove="Data\ML\ApiMaster\**" />
+    <None Remove="Data\ML\DocHead\**" />
+    <None Remove="Data\ML\DPMBaord\**" />
+    <None Remove="Data\ML\Master\ApiCate\**" />
+    <None Remove="Data\ML\Master\News\**" />
+    <None Remove="Data\ML\POS\**" />
+    <None Remove="Data\ML\Q\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\ML\Master\CompanyInfo.cs" />
+    <Compile Remove="Data\ML\Master\UserGroup\xapi_master.cs" />
+    <Compile Remove="Data\ML\Master\UserInfo.cs" />
+    <Compile Remove="Data\ML\Master\UserMenu.cs" />
+    <Compile Remove="Data\ML\Master\vw_PermissionInBoard.cs" />
+    <Compile Remove="Data\ML\Master\vw_PermissionInMenu.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="1.0.6" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.0.6" />
+    <PackageReference Include="Telerik.UI.for.Blazor" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+</Project>

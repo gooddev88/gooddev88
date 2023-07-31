@@ -1,0 +1,130 @@
+﻿@using Blazorise.Localization
+@using RobotWasm.Client.Pages
+@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Pages.Login
+@layout TelerikLayout
+@inherits LayoutComponentBase
+
+<style>
+
+    body {
+        overflow-x: hidden;
+        background-color: #e1e1e1 !important;
+    }
+
+    .top-navbar {
+        background-color: #3498db;
+    }
+
+    .fixtop-textspan-logo {
+        position: absolute;
+        top: 20px;
+        left: 68px;
+    }
+
+    .badge-cart-shopping {
+        position: absolute;
+        margin-left: 40px;
+        top: 0px;
+        right: auto;
+        padding: 2px 8px;
+        border-radius: 50%;
+        background-color: red;
+        color: white;
+    }
+</style>
+
+<div class="main">
+    <div class="row p-2 top-navbar">
+        <a @onclick="@ToHome">
+        <img src="/img/wasco_logo.png" style="width:50px;" />&nbsp;
+        <div class="fixtop-textspan-logo"><span class="text-white" style="font-size:larger;">Wasco Co.,Ltd.</span></div>
+        </a>
+    </div>
+    <div class="container-fluid">
+        <TelerikRootComponent>
+            @Body
+        </TelerikRootComponent>
+    </div>
+
+    <div style="margin-top: 4rem;">
+        <nav class="nav" style="overflow-y: hidden;">
+            <a @onclick="@ToHome" class="nav__link text-decoration-none text-white pt-1">
+                <i class="fa-solid fa-house fa-lg"></i>
+                <label class="pt-1">หน้าแรก</label>
+            </a>
+            <a @onclick="@ToCartShopping" class="nav__link text-decoration-none text-white pt-1">
+                <i class="fa-solid fa-cart-shopping fa-lg"></i>
+                <label class="pt-1">ตะกร้า</label>
+                @if (Notification > 0) {
+                    <span class="badge-cart-shopping">@Notification.ToString("n0")</span>
+                }
+            </a>
+            <a @onclick="@ToViewUser" class="nav__link text-white text-decoration-none pt-1">
+                <i class="fa-solid fa-circle-user fa-lg"></i>
+                <label class="pt-1">ข้อมูลส่วนตัว </label>
+            </a>
+        </nav>
+    </div>
+</div>
+
+
+@code {
+
+    int Notification = 0;
+
+    protected override async Task OnParametersSetAsync() {
+        // await Task.Run(LoadData);
+    }
+
+    protected override async Task OnInitializedAsync() {
+        // Task.Run(LoadData);
+         await   LoadData();
+    }
+
+    //protected override void OnInitialized() {
+    //    LoadData();
+    //}
+
+    async Task LoadData() {
+        try {
+           await Task.Delay(3000);
+            string saleId = login.LogInInfo.CurrentUser;
+            Notification = await _soService.ListNotificationStatus(saleId);
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+  
+    }
+
+    async void ToHome() {
+        var comeFrom = await sessionStorage.GetItemAsync<string>(Globals.SessionComeFrom);
+        if (string.IsNullOrEmpty(comeFrom)) {
+            nav.NavigateTo("Dashboard/FirstBoard");
+            await InvokeAsync(StateHasChanged);
+        } else {
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            var user = login.LogInInfo.CurrentUser;
+            var xlogin = await Task.Run(() => login.CreateCrossAppReq(rcom, user, "OMS", comeFrom, ""));//ไปหน้า start board
+                                                                                                        //output = base_url + $"/Login/LoginFromApp/{result_api.ReqID}";
+            nav.NavigateTo(xlogin.GoToUrl);
+        }
+
+
+
+        //nav.NavigateTo("Dashboard/FirstBoard");
+        //await InvokeAsync(StateHasChanged);
+    }
+
+    async void ToCartShopping() {
+        nav.NavigateTo("Order/OrderList");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void ToViewUser() {
+        nav.NavigateTo("Login/UserInfoMini");
+        await InvokeAsync(StateHasChanged);
+    }
+}

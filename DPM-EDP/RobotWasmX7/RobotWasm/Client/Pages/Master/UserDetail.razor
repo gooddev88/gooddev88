@@ -1,0 +1,463 @@
+﻿@page "/Master/UserDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .hidden {
+        visibility: hidden;
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-checkbox:checked, .k-checkbox.k-checked {
+        border-color: #03a9f4;
+        background-color: #03a9f4;
+    }
+</style>
+
+@if (!isLoading)
+{
+
+    if (_userService.DocSet != null)
+    {
+        <div class="row pt-1">
+            <div class="col-12">
+
+                <div class="row">
+                    <div class="col-6">
+                        <Breadcrumb Mode="BreadcrumbMode.Auto">
+                            <BreadcrumbItem>
+                                <BreadcrumbLink To="Master/UserList">@menuCaption</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbItem Active>
+                                <BreadcrumbLink To="#">แก้ไข</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </Breadcrumb>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="btn-group" role="group" aria-label="Basic example">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                   @onclick="@btnSave" Class=""
+                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+                            </TelerikButton>
+                            <div>&nbsp;</div>
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                   @onclick="@btnToList" Class=""
+                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                                <i class="fa-regular fa-rectangle-list"></i>&nbsp; กลับหน้ารายการ
+                            </TelerikButton>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row pt-2">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header" style="background-color: cadetblue;">
+                                <div class="row">
+                                    <div class="col-md-12 text-start">
+                                        <span style="color: white">
+                                            <i class="fa-solid fa-circle-info fa-2x"></i>
+                                            <span>
+                                                @menuCaption
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 col-12">
+                                        <span>username</span>
+                                        <TelerikTextBox PlaceHolder="" @bind-Value="@username" Enabled="@user_enabled" />
+                                    </div>
+                                    <div class="col-md-3 col-12">
+                                        <span>ชื่อ</span>
+                                        <TelerikTextBox @bind-Value="@_userService.DocSet.User.first_name" />
+                                    </div>
+                                    <div class="col-md-3 col-12">
+                                        <span>นามสกุล</span>
+                                        <TelerikTextBox @bind-Value="@_userService.DocSet.User.last_name" />
+                                    </div>
+
+                                    @*<div class="col-md-3 col-12 pt-3">
+                                        <TelerikCheckBox Id="chkIsActive" @bind-Value="@isactive"></TelerikCheckBox>
+                                        <span style="font-size:medium;">ใช้งาน</span>
+                                        </div>*@
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-3 col-12">
+                                        <span>อีเมล์</span>
+                                        <TelerikTextBox PlaceHolder="" @bind-Value="@_userService.DocSet.User.email" />
+                                    </div>
+                                    <div class="col-md-3 col-12">
+                                        <span>หน่วยงาน</span>
+                                        <TelerikComboBox @bind-Value="@_userService.DocSet.User.comgroupid"
+                                                 Data="@CboComGroup"
+                                                 ScrollMode="@DropDownScrollMode.Virtual"
+                                                 ValueField="@(nameof(company_group_info.company_groupid))"
+                                                 TextField="@(nameof(company_group_info.name1))"
+                                                 Width="100%" PageSize="50" ItemHeight="35"
+                                                 Filterable="true"
+                                                 FilterOperator="@StringFilterOperator.Contains">
+                                            <ComboBoxSettings>
+                                                @*<ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>*@
+                                            </ComboBoxSettings>
+                                            <HeaderTemplate>
+                                                <div class="fw-bold py-2">&nbsp;&nbsp; หน่วยงาน</div>
+                                            </HeaderTemplate>
+                                            <ItemTemplate>
+                                                <span>@($"{context.name1}")</span>
+                                            </ItemTemplate>
+                                        </TelerikComboBox>
+                                    </div>
+
+                                    <div class="col-md-3 col-12">
+                                        <span>ส่วนงาน</span>
+                                        <TelerikComboBox @bind-Value="@_userService.DocSet.User.companyid"
+                                                 Data="@CboCompany"
+                                                 ScrollMode="@DropDownScrollMode.Virtual"
+                                                 ValueField="@(nameof(company_info.companyid))"
+                                                 TextField="@(nameof(company_info.name1))"
+                                                 Width="100%" PageSize="50" ItemHeight="35"
+                                                 Filterable="true"
+                                                 FilterOperator="@StringFilterOperator.Contains">
+                                            <ComboBoxSettings>
+                                            </ComboBoxSettings>
+                                            <HeaderTemplate>
+                                                <div class="fw-bold py-2">&nbsp;&nbsp; ส่วนงาน</div>
+                                            </HeaderTemplate>
+                                            <ItemTemplate>
+                                                <span>@($"{context.name1}")</span>
+                                            </ItemTemplate>
+                                        </TelerikComboBox>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 @if (isEdit) {
+                    <div class="row pt-2">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header" style="background-color: cadetblue;">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <span class="text-white">
+                                                <i class="fa-solid fa-gear fa-2x"></i>   
+                                                &nbsp;รีเซ็ตรหัสผ่าน
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                       @onclick="@btnReset" Class="px-3"
+                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                                        <i class="fa-solid fa-rotate-left fa-lg"></i>&nbsp; กดรีเซ็ต
+                                    </TelerikButton>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+               
+                    <div class="row pt-2 @IsdivPermission" id="divPermission">
+                        <div class="col-md-12">
+
+                            <div class="row pt-2">
+                                <div class="col-md-12">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #feca57 !important">
+                                            <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleUserGroup = !IsVisibleUserGroup;
+                                                                                })">
+                                                <span style="color: black">กำหนดสิทธิ์ ตามกลุ่มการใช้งาน</span>
+                                            </a>
+                                        </div>
+                                        <div class="collapse @(IsVisibleUserGroup ? "show" : "")">
+                                            <div class="card-body bg-white pb-1">
+                                                @foreach (var b in _userService.DocSet.XGroup) {
+                                                    <div class="row">
+                                                        <div class="col-2">
+                                                            <TelerikCheckBox @bind-Value="@b.X"></TelerikCheckBox>
+                                                            &nbsp;&nbsp;<span>@b.group_id</span>
+                                                        </div>
+                                                        <div class="col-10">
+                                                            <span>@b.Name</span>
+                                                        </div>
+                                                    </div>
+                                                    <hr class="mt-1" />
+                                                }
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+                }
+
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<usergroup_info> DocList = new List<usergroup_info>();
+    List<company_group_info> CboComGroup = new List<company_group_info>();
+    List<company_info> CboCompany = new List<company_info>();
+
+    public bool user_enabled { get; set; } = true;
+    public string username { get; set; } = "";
+    string IsdivPermission { get; set; } = "";
+    public bool isactive { get; set; }
+
+    private bool isEdit = true;
+
+    public bool IsVisibleUserGroup { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadDropDown);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh()
+    {
+        try
+        {
+            if (_userService.DocSet == null)
+            {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_USER);
+                if (!string.IsNullOrEmpty(docid))
+                {
+                    _userService.DocSet = await Task.Run(() => _userService.GetDocSet(docid));
+                }
+                else
+                {
+                    _userService.DocSet = UserService.NewTransaction();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var xx = ex.Message;
+        }
+    }
+
+    async void LoadData()
+    {
+        SetActiveControl();
+        BindData();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadDropDown()
+    {
+        CboComGroup = await _companyService.ListGroupCompany();
+        CboCompany = await _companyService.ListCompany();
+    }
+
+    private void SetActiveControl()
+    {
+        CheckPermission();
+    }
+    private void CheckPermission()
+    {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "901");
+        menuCaption = menu.menu_name;
+        menuGroupCaption = UserService.GetMenuGroup(login.LogInInfo, menu.group_id).menu_name;
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "901").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsEdit)) {
+            isEdit = false;
+        }
+    }
+
+    void BindData()
+    {
+        var h = _userService.DocSet.User;
+        username = "";
+        if (h.username != "")
+        {
+            user_enabled = false;
+            username = h.username;
+            IsdivPermission = "";
+        }
+        else
+        {
+            IsdivPermission = "hidden";
+            user_enabled = true;
+        }
+
+        //if (h.is_active == 1)
+        //{
+        //    isactive = true;
+        //}else {
+        //    isactive = false;
+        //}
+
+        //isactive = Convert.ToBoolean(h.is_active);
+    }
+
+    #region Save
+
+    bool ValidData()
+    {
+        var h = _userService.DocSet.User;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (username == "")
+        {
+            Errmsg = "ระบุรหัสผู้ใช้งาน!! ";
+            isvalid = false;
+        }
+
+        if (h.first_name == "")
+        {
+            Errmsg = "ระบุชื่อ!! ";
+            isvalid = false;
+        }
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    async void btnSave()
+    {
+
+        if (!ValidData())
+        {
+            return;
+        }
+        isLoading = true;
+        await Task.Run(Save);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async private Task Save()
+    {
+
+        var isnew = PrepairDataSave();
+        var user = _userService.DocSet.User;
+        var rs = await Task.Run(() => _userService.Save(_userService.DocSet));
+        if (rs.Result.ToString() == "fail")
+        {
+            await Swal.FireAsync("", rs.Message1, "error");
+            return;
+        }
+        else
+        {
+            //_userService.DocSet = await Task.Run(() => _userService.GetDocSet(user.username));
+            //if (isnew)
+            //{
+            //    await sessionStorage.SetItemAsync(Globals.ActiveID_USER, user.username);
+            //}
+            //await Task.Run(LoadData);
+            //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            //await InvokeAsync(StateHasChanged);
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "success",
+                    Text = $"บันทึกสำเร็จ",
+                    ShowCancelButton = false,
+                    Icon = "success",
+                    ConfirmButtonText = "ตกลง"
+                });
+            if (string.IsNullOrEmpty(result.Value))
+            {
+                return;
+            }
+            nav.NavigateTo($"Master/UserList", false);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    bool PrepairDataSave()
+    {
+        var user = login.LogInInfo.CurrentUser;
+        bool isnew = false;
+        var h = _userService.DocSet.User;
+        if (h.username == "")
+        {
+            isnew = true;
+            h.username = username;
+            h.created_by = user;
+        }
+        else
+        {
+            h.modified_by = user;
+        }
+
+        //h.is_active = Convert.ToInt32(isactive);
+
+        return isnew;
+    }
+
+    #endregion
+
+    async void btnToList()
+    {
+        nav.NavigateTo($"Master/UserList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void btnReset()
+    {
+        Random generator = new Random();
+        string sixnumber = generator.Next(0,1000000).ToString("D6");
+        await Swal.FireAsync(sixnumber,"รีเซ็ตรหัสผ่านสำเร็จ",SweetAlertIcon.Success);
+
+        var u = _userService.DocSet.User;
+        u.password = sixnumber;
+        u.is_newuser = 1;
+        var rs = await Task.Run(() => _userService.ReSetPassword(_userService.DocSet));
+        if (rs.Result.ToString() == "fail")
+        {
+            await Swal.FireAsync("", rs.Message1, "error");
+            return;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

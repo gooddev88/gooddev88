@@ -1,0 +1,296 @@
+﻿@page "/POSV3/POSMenuMore"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@*@using Robot.Data.DA.LoginCrossApp*@
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-2 px-2">
+            <div class="col-12">
+                <div class="card" style="border-radius: 10px;">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-1 col-sm-2 col-2 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <img src="/SALE/assets/img/back.png" style="width:2rem;" />
+                                </a>&nbsp;
+                            </div>
+                            <div class="col-md-11 col-sm-10 col-10 pl-0 text-left">
+                                <strong style="font-size:2rem; color:crimson;">ดำเนิดการเพิ่มเติม</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row px-2 pt-2">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-3 col-4">
+                                <label class="text-center" style="font-size: small; color: gray;">
+                                    @lblCompanyName
+                                </label><br />
+                                <a ID="btnShipTo" class="" @onclick="@OnShipTo">
+                                    @switch (@posService.DocSet.Head.ShipToLocID)
+                                    {
+                                        case "":
+                                            <img src="/SALE/assets/img/Sale-icon.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "GRAB":
+                                            <img src="/SALE/assets/img/grab.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "SHOPEE":
+                                            <img src="/SALE/assets/img/shopee_logo.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "LINEMAN":
+                                            <img src="/SALE/assets/img/lineman.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "PANDA":
+                                            <img src="/SALE/assets/img/padda.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "ROBINHOOD":
+                                            <img src="/SALE/assets/img/robinhood.png" alt="" style="width: 4rem;" />
+                                            break;
+                                        case "ONLINE":
+                                            <img src="/SALE/assets/img/online.png" alt="" style="width: 4rem;" />
+                                            break;
+
+                                        default:
+                                            <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 4rem;" />
+                                            break;
+                                    }
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-sm-6 col-5 px-0">
+                                <label style="color:dimgray; font-size:small;"><i style="color:green;" class="far fa-check-circle fa-lg"></i>&nbsp; @lblOrderID</label><br />
+                                @if (lblBillID != "")
+                                {
+                                    <label style="color: dimgray; font-size: small;"><i style="color:orange;" class="far fa-check-circle fa-lg"></i>&nbsp; @lblBillID</label><br />
+                                }
+                                @if (lblFINVID != "")
+                                {
+                                    <label style="color: dimgray; font-size: small;"><i style="color:dodgerblue;" class="far fa-check-circle fa-lg"></i>&nbsp; @lblFINVID</label>
+                                }
+                            </div>
+                            <div class="col-3 text-right pl-0">
+                                <label style="font-size:small;">@billdate</label><br />
+                                <a ID="btnPaymentBackToMain" runat="server"
+                                   class="btn btn-info"
+                                   @onclick="@AddTables">
+                                    <label class="text-white">@posService.DocSet.Head.TableName</label>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row pb-3 px-2 pt-2">
+            <div class="col-12">
+                <a ID="btnback" @onclick="@GoToBill">
+                    <div class="card" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px; border-radius: 15px !important;">
+                        <div class="card-body p-3">
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <img src="/SALE/assets/img/salehistory.png" alt="" style="width: 3rem;" />&nbsp;
+                                    <b>ประวัติบิล</b>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        @if (posService.DocSet.Head.BillID != "")
+        {
+            <div class="row pb-3 px-2">
+                <div class="col-12">
+                    <a ID="btndelete" @onclick="@DeleteBill">
+                        <div class="card" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px; border-radius: 15px !important;">
+                            <div class="card-body p-3">
+                                <div class="row pt-2">
+                                    <div class="col-12">
+                                        <img src="/SALE/assets/img/delete_logo.png" alt="" style="width: 3rem;" />&nbsp;
+                                        <b>ลบบิล</b>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        }
+
+        @if (posService.DocSet.Head.INVID != "")
+        {
+            <div class="row pb-3 px-2">
+                <div class="col-12">
+                    <a ID="btndelete" @onclick="@PosSaleTax">
+                        <div class="card" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px; border-radius: 15px !important;">
+                            <div class="card-body p-3">
+                                <div class="row pt-2">
+                                    <div class="col-12">
+                                        <img src="/SALE/assets/img/printer_logo.png" alt="" style="width: 3rem;" />&nbsp;
+                                        <b>ใบกำกับภาษี</b>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        }
+        <hr />
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+    string billdate { get; set; } = "";
+    public string lblCompanyName { get; set; }
+    public string lblBillID { get; set; } = "-";
+    public string lblFINVID { get; set; } = "-";
+
+    public string lblOrderID { get; set; } = "ออเดอร์ใหม่";
+    public string lblTableName { get; set; } = "กลับบ้าน";
+
+
+    List<CompanyService.CompanyInfoList> ListCompany = new List<CompanyService.CompanyInfoList>();
+    LogInCrossAppReq LogInCrossAppReq = new LogInCrossAppReq();
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        BindData();
+        isLoading = false;
+    }
+
+    void BindData()
+    {
+        var h = posService.DocSet.Head;
+
+        lblCompanyName = login.LoginInfo.CurrentCompany.Name2;
+        if (h.BillID == "")
+        {
+            lblOrderID = "ออเดอร์ใหม่";
+        }
+        else
+        {
+            if (h.BillID != "")
+            {
+                lblOrderID = h.BillID;
+            }
+
+            lblBillID = "-";
+            if (h.INVID != "")
+            {
+                lblBillID = h.INVID;
+            }
+
+            if (!string.IsNullOrEmpty(h.FINVID))
+            {
+                lblFINVID = h.FINVID;
+            }
+
+        }
+
+        billdate = h.BillDate.ToString("dd/MM/yyyy");
+        InvokeAsync(StateHasChanged);
+    }
+
+    async void AddTables()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSelectTable", false);
+    }
+
+    async void OnShipTo()
+    {
+        if (posService.DocSet.Head.BillID != "")
+        {
+            await Swal.FireAsync("", "ไม่สามารถเปลี่ยนได้เมื่อบันทึกออเดอร์แล้ว", "error");
+            return;
+        }
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSShipToPage", false);
+    }
+
+    async void GoToBill()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSBillHistoryList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void PosSaleTax()
+    {
+        nav.NavigateTo($"POSV3/POSSaleTax", false);
+    }
+
+    void DeleteBill()
+    {
+        nav.NavigateTo($"POSV3/POSDeleteBill", false);
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

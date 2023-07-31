@@ -1,0 +1,396 @@
+﻿@page "/Master/BookBank/BookBankDetail"
+@inject BookBankService bookbankService
+
+<style>
+    .dxbs-input-group.input-group {
+        width: 100%;
+    }
+
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-12">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Menu/MenuMaster/MASTER">Master</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Master/BookBank/BookBankList">บัญชีธนาคาร</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Master/BookBank/BookBankDetail">ข้อมูลบัญชีธนาคาร</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <TelerikTextBox PlaceHolder="คำค้นหา" FillMode="@(ThemeConstants.TextBox.FillMode.Outline)" ValueChanged="@OnTextChanged_Search"></TelerikTextBox>
+                                    </div>
+                                </div>
+                                <div class="row pt-2">
+                                    <div class="col-md-12 text-start">
+                                        <TelerikCheckBox Id="chkIsActive" Value="@Filter.ShowNotActive" OnChange="@OnChange_chkIsActive"></TelerikCheckBox>
+                                        <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                                    </div>
+                                </div>
+                                <div class="row pt-2">
+                                    <div class="col-12">
+                                        <TelerikGrid Data=@DocList
+                                                     Pageable="true"
+                                                     Groupable="false"
+                                                     Sortable="true"
+                                                     Resizable="true"
+                                                     Reorderable="true"
+                                                     PageSize="30"
+                                                          OnRowClick="@OnRowClickHandler"
+                                                     Navigable="true">
+                                            <GridColumns>
+                                             
+                                                              <GridColumn Field="@nameof(BookBankInfo.BookID)" Title="เลขบัญชี" Width="180px" />
+                                                <GridColumn Field="@nameof(BookBankInfo.BookDesc)" Title="รายละเอียดบัญชี" Width="180px" />
+                                                <GridColumn Field="@nameof(BookBankInfo.BranchName)" Title="สาขา" Width="130px" />
+                                                <GridColumn Field=@nameof(BookBankInfo.Sort) Title="ลำดับ" DisplayFormat="{0:N0}" Width="110px" />
+                                            </GridColumns>
+                                        </TelerikGrid>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h4>เพิ่มแก้ไข</h4>
+                                    </div>
+                                    @if (isShowNew) {
+                                        <div class="col-6 text-end">
+                                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                       @onclick="@NewDoc" Class=""
+                                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                                <i class="fa-solid fa-circle-plus"></i>&nbsp; เพิ่มใหม่
+                                            </TelerikButton>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="row pt-2">
+                                    <div class="col-md-12">
+                                        <div class="card">
+                                            <div class="card-body">
+
+                                                <div class="row">
+                                                    <div class="col-md-12">
+
+                                                        <div class="row pt-2">
+                                                            <label>เลขบัญชี</label>
+                                                            <div class="col-12">
+                                                                <TelerikTextBox PlaceHolder=""
+                                                                                @bind-Value="@bookbankService.DocSet.Book.BookID"
+                                                                                Enabled="@bookidreadonly" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-2">
+                                                            <label>ชื่อบัญชี </label>
+                                                            <div class="col-12">
+                                                                <TelerikTextBox @bind-Value="@bookbankService.DocSet.Book.BookDesc" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-2">
+                                                            <label>ธนาคาร </label>
+                                                            <div class="col-12">
+                                                                <TelerikComboBox @bind-Value="@selectBankCode.BankCode"
+                                                                                 Data="@cboBankCode"
+                                                                                 TextField="@nameof(BankInfo.Name_TH)"
+                                                                                 ValueField="@nameof(BankInfo.BankCode)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-2">
+                                                            <label>สาขา </label>
+                                                            <div class="col-12">
+                                                                <TelerikTextBox @bind-Value="@bookbankService.DocSet.Book.BankName" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-2">
+                                                            <label>ลำดับ </label>
+                                                            <div class="col-12">
+                                                                <TelerikNumericTextBox Decimals="0" Enabled="true" Format="N0"
+                                                                                       Class="text-center font-weight-bold" @bind-Value="Sort"></TelerikNumericTextBox>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row pt-2">
+                                                            <label>หมายเหตุ</label>
+                                                            <div class="col-12">
+                                                                <TelerikTextArea @bind-Value="@bookbankService.DocSet.Book.Remark1"
+                                                                                 AutoSize="true"
+                                                                                 Class="w-100">
+                                                                </TelerikTextArea>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="row pt-5 pb-3">
+                                                    <div class="col-6">
+                                                        <TelerikCheckBox Id="chkIsActive" @bind-Value="@bookbankService.DocSet.Book.IsActive"></TelerikCheckBox>
+                                                        <label style="font-size:large;">เปิดใช้งาน</label>
+                                                    </div>
+                                                    <div class="col-6 text-end">
+                                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                                       @onclick="@OnSave" Class="w-100 py-2"
+                                                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                                            <i class="fas fa-save fa-lg"></i>&nbsp;บันทึกข้อมูล
+                                                        </TelerikButton>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    public bool bookidreadonly { get; set; } = true;
+    bool ShowFilterRow = false;
+
+    public int Sort { get; set; }
+
+    BookBankService.I_BookBankFiterSet Filter = BookBankService.NewFilterSet();
+    List<BankInfo> cboBankCode = new List<BankInfo>();
+
+    BankInfo selectBankCode = new BankInfo();
+      public TelerikGrid<BookBankInfo> dxDataGrid { get; set; }
+ 
+    IEnumerable<BookBankInfo> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadData());
+        await Task.Run(LoadGrdBookBank);
+    }
+
+
+    async Task CheckIsRefresh() {
+        if (bookbankService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(BookBankService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                bookbankService.DocSet = bookbankService.GetDocSet(docid, rcom, com);
+            } else {
+                bookbankService.DocSet = BookBankService.NewTransaction(rcom, com);
+            }
+        }
+    }
+
+    void SetDefaultFilter() {
+        Filter.RCom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+    }
+
+    async Task LoadGrdBookBank() {
+        SetDefaultFilter();
+        DocList = BookBankService.ListDoc(Filter);
+    }
+
+    async Task SearchAction() {
+        await Task.Run(LoadGrdBookBank);
+    }
+
+    async Task LoadData() {
+        LoadDropDownList();
+        BindData();
+        isLoading = false;
+        SetActiveControl();
+        //await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetActiveControl() {
+        CheckPermission();
+    }
+    private void CheckPermission() {
+        var h = bookbankService.DocSet.Book;
+        if (h.BookID == "") {
+            isShowDelete = false;
+        }
+        if (!login.CanCreate(login.LoginInfo, "167")) { //167 บัญชีธนาคาร
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "167")) {
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "167")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+
+    public async void OnTextChanged_Search(object Search) {
+        if (Search != null) {
+            Filter.SearchText = Search.ToString();
+            Task.Run(() => SearchAction());
+        }
+    }
+
+    public async void OnChange_chkIsActive(object value) {
+        if (value != null) {
+            Filter.ShowNotActive = Convert.ToBoolean(value);
+            await SearchAction();
+        }
+    }
+
+    void LoadDropDownList() {
+        cboBankCode = BookBankService.ListBank(false);
+    }
+
+    void BindData() {
+        var h = bookbankService.DocSet.Book;
+        if (h == null) {
+            return;
+        }
+        if (h.BookID != "") {
+            bookidreadonly = false;
+        } else {
+            bookidreadonly = true;
+        }
+
+        selectBankCode.BankCode = h.BankCode;
+        selectBankCode.Name_TH = h.BankName;
+
+        Sort = h.Sort;
+    }
+
+    private void SetPrimaryData() {
+        var h = bookbankService.DocSet.Book;
+
+        h.BankCode = selectBankCode.BankCode;
+        h.BankName = selectBankCode.Name_TH;
+        h.Sort = Sort;
+    }
+          async Task OnRowClickHandler(GridRowClickEventArgs args) { 
+        var data = args.Item as BookBankInfo; 
+   bookbankService.DocSet = bookbankService.GetDocSet(data.BookID, data.RCompanyID, data.CompanyID);
+        BindData();
+        nav.NavigateTo($"Master/BookBank/BookBankDetail", false);
+    }
+    //void GoToBookBank(BookBankInfo data) {
+    //    bookbankService.DocSet = bookbankService.GetDocSet(data.BookID, data.RCompanyID, data.CompanyID);
+    //    BindData();
+    //    nav.NavigateTo($"Master/BookBank/BookBankDetail", false);
+    //    InvokeAsync(StateHasChanged);
+    //}
+
+    bool ValidData() {
+        var h = bookbankService.DocSet.Book;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.BookID == "") {
+            Errmsg = "ระบุ เลขบัญชี";
+            isvalid = false;
+        }
+        if (h.BookDesc == "") {
+            Errmsg = "ระบุ ชื่อบัญชี";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        Save();
+    }
+
+    private async void Save() {
+        var rcom = login.LoginInfo.CurrentRootCompany.RCompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var createby = login.LoginInfo.CurrentUser;
+        SetPrimaryData();
+        var h = bookbankService.DocSet.Book;
+
+        var rs = BookBankService.Save(bookbankService.DocSet, rcom, com, createby);
+        if (rs.Result != "ok") {
+            await Swal.FireAsync("", rs.Message1, "error");
+
+        } else {
+            bookbankService.DocSet = bookbankService.GetDocSet(h.BookID, rcom, com);
+            LoadData();
+            await Task.Run(LoadGrdBookBank);
+            await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async void NewDoc() {
+        var rcom = login.LoginInfo.CurrentRootCompany.RCompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        await sessionStorage.RemoveItemAsync(BookBankService.sessionActiveId);
+        bookbankService.DocSet = BookBankService.NewTransaction(rcom, com);
+        LoadData();
+    }
+
+  
+
+
+}

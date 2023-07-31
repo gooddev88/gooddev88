@@ -1,0 +1,965 @@
+﻿@page "/Leave/LeaveDetail/{comefrom}"
+@using Robot.Data.DA.Document
+@using static Robot.Data.DA.Leave.LeaveService
+@using Robot.Data.DA.Leave
+@using System.IO
+@using Robot.Data.ML
+@using Robot.Data.ML.DPMLeaveModel
+@using static Robot.Data.ML.I_Result
+@inject LeaveService leaveService
+<style>
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/assets/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+    .fix-div {
+        font-size: 1.2rem;
+        height: 60px;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-11 mx-auto">
+                <div class="row">
+                    <div class="col-6">
+                        <a class="btn p-0" @onclick="@Onback">
+                            <p class="card-title">
+                                <i class="fa fa-chevron-circle-left fa-2x"></i>
+                                <span style="font-weight: bold; font-size:x-large; color: black;">@leaveService.DocSet.Leave.LeaveTypeDesc  </span>
+                            </p>
+                        </a>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span style="font-weight: bold; font-size:x-large; color: black;">@leaveService.DocSet.Leave.DocType  </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-3">
+            <div class="col-md-11 mx-auto">
+                <div class="row">
+                    <div class="col-md-12 col-sm-12 col-12">
+                        <h4 style="font-weight: bold; color: black;"> @leaveService.DocSet.Leave.FullName  </h4>
+                    </div>
+                </div>
+
+                @if (leaveService.DocSet.Leave.DocType == "ใบยกเลิกลา") {
+                    <div class="row pt-2">
+                        <div class="col-12">
+                            <Alert Class="mb-0" Color="Color.Danger" Visible>
+                                <AlertMessage>ใบยกเลิกลา</AlertMessage>
+                                <AlertDescription>อยู่ระหว่างการทำการยกเลิกวันลา</AlertDescription>
+                            </Alert>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-11 col-sm-12 col-12 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 col-sm-6 col-12">
+                                @switch (leaveService.DocSet.Leave.ApproveStatus) {
+                                    case "":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-warning text-dark">เอกสารใหม่</span>
+                                        break;
+                                    case "PENDING":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-warning text-dark">รออนุมัติ</span>
+                                        break;
+                                    case "APPROVED_LEVEL1":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-success">อนุมัติระดับ 1</span>
+                                        break;
+                                    case "APPROVED_LEVEL2":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-success">อนุมัติระดับ 2</span>
+                                        break;
+                                    case "APPROVED":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-success">อนุมัติแล้ว</span>
+                                        break;
+                                    case "REJECTED":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-danger">ไม่อนุมัติ</span>
+                                        break;
+                                    case "CANCEL":
+                                        <span style="font-size:large;" class="badge rounded-pill bg-danger">ยกเลิก</span>
+                                        break;
+                                }
+                            </div>
+                            <div class="col-md-6 col-sm-6 col-12 pt-2  text-end">
+                                @if (@isShowSave) {
+                                    <a @onclick="@OnSave" class="text-decoration-none">
+                                        <i class="far fa-save"></i>
+                                        บันทึก &nbsp; &nbsp;
+                                    </a>
+                                }
+                                @if (@isShowDelete) {
+                                    <a @onclick="@OnDelete" class="text-decoration-none">
+                                        <i class="far fa-trash-alt"></i>
+                                        ลบเอกสาร
+                                    </a>
+                                }
+
+                                @if (@isShowCancel) {
+                                    <a @onclick="@OnCreateCancel" class="text-decoration-none">
+                                        <i class="fas fa-history"></i>
+                                        ยกเลิกวันลา
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                        @if (leaveService.DocSet.Leave.LeaveID != "") {
+                            <div class="row">
+                                <div class="col-12">
+                                    <p>
+                                        <small>เลขที่เอกสาร @leaveService.DocSet.Leave.LeaveID</small> &nbsp; &nbsp;
+                                        <small>สร้างโดย @leaveService.DocSet.Leave.CreatedBy</small> &nbsp; &nbsp;
+                                        <small>เมื่อเวลา @leaveService.DocSet.Leave.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </p>
+                                </div>
+                            </div>
+                        }
+
+                        <hr class="my-2" />
+                        <div class="row pt-2">
+                            <div class="col-md-3 col-sm-12 col-12">
+                                <label>ลาตั้งแต่</label>
+                                <TelerikDatePicker @bind-Value="@DateFrom" Max="@Max" Min="@Min"
+                                                   OnChange="@OnDateFromChanged"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+
+                            </div>
+                            <div class="col-md-3 col-sm-12 col-12">
+                                <label>ถึงวันที่</label>
+                                <TelerikDatePicker @bind-Value="@DateTo" Max="@Max" Min="@Min"
+                                                   OnChange="@OnDateToChanged"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+                            </div>
+                            <div class="col-md-3 col-sm-12 col-12">
+                                <label>จำนวนวัน</label>
+                                <TelerikTextBox @bind-Value="@txtLeaveDay"
+                                                Size="ThemeConstants.DropDownList.Size.Small" />
+                            </div>
+                        </div>
+
+                        <div class="row pt-2">
+                            <div class="col-md-9 col-sm-12 col-12">
+                                <label>เหตุผลการลา</label> @if (@leaveService.DocSet.Leave.LeaveType != "ลาพักผ่อน") {
+                                    <span style="color:red;"> *</span>
+                                }
+                                <TelerikTextArea @bind-Value="@Remark"
+                                                 AutoSize="true"
+                                                 Class="w-100"
+                                                 PlaceHolder="">
+                                </TelerikTextArea>
+                            </div>
+                        </div>
+
+                        @if (leaveService.DocSet.Leave.LeaveID != "") {
+                            <div class="row pt-3">
+                                <div class="col-12">
+                                    <div class="file-input-zone">
+                                        <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                        </InputFile>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                    </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    @if (leaveService.DocSet.Files.Count() > 0) {
+                                        @foreach (var l in leaveService.DocSet.Files) {
+                                            <a class="btn btn-link" @onclick="@DownLoadFile">
+                                                <span>@l.FileName</span>&nbsp;&nbsp;
+                                            </a>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="row pt-3">
+                            <div class="col-md-9 col-sm-12 col-12">
+                                @if (IsShowApprove) {
+                                    <a @onclick="@(() => DoApproveOrReject("APPROVED"))" class="text-decoration-none">
+                                        <i class="far fa-thumbs-up"></i>อนุมัติ &nbsp; &nbsp;
+                                    </a>
+                                    <a @onclick="@(() => DoApproveOrReject("REJECTED"))" class="text-decoration-none" style="color:red">
+                                        <i class="fas fa-thumbs-down"></i>ไม่อนุมัติ &nbsp; &nbsp;
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (leaveService.DocSet.Leave.RefToLeaveID != "") {
+            <div class="row pt-3">
+                <div class="col-md-11 mx-auto">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-12">
+                            <h4 style="font-weight: bold; color: black;">เอกสารอ้างอิง</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row pt-1">
+                <div class="col-md-11 mx-auto">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <p>
+                                        <small>อ้างอิงถึง @leaveService.DocSet.LeaveRef.DocType</small>
+                                        <small>เลขที่ <strong>@leaveService.DocSet.LeaveRef.LeaveID   </strong>  </small> &nbsp; &nbsp;
+                                        <small>สร้างโดย <strong>@leaveService.DocSet.LeaveRef.CreatedBy  </strong>   </small> &nbsp; &nbsp;
+                                        <small>เมื่อเวลา <strong>@leaveService.DocSet.LeaveRef.CreatedDate.ToString("dd/MM/yyyy HH:mm") </strong>    </small>
+                                        <br>
+                                        <small>วันที่ลา @leaveService.DocSet.LeaveRef.DateFrom.ToString("dd/MM/yyyy") &nbsp; ถึง &nbsp;  @leaveService.DocSet.LeaveRef.DateTo.ToString("dd/MM/yyyy") </small>
+                                        <br>
+                                        <small>@leaveService.DocSet.LeaveRef.Remark</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row pt-2">
+            <div class="col-md-11 mx-auto">
+                <div class="card">
+                    <div class="card-header" style="background-color:white">
+                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleLeave = !IsVisibleLeave;
+                                                                                })">
+                            <h4 style="font-weight: bold; color: black;">สรุปตามประเภทวันลา</h4>
+                        </a>
+                    </div>
+                    <div class="collapse @(IsVisibleLeave ? "show" : "")">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="row">
+                                        @foreach (var l in ListSumHRLeave) {
+                                            <div class="col-md-3 col-sm-3 px-1 py-1">
+                                                <div class="card card-r">
+                                                    <div class="card-body">
+                                                        <div class="fix-div">@l.LeaveTypeDesc</div>
+                                                        <div class="row">
+                                                            <div class="col-md-12 text-end">
+                                                                <p class="card-text">
+                                                                    <span style="color:@l.LabelColor">
+                                                                        <small>@l.PrefixNumber</small>&nbsp;<span style="font-size:2.5rem;"> <strong>@l.LeaveDay</strong></span> <small>วัน </small>
+                                                                    </span>
+                                                                    @if (l.HasLimitLeaveDay == "YES") {
+                                                                        <small>เหลือ </small>
+
+                                                                        <span style="font-size:2.5rem;"><strong>@l.LeaveDayRemain</strong></span> <small>วัน </small>
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row pt-2">
+            <div class="col-md-11 mx-auto">
+                <div class="card">
+                    <div class="card-header" style="background-color:white">
+                        <a class="w-100 text-decoration-none" data-toggle="collapse" @onclick="@(() =>
+                                                                                {
+                                                                                        IsVisibleLeaveHistory = !IsVisibleLeaveHistory;
+                                                                                })">
+                            <h4 style="font-weight: bold; color: black;">  ประวัติการลา </h4>
+                        </a>
+                    </div>
+                    <div class="collapse @(IsVisibleLeaveHistory ? "show" : "")">
+                        <div class="card-body">
+
+                            <div class="row">
+                                <div class="col-12" style="font-size:small;">
+                                    <TelerikGrid Data=@LeaveHistoryList
+                                                 Pageable="true"
+                                                 Class="small"
+                                                 Groupable="false"
+                                                 Sortable="true"
+                                                 Resizable="true"
+                                                 Reorderable="true"
+                                                 PageSize="10"
+                                                 Navigable="true">
+                                        <GridColumns>
+                                            <GridColumn Field="@nameof(I_LeaveGridDisplay.DocType)" Title="เอกสาร" Editable="false" Width="120px">
+                                                <Template>
+                                                    @{
+                                                        var data = context as I_LeaveGridDisplay;
+
+                                                        if (data.DocType == "ใบยกเลิกลา") {
+                                                            <span class="badge rounded-pill bg-danger">เอกสารยกเลิก</span>
+                                                        } else {
+                                                            <span>@data.DocType</span>
+                                                        }
+                                                    }
+                                                </Template>
+                                            </GridColumn>
+                                            <GridColumn Field=@nameof(I_LeaveGridDisplay.LeaveType) Title="ประเภทการลา" Width="90px" />
+                                            <GridColumn Field=@nameof(I_LeaveGridDisplay.DateLeave) Title="ช่วงวันที่ลา" Width="190px" />
+                                            <GridColumn Field="@nameof(I_LeaveGridDisplay.Status)" Title="สถานะ" Editable="false" Width="110px">
+                                                <Template>
+                                                    @{
+                                                        var data = context as I_LeaveGridDisplay;
+
+                                                        @switch (data.Status.ToUpper()) {
+                                                            case "PENDING":
+                                                                <span class="badge rounded-pill bg-warning text-dark" style="width:80px">รออนุมัติ</span>
+                                                                break;
+                                                            case "APPROVED_LEVEL1":
+                                                                <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติระดับ 1</span>
+                                                                break;
+                                                            case "APPROVED_LEVEL2":
+                                                                <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติระดับ 2</span>
+                                                                break;
+                                                            case "APPROVED":
+                                                                <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติ</span>
+                                                                break;
+                                                            case "REJECTED":
+                                                                <span class="badge rounded-pill bg-danger" style="width:80px">ไม่อนุมัติ</span>
+                                                                break;
+                                                            case "CANCEL":
+                                                                <span class="badge rounded-pill bg-danger" style="width:80px">ยกเลิก</span>
+                                                                break;
+                                                            default:
+                                                                <span class="badge rounded-pill bg-warning text-dark" style="width:80px">รออนุมัติ</span>
+                                                                break;
+                                                        }
+                                                    }
+                                                </Template>
+                                            </GridColumn>
+                                            @*<GridColumn Field="@nameof(I_LeaveGridDisplay.ApprovedL1)" Title="ผู้อนุมัติ ระดับ1" Width="200px" />*@
+                                            <GridColumn Field="@nameof(I_LeaveGridDisplay.Approved)" Title="ผู้อนุมัติ" Width="200px" />
+                                            <GridColumn Field="@nameof(I_LeaveGridDisplay.Reason)" Title="เหตุผลการลา" Width="230px" />
+                                        </GridColumns>
+                                    </TelerikGrid>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter] public string comefrom { get; set; }
+    //0=from dashboard
+    //1=from list page
+
+    bool isUploading = false;
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    //List<vw_XFilesRef> List_files = new List<vw_XFilesRef>();
+
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool IsEdit = true;
+    public bool isShowDelete = true;
+    public bool isShowCancel = true;
+    public bool isShowSave = true;
+    public bool IsShowApprove = false;
+
+    public DateTime DateFrom { get; set; } = LeaveService.ConvertTobuddhistDate(DateTime.Now);
+    public DateTime DateTo { get; set; } = LeaveService.ConvertTobuddhistDate(DateTime.Now);
+    public string txtLeaveDay { get; set; } = "1";
+    public int FiscalYear { get; set; } = LeaveService.GetYearFiscalYear(DateTime.Now.Date);
+    public string Remark { get; set; } = "";
+    public string Action { get; set; } = "";
+    public DateTime Min = new DateTime(2000, 1, 1);
+    public DateTime Max = new DateTime(2999, 12, 31);
+    public bool IsVisibleLeave { get; set; } = false;
+    public bool IsVisibleLeaveHistory { get; set; } = false;
+
+    List<SP_HRLeaveSummary> ListSumHRLeave = new List<SP_HRLeaveSummary>();
+    List<SelectOption> cboYear = new List<SelectOption>();
+    public TelerikGrid<vw_HRLeave> dxDataGrid { get; set; }
+    public List<I_LeaveGridDisplay> LeaveHistoryList = new List<I_LeaveGridDisplay>();
+    public string SelectLEAVETYPE { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        //pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadDropDownList);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        var h = leaveService.DocSet.Leave;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+
+        var x_LeaveHistoryList = LeaveService.ListLeaveHistory(h.RComID, h.Username, h.WorkYear);
+        LeaveHistoryList = FillText(x_LeaveHistoryList);
+        ListSumHRLeave = LeaveService.ListLeaveSummary(rcom, h.Username, h.WorkYear);
+        isLoading = false;
+        BindData();
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public List<I_LeaveGridDisplay> FillText(List<vw_HRLeave> input) {
+        List<I_LeaveGridDisplay> result = new List<I_LeaveGridDisplay>();
+        foreach (var l in input) {
+            I_LeaveGridDisplay n = new I_LeaveGridDisplay();
+            n.Rcom = l.RComID;
+            n.Com = l.ComID;
+            n.LeaveID = l.LeaveID;
+            n.DocType = l.DocType;
+            n.LeaveType = l.LeaveType;
+            n.Day = l.LeaveDay.ToString("N0") + "Day";
+            n.DateLeave = LeaveService.ConvertTobuddhistDate(l.DateFrom).ToString("dd/MM/yyyy") + " - " + LeaveService.ConvertTobuddhistDate(l.DateTo).ToString("dd/MM/yyyy");
+            n.StatusL1 = l.ApproveStatusL1;
+            n.ApprovedL1 = string.IsNullOrEmpty(l.ApprovedByL1) ? "" : l.ApprovedByL1 + " วันที่ " + Convert.ToDateTime(l.ApprovedDateL1).ToString("dd/MM/yyyy");
+            n.Status = l.ApproveStatus;
+            if (l.ApprovedDate != null) {
+                n.Approved = l.ApprovedBy + " วันที่ " + LeaveService.ConvertTobuddhistDate(Convert.ToDateTime(l.ApprovedDate)).ToString("dd/MM/yyyy");
+            }
+
+            n.FullName = l.FullName;
+            n.Position = l.PositionID;
+            n.Department = l.DepartmentID;
+            n.IsLockCreateCancelDoc = l.IsLockCreateCancelDoc;
+            n.Reason = l.Remark;
+            result.Add(n);
+        }
+        return result;
+    }
+
+    private void SetActiveControl() {
+        var h = leaveService.DocSet.Leave;
+        //if (comefrom == "2") {//leave history
+        //    IsShowApprove = false;
+        //}
+        if (comefrom == "1" || comefrom == "2") {//leave approve
+
+            IsEdit = false;
+            isShowDelete = false;
+            isShowCancel = false;
+            isShowSave = false;
+            if (leaveService.DocSet.Leave.ApproveStatus == "APPROVED") {
+                isShowDelete = false;
+            } else {
+                IsShowApprove = true;
+            }
+
+        }
+        if (comefrom == "0" || comefrom == "3") {//leave request
+            if (leaveService.DocSet.Leave.ApproveStatus == "APPROVED") {
+                isShowCancel = true;
+                isShowDelete = false;
+                IsEdit = false;
+                isShowSave = false;
+            }
+            var bb = new List<string> { "APPROVED_LEVEL1", "APPROVED_LEVEL2" };
+            if (bb.Contains(leaveService.DocSet.Leave.ApproveStatus)) {
+                isShowCancel = false;
+                isShowDelete = true;
+                IsEdit = false;
+            }
+
+            if (leaveService.DocSet.Leave.ApproveStatus == "PENDING") {
+                isShowCancel = false;
+                isShowDelete = true;
+                isShowSave = true;
+                IsEdit = false;
+            }
+            if (leaveService.DocSet.Leave.ApproveStatus == "REJECTED") {
+                isShowCancel = false;
+                isShowDelete = false;
+                IsEdit = false;
+            }
+
+        }
+        if (h.LeaveID == "") {
+            isShowDelete = false;
+        } else {
+            if (leaveService.DocSet.Leave.ApproveStatus == "APPROVED") {
+                isShowDelete = false;
+                IsShowApprove = false;
+            }
+        }
+        CheckPermission();
+    }
+    private void CheckPermission() {
+        var h = leaveService.DocSet.Leave;
+
+
+    }
+
+    async Task CheckIsRefresh() {
+        var h = leaveService.DocSet.Leave;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        if (leaveService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(LeaveService.sessionActiveId);
+            if (!string.IsNullOrEmpty(docid)) {
+                leaveService.DocSet = leaveService.GetDocSet(rcom, docid);
+            } else {
+                Onback();
+            }
+        }
+    }
+    async void DoApproveOrReject(string action) {
+        var max_level = GetMaxLevel();
+        var leave = leaveService.DocSet.Leave;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var approver = login.LoginInfo.CurrentUser;
+
+        var rs = LeaveService.LeaveApprove(leave.LeaveID, rcom, approver, max_level, action);
+        if (rs.Result != "ok") {
+            await Swal.FireAsync("", rs.Message1, "info");
+            return;
+        } else {
+            await Swal.FireAsync("", "ดำเนินการสำเร็จ", "success");
+            leaveService.DocSet = leaveService.GetDocSet(leave.RComID, leave.LeaveID);
+            LoadData();
+
+        }
+    }
+    public string GetMaxLevel() {
+        var haslv1 = login.CanEdit(login.LoginInfo, "172");
+        var haslv2 = login.CanEdit(login.LoginInfo, "173");
+        var haslv3 = login.CanEdit(login.LoginInfo, "174");
+        if (haslv3) {
+            return "L3";
+        } else if (haslv2) {
+            return "L2";
+        } else if (haslv1) {
+            return "L1";
+        } else {
+            return "X";
+        }
+
+        //"PENDING"
+        //"APPROVED_LEVEL1"
+        //"APPROVED_LEVEL2"
+        //"APPROVED"
+        //"REJECTED"
+        //"CANCEL"
+    }
+
+    async void LoadDropDownList() {
+
+    }
+
+    public void BindData() {
+        var h = leaveService.DocSet.Leave;
+        if (h.LeaveID != "") {
+            SelectLEAVETYPE = h.LeaveType;
+            DateFrom = h.DateFrom;
+            DateTo = h.DateTo;
+            txtLeaveDay = h.LeaveDay.ToString("N0");
+            Remark = h.Remark;
+            //Task.Run(() => loadProfile());
+        }
+    }
+
+    bool ValidLineData() {
+        var h = leaveService.DocSet.info;
+        var a = leaveService.DocSet.Leave;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (DateFrom == null) {
+            Errmsg = "ระบุ วันลาตั้งแต่";
+            isvalid = false;
+        }
+
+        if (DateTo == null) {
+            Errmsg = "ระบุ ลาถึงวันที่";
+            isvalid = false;
+        }
+        if (DateTo < DateFrom) {
+            Errmsg = "วันที่สุดท้ายต้องมากกว่าวันที่เริ่มลา";
+            isvalid = false;
+        }
+        if (a.LeaveType != "ลาพักผ่อน") {
+            if (Remark == "") {
+                Errmsg = "ระบุ เหตุผลการลา";
+                isvalid = false;
+            }
+        }
+
+        if (a.LeaveType != "ลาป่วย") {
+            if (DateFrom.Date <= LeaveService.ConvertTobuddhistDate(DateTime.Now.Date)) {
+                Errmsg = "ไม่อนุญาตให้ลาภายในวันที่ปัจจุบันหรือย้อนหลังได้";
+                isvalid = false;
+            }
+        }
+
+        if (a.LeaveType == "ลาป่วย") {
+            if (DateFrom.Date > LeaveService.ConvertTobuddhistDate(DateTime.Now.Date)) {
+                Errmsg = "ไม่อนุญาตให้ลาป่วยล่วงหน้าได้";
+                isvalid = false;
+            }
+        }
+        if (a.DocType != "ใบยกเลิกลา") {
+            var chk_dup = LeaveService.CheckDupLeave(a.Username, a.LeaveID, LeaveService.ConvertToEnglistDate(DateFrom.Date), LeaveService.ConvertToEnglistDate(DateTo.Date));
+            if (chk_dup.Result == "fail") {
+                Errmsg = chk_dup.Message1;
+                isvalid = false;
+            }
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "info");
+        }
+        return isvalid;
+    }
+    private bool PrepairDataSave() {
+        var Leave = leaveService.DocSet.Leave;
+        var h = leaveService.DocSet.info;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        bool isnew = Leave.LeaveID == "" ? true : false;
+
+        if (isnew) {
+            Leave.LeaveID = IDRuunerService.GetNewIDV2("LEAVE", rcom, "", DateFrom.Date, false, "th")[1];
+            //Leave.RComID = rcom;
+            //Leave.ComID = com;
+
+        }
+        RecalLeaveDay();
+
+        Leave.WorkYear = LeaveService.GetYearFiscalYear(DateFrom.Date);
+
+        int xLeaveDay = 0;
+        int.TryParse(txtLeaveDay, out xLeaveDay);
+        Leave.LeaveDay = xLeaveDay;
+
+        Leave.DateFrom = DateFrom.Date;
+        Leave.DateTo = DateTo.Date;
+        Leave.Remark = Remark;
+        Leave.ModifiedBy = login.LoginInfo.CurrentUser;
+        Leave.ModifiedDate = DateTime.Now;
+        if (Leave.DocType == "ใบยกเลิกลา") {
+            Leave.LeaveDay = Math.Abs(Leave.LeaveDay) * -1;
+        }
+        if (Leave.DocType == "ใบลา") {
+            Leave.LeaveDay = Math.Abs(Leave.LeaveDay);
+        }
+        return isnew;
+    }
+    async void OnSave() {
+        var Leave = leaveService.DocSet.Leave;
+        if (!ValidLineData()) {
+            return;
+        }
+        var isnew = PrepairDataSave();
+        var rs = LeaveService.Save(leaveService.DocSet.Leave, isnew);
+        if (rs.Result != "ok") {
+            await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, Leave.LeaveID);
+            await Swal.FireAsync("", rs.Message1, "info");
+            return;
+        } else {
+            leaveService.DocSet = leaveService.GetDocSet(Leave.RComID, Leave.LeaveID);
+
+            await Swal.FireAsync("", "เพิ่มสำเร็จ", "success");
+            LoadData();
+        }
+    }
+
+    async void ListGrd() {
+        var rcom = login.LoginInfo.CurrentCompany.CompanyID;
+        ListSumHRLeave = LeaveService.ListLeaveSummary(rcom, leaveService.DocSet.info.Username, FiscalYear);
+    }
+
+    private void ResetControl() {
+        SelectLEAVETYPE = "";
+        DateFrom = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date);
+        DateTo = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date);
+        txtLeaveDay = "1";
+    }
+
+    async void OnDelete() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันลบใบลา",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        var user = login.LoginInfo.CurrentUser;
+
+
+        var rs = LeaveService.DeleteLine(leaveService.DocSet.Leave.ID, user);
+        if (rs.Result != "ok") {
+            await Swal.FireAsync("", rs.Message1, "info");
+            return;
+        } else {
+
+            await Swal.FireAsync("Success", "ลบใบลาสำเร็จ", "success");
+            Onback();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async void OnCreateCancel() {
+
+        var Leave = leaveService.DocSet.Leave;
+
+        DateTime today = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date);
+
+        if (today >= Leave.DateTo.Date) {
+            await Swal.FireAsync("Warning", "ไม่สามารถยกเลิกวันลาได้ เนื่องจากวันสิ้นสุดวันลาเลยหรือเท่ากับวันที่ปัจจุบัน!!", "info");
+            return;
+        }
+
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, Leave.LeaveID);
+        leaveService.DocSet = leaveService.ConvertToCancelDoc(rcom, Leave.LeaveID, Leave.Username);
+        SetActiveControl();
+        nav.NavigateTo($"Leave/LeaveDetail/{comefrom}", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    private void OnDateFromChanged(object theUserInput) {
+        DateTime lowlimit_date = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date).AddMonths(-12);
+        DateTime maxlimit_date = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date).AddMonths(12);
+        if (Convert.ToDateTime(theUserInput) < lowlimit_date || Convert.ToDateTime(theUserInput) >= maxlimit_date) {
+            Swal.FireAsync("Warning", "วันที่ไม่อยู่ในขอบเขตการลาได้!!", "info");
+            return;
+        }
+        calLeaveDay(Convert.ToDateTime(theUserInput), "from");
+        // the handler receives an object that you may need to cast to the type of the component
+        // if you do not provide a Value, you must provide the Type parameter to the component
+        //result = string.Format("The user entered: {0:dd/MMM/yyyy}", (theUserInput as DateTime?).Value);
+    }
+
+    private void OnDateToChanged(object theUserInput) {
+        DateTime input_date = LeaveService.ConvertTobuddhistDate(Convert.ToDateTime(theUserInput));
+        DateFrom = LeaveService.ConvertTobuddhistDate(DateFrom);
+        DateTo = LeaveService.ConvertTobuddhistDate(DateTo);
+        DateTime lowlimit_date = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date).AddMonths(-12);
+        DateTime maxlimit_date = LeaveService.ConvertTobuddhistDate(DateTime.Now.Date).AddMonths(12);
+        if (Convert.ToDateTime(input_date) < lowlimit_date || Convert.ToDateTime(input_date) >= maxlimit_date) {
+            Swal.FireAsync("Warning", "วันที่ไม่อยู่ในขอบเขตการลาได้!!", "info");
+            return;
+        }
+        calLeaveDay(Convert.ToDateTime(input_date), "to");
+        // the handler receives an object that you may need to cast to the type of the component
+        // if you do not provide a Value, you must provide the Type parameter to the component
+        //result = string.Format("The user entered: {0:dd/MMM/yyyy}", (theUserInput as DateTime?).Value);
+    }
+
+
+    void calLeaveDay(DateTime newValue, string to_from) {
+        if (to_from == "from") {
+            DateFrom = newValue;
+        } else {
+            DateTo = newValue;
+        }
+
+        if (DateTo != null && DateFrom != null) {
+            var totaldays = (Convert.ToInt32((Convert.ToDateTime(DateTo).Date - Convert.ToDateTime(DateFrom).Date).TotalDays)) + 1;
+            txtLeaveDay = totaldays.ToString("N0");
+        }
+    }
+    void RecalLeaveDay() {
+
+        var totaldays = (Convert.ToInt32((Convert.ToDateTime(DateTo).Date - Convert.ToDateTime(DateFrom).Date).TotalDays)) + 1;
+        txtLeaveDay = totaldays.ToString("N0");
+
+    }
+    async void Onback() {
+        if (comefrom == "0" || comefrom == "3") {
+            nav.NavigateTo($"Dashboard/PersonBoardDesktop", false);
+        }
+        if (comefrom == "1") {
+            nav.NavigateTo($"Leave/UserLeaveList", false);
+        }
+        if (comefrom == "2") {
+            nav.NavigateTo($"Leave/UserLeaveHistoryList", false);
+        }
+    }
+
+    async void OnNew(string leave_type) {
+        var Leave = leaveService.DocSet.Leave;
+
+        string user = Leave.Username;
+        string rcom = Leave.RComID;
+        string com = Leave.ComID;
+        string fullname = Leave.FullName;
+        string poistion = Leave.PositionID;
+
+        leaveService.DocSet = LeaveService.NewTransaction(rcom, com, leave_type);
+        leaveService.DocSet.Leave.Username = user;
+        leaveService.DocSet.Leave.FullName = fullname;
+        leaveService.DocSet.Leave.PositionID = poistion;
+        leaveService.DocSet.Leave.PositionName = MasterTypeService.GetType("JOB POSITION", poistion)?.Description1;
+        leaveService.DocSet.Leave.WorkYear = Convert.ToInt32(FiscalYear);
+        leaveService.DocSet.Leave.CreatedBy = login.LoginInfo.CurrentUser;
+        nav.NavigateTo($"Leave/LeaveDetail/0", false);
+    }
+
+    #region upload
+
+
+    //async Task loadProfile()
+    //{
+    //    isUploading = true;
+    //    var user = login.LoginInfo.CurrentUser;
+    //    var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    var h = leaveService.DocSet.Leave;
+
+    //   // List_files = FileGo.ListFilesRef(rcom,"",FileGo.Type_leavedocument,h.LeaveID);
+    //    isUploading = false;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    async Task DownLoadFile() {
+        try {
+            var h = leaveService.DocSet.Leave;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string file_url = FileGo.GetFileUrl(rcom, "", FileGo.Type_leavedocument, h.LeaveID);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = leaveService.DocSet.Leave;
+        string user = login.LoginInfo.CurrentUser;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        if (string.IsNullOrEmpty(h.LeaveID)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                //var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                //imgUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_leavedocument, rcom, "", h.LeaveID);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+            }
+            await Upload();
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task Upload() {
+        try {
+            var h = leaveService.DocSet.Leave;
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            isUploading = true;
+            var login_filego = FileGo.GetFileGoLogin();
+            string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            } else {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail") {
+                    upload_file.Clear();
+                    await Swal.FireAsync("Error", update_result.Message1, "error");
+                    //ShowMessage(false, update_result.Message1);
+                } else {
+                    //ShowMessage(true, "Upload Success");
+                    var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+                    var rr = FileGo.SaveXFileRef(xfile_ref);
+                  var rrr=  LeaveService.Set_UnSet_HasFileAndCer(h.RComID, h.LeaveID,true);
+                    leaveService.DocSet = leaveService.GetDocSet(h.RComID, h.LeaveID);
+                }
+            }
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    #endregion
+
+}

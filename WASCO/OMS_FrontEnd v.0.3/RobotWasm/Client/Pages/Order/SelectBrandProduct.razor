@@ -1,0 +1,159 @@
+﻿@page "/Order/SelectBrandProduct"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+@using BrowserInterop.Extensions
+@using BrowserInterop.Geolocation
+@inject IJSRuntime jsRuntime
+
+
+
+<style>
+    .card-top-menu {
+        padding: 11px 10px 11px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    div.noSelect {
+        -moz-user-select: none; /* Mozilla browsers */
+        -khtml-user-select: none; /* WebKit browsers */
+        user-select: none; /* Standard syntax */
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">เลือกยี่ห้อ</span></div>
+        </div>
+
+    </a>
+
+</div>
+
+<div class="row pt-3">
+    <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                @foreach (var l in ListBrandProduct) {
+                    <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectBrand(l))">
+                        <div class="row pt-1 noSelect">
+                        <div class="col-12">
+                            
+                                <div class="d-inline"><span style="font-size:large;">@l.Description1</span></div>
+                                <div class="d-inline float-end"><i class="fa-solid fa-angle-right" style="font-size: 1.5em;"></i></div>
+                     
+                        </div>
+                    </div>
+                    </a>
+                    <hr class="my-3" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    List<vw_MasterTypeLine> ListBrandProduct = new List<vw_MasterTypeLine>();
+
+
+    #region gps
+    private WindowNavigatorGeolocation geolocationWrapper;
+    private GeolocationPosition currentPosition;
+    private List<GeolocationPosition> positioHistory = new List<GeolocationPosition>();
+    private IAsyncDisposable geopositionWatcher;
+    #endregion
+    protected override async Task OnInitializedAsync() {
+        #region gps
+        var window = await jsRuntime.Window();
+        var navigator = await window.Navigator();
+        geolocationWrapper = navigator.Geolocation;
+        #endregion
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    public async Task GetGeolocation() {
+        try {
+            currentPosition = (await geolocationWrapper.GetCurrentPosition(new PositionOptions() {
+                    EnableHighAccuracy = true,
+                    MaximumAgeTimeSpan = TimeSpan.FromHours(1),
+                    TimeoutTimeSpan = TimeSpan.FromMinutes(1)
+                })).Location;
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+  
+    }
+
+    async void LoadData() {
+        ListBrandProduct = await _masterTypeService.ListViewMasterType("", "ITEM BRAND", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    async Task OnSelectBrand(vw_MasterTypeLine select_data) {
+        isLoading = true;
+        await Task.Run(() => GetGeolocation());
+        var logininfo = login.LogInInfo;
+        var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+        await sessionStorage.RemoveItemAsync(Globals.SessionActive_SOID);
+        _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(logininfo.CurrentRootCompany.CompanyID, logininfo.CurrentCompany.CompanyID, "SO1", logininfo.CurrentUser, userfullname));
+        _soService.DocSet.Head.BrandID = select_data.ValueTXT;
+        await sessionStorage.SetItemAsync(Globals.SessionActive_BrandID, select_data.ValueTXT);
+
+        try {
+
+            _soService.DocSet.Head.Lat = Convert.ToDecimal(currentPosition.Coords.Latitude);
+            _soService.DocSet.Head.Lon = Convert.ToDecimal(currentPosition.Coords.Longitude);
+            await sessionStorage.SetItemAsync(Globals.SessionLat, _soService.DocSet.Head.Lat);
+            await sessionStorage.SetItemAsync(Globals.SessionLon, _soService.DocSet.Head.Lon);
+          
+
+       
+            var geo_thailand = await Task.Run(() => _soService.GetGeoThailand(_soService.DocSet.Head.Lat, _soService.DocSet.Head.Lon));
+            if (geo_thailand != null) {
+                //_soService.DocSet.Head.Remark2 = geo_thailand.tname;
+                _soService.DocSet.Head.TName = geo_thailand.tname;
+                _soService.DocSet.Head.AName = geo_thailand.aname;
+                _soService.DocSet.Head.PName = geo_thailand.pname;
+                await sessionStorage.SetItemAsync(Globals.SessionAreaTName, geo_thailand.tname);
+                await sessionStorage.SetItemAsync(Globals.SessionAreaAName, geo_thailand.aname);
+                await sessionStorage.SetItemAsync(Globals.SessionAreaPName, geo_thailand.pname);
+            }
+        } catch (Exception) {   }
+     
+        isLoading = false;
+        nav.NavigateTo($"Order/OrderDetail", false);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Dashboard/FirstBoard");
+    }
+}

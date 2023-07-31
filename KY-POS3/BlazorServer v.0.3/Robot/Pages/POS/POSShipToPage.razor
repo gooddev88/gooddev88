@@ -1,0 +1,101 @@
+﻿@page "/POS/POSShipToPage/{pagecomefrom}"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using Blazored.LocalStorage
+
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<style>
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+</style>
+
+
+<div class="row pt-2">
+    <div class="col-11 mx-auto">
+
+
+        <TelerikListView Data=@shiptoList
+                         Pageable="true"
+                         PageSize="1000">
+            <HeaderTemplate>
+            </HeaderTemplate>
+            <Template>
+                <div class="card w-100 m-0 px-2 py-2 mt-2">
+                    <div class="card-body p-0 px-2 w-100">
+                        <a class="btn p-0 w-100" style="height: auto;" @onclick="@(  () => GoToPOSSale(@context.ShipToID))">
+
+                            <div class="row pt-2">
+                                <div class="col-4 pt-1 text-left">
+                                    <img src='@context.ImageUrl' alt="" style="width: 5rem;" />
+                                </div>
+                                <div class="col-8 text-right pt-3">
+                                    <span style="color: cadetblue; font-size: 2rem; font-weight:bold;">@context.ShipToName &nbsp;</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+
+            </Template>
+        </TelerikListView>
+
+
+
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string pagecomefrom { get; set; } = "";
+    bool isLoading = true;
+    //public LogInService.LoginSet login { get; set; }
+
+
+    IEnumerable<ShipTo> shiptoList;
+
+
+    protected override async Task OnInitializedAsync() {
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+    void LoadData() {
+        shiptoList = ShipToService.ListShipTo();
+    }
+    async void GoToPOSSale(string shipTo) {
+
+
+        posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo, "webv2", shipTo));
+        posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+        posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+
+
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSSaleDetail/{pagecomefrom}", false);
+        await InvokeAsync(StateHasChanged);
+
+    }
+}

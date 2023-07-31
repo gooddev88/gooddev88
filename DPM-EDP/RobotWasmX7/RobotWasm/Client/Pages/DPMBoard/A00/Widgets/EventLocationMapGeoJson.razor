@@ -1,0 +1,125 @@
+﻿@*@page "/DPMBoard/A01/DashBoard/MapJson"*@
+
+@using RobotWasm.Shared.Data.ML.DPMBaord.Accident
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+<h3>EventLocationMap</h3>
+
+@using System.Net
+
+<style>
+
+    .loader-container {
+        text-align: center;
+        display: inline-table;
+        padding-top: 10px;
+        position: absolute;
+        left: 50%;
+    }
+</style>
+
+
+        <TelerikRootComponent>
+            <TelerikMap Center="@Center"
+                WrapAround="true"
+                MinZoom="1"
+                Zoom="5">
+                <MapLayers>
+                    <MapLayer Type="@MapLayersType.Shape"
+                      Data="@WorldData">
+                        <MapLayerShapeSettings>
+                            <MapLayerShapeSettingsStyle>
+                                <MapLayerShapeSettingsStyleFill Color="#008080" Opacity="0.5"></MapLayerShapeSettingsStyleFill>
+                                <MapLayerShapeSettingsStyleStroke Color="#ffffff"></MapLayerShapeSettingsStyleStroke>
+                            </MapLayerShapeSettingsStyle>
+                        </MapLayerShapeSettings>
+                    </MapLayer>
+
+                    <MapLayer Type="@MapLayersType.Marker"
+                      Data="@MarkerData"
+                      LocationField="@nameof(MarkerModel.LatLng)"
+                      TitleField="@nameof(MarkerModel.Address)">
+                        <MapLayerMarkerSettings>
+                            <MapLayerMarkerSettingsTooltip>
+                                <Template>
+                                @{
+                                    var dataItem = context.DataItem as MarkerModel;
+                                }
+
+                                    <div>@dataItem.Address</div>
+                                </Template>
+                            </MapLayerMarkerSettingsTooltip>
+                        </MapLayerMarkerSettings>
+                    </MapLayer>
+                </MapLayers>
+            </TelerikMap>
+        </TelerikRootComponent>
+ 
+@code {
+    [Parameter] public List<AccindentLocationSet> Data { get; set; }
+    public double[] Center { get; set; } = new double[] { 15.517641477912017, 100.63329004520848 };
+
+
+    public string WorldData { get; set; } = "";
+    protected override async Task OnInitializedAsync() {
+
+    }
+
+    protected override async Task OnParametersSetAsync() {
+        await LoadMap();
+    }
+
+
+
+    public List<MarkerModel> MarkerData { get; set; } = new List<MarkerModel>()
+                    {
+        // North America
+        new MarkerModel()
+        {
+            LatLng = new double[] { 9.122980524119631, 99.30180777840793 },
+            Address = "สุราษฎร์ธานี",
+        },
+
+
+        new MarkerModel()
+        {
+            LatLng = new double[] { 16.86088359401918, 99.75811671189606},
+            Address = "Sukhothai",
+        },
+
+    };
+
+    public class MarkerModel {
+        public double[] LatLng { get; set; }
+        public string Address { get; set; }
+    }
+
+
+    async private Task LoadMap() {
+
+        string url = "https://raw.githubusercontent.com/apisit/thailand.json/master/thailandWithName.json";
+        using (var httpClient = new HttpClient()) {
+            WorldData = await Task.Run(() => httpClient.GetStringAsync(url)); 
+        } 
+        await InvokeAsync(StateHasChanged);
+
+
+
+        //string url = "https://raw.githubusercontent.com/apisit/thailand.json/master/thailandWithName.json";
+        //using (var httpClient = new HttpClient()) {
+        //    thaiGeoJson = await Task.Run(() => httpClient.GetStringAsync(url));
+        //}
+        Data = Data.Take(50).ToList();
+        foreach (var d in Data)
+    {
+          double lat = 0;
+            double lon = 0;
+            double.TryParse(d.lat, out lat);
+            double.TryParse(d.lon, out lon);
+        MarkerData.Add(new MarkerModel { LatLng=   new double[] { lat, lon } ,Address=d.province});
+    }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

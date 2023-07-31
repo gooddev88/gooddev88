@@ -1,0 +1,51 @@
+﻿@page "/"
+@using  Robot.Data.GADB.TT
+@using Robot.Data.DA
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.ML
+
+
+
+@inject NavigationManager navigation
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject SweetAlertService Swal 
+
+    <link href="_content/BlazorPro.Spinkit/spinkit.min.css" rel="stylesheet" />
+
+<style>
+    #testCSS {
+        background-color: aqua
+    }
+</style>
+
+
+
+<div class="container" style="
+    padding-right: 0px;
+    padding-left: 0px;
+">
+
+    <div class="card">
+        <div class="card-body" style="padding-bottom: 10px;">
+            <div class="row">
+                <div class="col-md-12">
+                    <h3> <span>Go to list page</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code{
+
+
+    protected override void OnInitialized() {
+        //navigation.NavigateTo($"/DAlert/DAlertList",true);
+        //  navigation.NavigateTo($"/Vaccine/Vaccine", true);
+        InvokeAsync(StateHasChanged);
+    }
+ 
+
+}

@@ -1,0 +1,751 @@
+﻿@page "/Order/OrderDetail"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .badge-open-line {
+        background-color: #a3caf3;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-success-line {
+        background-color: #b4eda0;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-pending-line {
+        background-color: #ffebb6;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-lost-line {
+        background-color: pink;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">รายละเอียดการสั่งสินค้า</span></div>
+        </div>
+    </a>
+
+</div>
+
+@if (_soService.DocSet != null) {
+    <div class="row pt-2">
+        <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body pt-1">
+                            <div class="row">
+                                <div class="col-6">
+                                    @*<span class="badge badge-success-line"> @_soService.DocSet.Head.BrandID</span>*@
+                                    <strong style="font-size:larger"> @brandId</strong>
+                                    @if (!string.IsNullOrEmpty(_soService.DocSet.Head.OrdID) && _soService.DocSet.Head.Status != "WAIT") {
+                                        <a @onclick="OpenPrintORDER">
+                                            &nbsp;
+                                            <i class="fa-solid fa-print" style="color:darkred"></i>
+                                        </a>
+                                    }
+                                
+
+                                </div>
+                                <div class="col-6 text-end">
+                                    @if (_soService.DocSet.Head.Status == "OPEN") {
+                                        <span class="badge badge-open-line"><i style="color:cornflowerblue;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                    } else if (_soService.DocSet.Head.Status == "WAIT") {
+                                        <span class="badge badge-pending-line"><i style="color:darkorange;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                    } else {
+                                        <span class="badge badge-success-line"><i style="color:green;" class="fa-solid fa-circle"></i>&nbsp;@_soService.DocSet.Head.Status</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="row">
+                                @if (!string.IsNullOrEmpty(_soService.DocSet.Head.OrdID)) {
+                                    @*         <div class="col-md-6 col-sm-12 col-12 pt-2">
+                            <div class="d-inline-flex"><span style="font-size:medium;">เอกสาร @_soService.DocSet.Head.OrdID</span></div>
+                            </div>*@
+
+
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-flex"><span style="font-size:medium;">เอกสาร @_soService.DocSet.Head.OrdID</span></div>
+                                                @if (_soService.DocSet.Head.IsLink) {
+                                                    <i class="fa-solid fa-link" style="color: #49e407;"></i>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            @if (!_soService.DocSet.Head.IsPrint || isadmin) {
+                                                <a @onclick="OnDeleteDoc">
+                                                    &nbsp;
+                                                    <i class="fa-solid fa-trash-can" style="color:black"></i>
+                                                </a>
+                                             
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                <div class="col-md-8 col-sm-12 col-12">
+                                    <div class="d-inline-flex">ลูกค้า</div>
+                                    <div class="d-inline-block">
+                                        <TelerikTextBox @bind-Value="@_soService.DocSet.Head.CustName" FillMode="@Outline" />
+                                    </div>
+                                    <div class="d-inline-block">
+                                        <a class="p-0 text-decoration-none" @onclick="@GoSelectCustomer">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </a>
+                                    </div>
+                                    @*     <a class="p-0 text-decoration-none" @onclick="@GoSelectCustomer">
+                                        <div class="d-inline-block"><span style="font-size:medium;">@(
+                                            _soService.DocSet.Head.CustID == "" ? "กดเลือกลูกค้า" : _soService.DocSet.Head.CustName
+                                            )</span></div>
+                                    </a>*@
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                        <span>เซลล์</span>
+                                        <a class="p-0 text-decoration-none" @onclick="@GoSelectSalesman">
+                                            <div class="d-inline-block"><span style="font-size:medium;">@(
+                                                _soService.DocSet.Head.SalesName == "" ? "กดเลือกผู้ขาย" : _soService.DocSet.Head.SalesName
+                                                )</span></div>
+                                        </a>
+                                        @*  <div class="d-inline-flex">ผู้ขาย</div>
+                                    <div class="d-inline-block">
+                                    <TelerikComboBox Value="@_soService.DocSet.Head.SalesID1"
+                                    Data="@ListUser"
+                                    ScrollMode="@DropDownScrollMode.Virtual"
+                                    ValueField="@(nameof(UserInfo.Username))"
+                                    TextField="@(nameof(UserInfo.FullName))"
+                                    Width="100%" PageSize="10" ItemHeight="35"
+                                    ValueChanged="@( (string v) => ValueChangeUser(v) )"
+                                    Filterable="true"
+                                    FillMode="@Outline"
+                                    FilterOperator="@StringFilterOperator.Contains">
+                                    <ComboBoxSettings>
+                                    <ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>
+                                    </ComboBoxSettings>
+                                    </TelerikComboBox>
+                                    </div>*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                        <span>คลัง</span>
+                                        <a class="p-0 text-decoration-none" @onclick="@GoSelectLocation">
+                                            <div class="d-inline-block"><span style="font-size:medium;">@(
+                                                _soService.DocSet.Head.ShipFrLocID == "" ? "กดเลือกคลัง" : _soService.DocSet.Head.ShipFrLocID
+                                                )</span></div>
+                                        </a>
+                                        @*    <div class="d-inline-flex">คลัง</div>
+                                        <div class="d-inline-block">
+                                            <TelerikComboBox @bind-Value="@_soService.DocSet.Head.ShipFrLocID"
+                                                         Data="@ListLocation"
+                                                         ScrollMode="@DropDownScrollMode.Virtual"
+                                                         ValueField="@(nameof(LocationInfo.LocID))"
+                                                         TextField="@(nameof(LocationInfo.Name))"
+                                                         Width="100%" PageSize="10" ItemHeight="35"
+                                                         Filterable="true"
+                                                         FillMode="@Outline"
+                                                         FilterOperator="@StringFilterOperator.Contains">
+                                                <ComboBoxSettings>
+                                                    <ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>
+                                                </ComboBoxSettings>
+
+                                            </TelerikComboBox>
+                                        </div>*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                        <div class="d-inline-flex">วันที่</div>
+                                        <div class="d-inline-block">
+                                            <TelerikDatePicker @bind-Value="@_soService.DocSet.Head.OrdDate"
+                                            Format="dd/MM/yyyy" FillMode="@Outline">
+                                            </TelerikDatePicker>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 col-sm-12 col-12 pt-2">
+                                        <div class="d-inline-flex">เลข PO</div>
+                                        <div class="d-inline-block">
+                                            <TelerikTextBox @bind-Value="@_soService.DocSet.Head.POID" FillMode="@Outline" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-row bd-highlight mb-0">
+                                            <div class="d-inline-block"><span style="font-size:small;">จำนวน &nbsp; <b> @_soService.DocSet.Head.Qty.ToString("n0")</b> &nbsp;</span></div>
+                                            <div class="d-inline-block"><span style="font-size:small;">ยอดรวม  &nbsp;<b> @_soService.DocSet.Head.NetTotalAmtIncVat.ToString("n2")</b> &nbsp; บาท  &nbsp;</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-row bd-highlight mb-0">
+                                            <div class="d-inline-block"><span style="font-size:small;">ส่วนลด &nbsp;<b> @_soService.DocSet.Head.ItemDiscAmtIncVat.ToString("n2")</b> &nbsp; บาท  &nbsp;</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                         
+                                 
+                                @*      <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-row bd-highlight mb-0">
+                                            <div class="d-inline-block"><span style="font-size:small;">Salesman &nbsp; <b> @_soService.DocSet.Head.SalesName</b></span></div>
+                                        </div>
+
+                                    </div>
+                                </div>*@
+                                @if (isadmin) {
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row bd-highlight mb-0">
+                                                <div class="d-inline-block"><span style="font-size:small;">สถานที่ &nbsp; <b> @_soService.DocSet.Head.PName -> @_soService.DocSet.Head.AName -> @_soService.DocSet.Head.TName</b></span></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                }
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="d-inline-flex">หมายเหตุ</div>
+                                        <div class="d-inline-block w-100">
+                                            <TelerikTextArea @bind-Value="@_soService.DocSet.Head.Remark1" FillMode="@Outline"
+                                                             AutoSize="true" /> 
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!_soService.DocSet.Head.IsPrint || isadmin) {
+                                <div class="row pt-1">
+                                    <div class="col-md-12">
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                        @onclick="@(() => OnSave())" Class="w-100"
+                                        ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                            บันทึก
+                                        </TelerikButton>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="d-inline-block">รายการสินค้า</h5>
+                                    <div class="d-inline-block float-end">
+                                        @if (!_soService.DocSet.Head.IsPrint || isadmin) {
+                                            <a class="p-0 text-decoration-none text-dark" @onclick="@AddProduct">
+                                                <i class="fa-solid fa-cart-plus" style="font-size:1.5em; color:red;"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+
+                                    @if (_soService.DocSet.Line.Count > 0) {
+                                        <TelerikListView Data="@_soService.DocSet.Line"
+                                        @ref="@ListViewLine"
+                                        Pageable="true" Page="1" PageSize="10">
+                                            <Template>
+
+                                                <div class="row pt-1">
+                                                    <div class="col-10">
+
+                                                        <a class="p-0 text-decoration-none text-dark" @onclick="() => EditLineItem(context)">
+                                                            <div class="row">
+                                                                <div class="col-1">
+                                                                    <div class="mycircle-black">@context.Sort</div>
+                                                                </div>
+                                                                <div class="col-3">
+                                                                    <img class="m-auto" src="@context.ImageUrl"
+                                                                         style="width: 100%;object-fit: cover;width:100%;height:auto; " />
+                                                                </div>
+                                                                <div class="col-8 text-start">
+                                                                    <div>
+                                                                        <strong style="font-size:small;">@context.ItemID - @context.ItemName</strong>
+                                                                    </div>
+
+                                                                    <span class="small">จำนวน <b>@context.Qty.ToString("n0")</b> @context.Unit</span>
+                                                                    <span class="small">ราคา <b>@context.PriceIncVat.ToString("n2")</b> บาท</span>
+                                                                    <br />
+                                                                    <span class="small">รวม <b>@context.TotalAmtIncVat.ToString("n2")</b> บาท</span><br>
+                                                                    @if (context.DiscAmtIncVat > 0) {
+                                                                        <span class="small" style="color:red;">ส่วนลด <b> @context.DiscAmtIncVat.ToString("n0")</b> บาท &nbsp; </span>
+                                                                        <span class="small" style="color:red;"> / <b> @context.DiscPPUIncVat.ToString("n0")</b>  @context.Unit &nbsp; </span>
+
+                                                                        @if (context.Status == "WAIT") {
+                                                                            <i class="fa-solid fa-clock" style="color:orange"></i> <br>
+
+                                                                        }
+                                                                        @if (context.Status == "OK") {
+                                                                            <i class="fa-solid fa-circle-check" style="color:green"></i> <br>
+                                                                        }
+                                                                        @if (context.Status == "REJECT") {
+                                                                            <span class="badge rounded-pill bg-danger">Reject</span>
+                                                                        }
+
+                                                                    }
+                                                                    @if (context.PatternID != "P000") {
+                                                                        <span class="small"> @context.ProName &nbsp; </span>
+                                                                        if (context.IsComplete) {
+                                                                            <span>@context.ProName</span> <i class="fa-solid fa-circle-check" style="color:green"></i>
+                                                                        } else {
+                                                                            <span>@context.ProName</span>  <i class="fa-solid fa-xmark" style="color:red"></i>
+                                                                        }
+                                                                    }
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                    <div class="col-2 text-end pr-4">
+                                                        @if (!_soService.DocSet.Head.IsPrint || isadmin) {
+                                                            <a @onclick="() => OnDeleteItem(context)">
+                                                                &nbsp;
+                                                                <i class="fa-solid fa-trash-can" style="color:black"></i>
+                                                            </a>
+                                                        }
+                                                    </div>
+
+
+                                                </div>
+                                                <hr class="my-3" />
+                                            </Template>
+                                        </TelerikListView>
+                                    } else {
+                                        <div class="row">
+                                            <div class="col-6 mx-auto">
+                                                <img src="/img/no_data.jpg" style="width: 100%;" />
+                                                <div class="text-center">ไม่พบเอกสาร</div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<TelerikWindow Class="telerik-pop" @bind-State="@State" Centered="true"
+@bind-Visible=@isPopupPrint Modal="true">
+    <WindowTitle>
+        <strong>Print</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+    <WindowContent>
+        <iframe src=@PrintUrl style="width:100%;height:1000px" frameborder="0" class="holds-the-iframe"></iframe>
+    </WindowContent>
+</TelerikWindow>
+
+
+
+<div>
+    @if (playsound) {
+        <div hidden>
+            <audio autoplay controls><source src="/sound/ok.wav" /></audio>
+        </div>
+    }
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    string brandId = "";
+    bool isadmin = false;
+    bool playsound = false;
+
+    public WindowState State { get; set; } = WindowState.Maximized;
+    public bool isPopupPrint { get; set; } = false;
+    public string PrintUrl { get; set; }
+
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline; 
+    private TelerikListView<vw_OSOLine> ListViewLine { get; set; }
+    //public IEnumerable<UserInfo> ListUser;
+    public List<LocationInfo> ListLocation = new List<LocationInfo>();
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadDropDown());
+        await Task.Run(LoadData);
+        //await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            var user = login.LogInInfo.CurrentUser;
+            var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+            brandId =   await sessionStorage.GetItemAsync<string>(Globals.SessionActive_BrandID);
+            if (string.IsNullOrEmpty(brandId)) {
+                nav.NavigateTo("Dashboard/FirstBoard");
+                return;
+            }
+            if (_soService.DocSet == null) {
+                var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID); 
+                if (!string.IsNullOrEmpty(docid)) {
+                    _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+                    _soService.DocSet.Head.BrandID = brandId;
+                } else {
+                    _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                    _soService.DocSet.Head.BrandID = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_BrandID);
+                    try {
+                        var lat = await sessionStorage.GetItemAsync<string>(Globals.SessionLat);
+                        var lon = await sessionStorage.GetItemAsync<string>(Globals.SessionLon);
+                        _soService.DocSet.Head.Lat = Convert.ToDecimal(lat);
+                        _soService.DocSet.Head.Lon = Convert.ToDecimal(lon);
+                    } catch (Exception ex) {
+                        var e = ex.Message;
+                    } 
+                    _soService.DocSet.Head.TName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaTName);
+                    _soService.DocSet.Head.AName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaAName);
+                    _soService.DocSet.Head.PName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaPName);
+                }
+            }
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+    }
+    async Task OnDeleteDoc() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        var h = _soService.DocSet.Head;
+        var user = login.LogInInfo.CurrentUser;
+        var rdel = await Task.Run(() => _soService.DeleteDoc(h.OrdID, h.RComID, h.ComID, user));
+        if (rdel.Result == "ok") {
+            GoBack();
+        } else {
+            await Swal.FireAsync("Warning", rdel.Message1, "info");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnDeleteItem(vw_OSOLine select_data) {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบสินค้า",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        _soService.DocSet = await Task.Run(() => _soService.DeleteLine(select_data.LineNum, _soService.DocSet));
+        #region  check Pro
+        try {
+            var h = _soService.DocSet.Head;
+            _soService.PromotionSet = await Task.Run(() => _promotionService.GetPromotionSet(h.RComID, h.ComID, h.BrandID, "", h.ShipFrLocID, select_data.ProID));
+            _soService.DocSet = SOFuncService.ProCal(_soService.DocSet, _soService.PromotionSet.Promotion);
+        } catch (Exception ex) {
+
+            var x = ex.Message;
+        }
+     
+        #endregion
+        ListViewLine.Rebind();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadDropDown() { 
+        //ListUser = await Task.Run(() => _userService.ListUserInfo());
+        await InvokeAsync(StateHasChanged);
+        //LoadLoc(_soService.DocSet.Head.SalesID1);
+        //await InvokeAsync(StateHasChanged);
+    }
+    //public async void ValueChangeUser(string value) {
+    //    if (!string.IsNullOrEmpty(value)) {
+    //        _soService.DocSet.Head.SalesID1 = value;
+    //        await   LoadLoc(_soService.DocSet.Head.SalesID1);
+    //    }
+    //}
+    //async Task LoadLoc(string user) {
+    //    var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+    //    var com = login.LogInInfo.CurrentCompany.CompanyID;
+    //    // ListLocation = await Task.Run(() => _companyService.ListLocactionsByUser(rcom, com, user));
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    async void LoadData() {
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+        SetActiveControl();
+    }
+
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckPermission() {
+        try {
+            isadmin = login.CanCreate(login.LogInInfo, "621");//621 ออเดอร์
+            await InvokeAsync(StateHasChanged);
+
+        } catch (Exception ex) {
+            var x = ex.Message;
+        }
+     
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "621");//621 ออเดอร์ 
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    async Task OnSelectBrand(vw_MasterTypeLine select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(Globals.SessionActive_BrandID, select_data.ValueTXT);
+        //await sessionStorage.RemoveItemAsync(Globals.SessionActive_PosID);
+        isLoading = false;
+        nav.NavigateTo($"Order/OrderDetail", false);
+    }
+
+
+    void GoSelectCustomer() {
+
+        if (_soService.DocSet.Line.Count == 0 ) {
+            nav.NavigateTo("Order/SelectCustomer");
+            return;
+        }
+        if (_soService.DocSet.Line.Count > 0) {
+            Swal.FireAsync("Warning", "ลบรายการสินค้าก่อนเปลี่ยนลูกค้า", "warning");
+            return;
+        }
+    }
+    void GoSelectSalesman() {
+
+        if (!isadmin) {
+            return;
+        }
+        if (_soService.DocSet.Line.Count == 0 ) {
+            nav.NavigateTo("Order/SelectSalesman");
+            return;
+        } 
+    }
+    void GoSelectLocation() {
+        if (_soService.DocSet.Line.Count == 0 ) {
+            nav.NavigateTo("Order/SelectLocation");
+            return;
+        }else {
+            Swal.FireAsync("Warning", "ลบรายการสินค้าก่อนเปลี่ยนคลัง", "warning");
+            return;
+        }
+    }
+    void AddProduct() {
+        if (_soService.DocSet.Head.CustID == "") {
+            Swal.FireAsync("Warning", "เลือกลูกค้าก่อนเลือกสินค้า", "warning");
+            return;
+        }
+        if (_soService.DocSet.Head.ShipFrLocID == "") {
+            Swal.FireAsync("Warning", "เลือกคลังก่อนเลือกสินค้า", "warning");
+            return;
+        }
+     _soService.DocSet=   SOFuncService.ClearPendingLot(_soService.DocSet);
+        //nav.NavigateTo("Order/SelectProduct");
+        nav.NavigateTo("Order/SelectPromotion");
+    }
+
+   async void EditLineItem(vw_OSOLine select_data) {
+        _soService.DocSet=SOFuncService.ClearPendingLot(_soService.DocSet);
+        var h = _soService.DocSet.Head;
+        _soService.DocSet.LineActive = _soService.DocSet.Line.Where(o => o.LineNum == select_data.LineNum).FirstOrDefault();
+        _soService.PromotionSet = await Task.Run(() => _promotionService.GetPromotionSet(h.RComID, h.ComID, h.BrandID, "", h.ShipFrLocID, _soService.DocSet.LineActive.ProID));
+        
+        nav.NavigateTo("Order/ProductInOrder/y");
+    }
+
+    bool ValidData() {
+        bool isvalid = true;
+        string Errmsg = "";
+        var h = _soService.DocSet.Head;
+        if (string.IsNullOrEmpty(h.CustID)) {
+            Errmsg = "ระบุ ลูกค้า";
+            Swal.FireAsync("Info", Errmsg, "info");
+            return false;
+        }
+        var count_in_complete_promotion = _soService.DocSet.Line.Where(o => o.IsComplete == false).Count();
+        if (count_in_complete_promotion>0) {
+            Errmsg = "ระบุ ซื้อสินค้าไม่ครบตามเงื่อนไขโปรโมชั่น";
+            Swal.FireAsync("Info", Errmsg, "info");
+            return false;
+        }
+
+        //if (string.IsNullOrEmpty(h.to_user_id)) {
+        //    Errmsg = "ระบุ ผู้รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.from_loc)) {
+        //    Errmsg = "ระบุ สถานที่ส่ง";
+        //    isvalid = false;
+        //}
+
+        //if (string.IsNullOrEmpty(h.to_loc)) {
+        //    Errmsg = "ระบุ สถานที่รับทรัพย์สิน";
+        //    isvalid = false;
+        //}
+
+        //if (!isvalid) {
+        //    Swal.FireAsync("", Errmsg, "error");
+        //}
+        return isvalid;
+    }
+
+    protected async Task<bool> PrepairDataSave() {
+        var doc = _soService.DocSet;
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID;
+        var h = _soService.DocSet.Head;
+        bool isnew = h.OrdID == "" ? true : false;
+        if (string.IsNullOrEmpty(h.OrdID)) {
+            //h.OrdID = (await Task.Run(() => _iDRuunerService.GetNewIDV3(h.DocTypeID, rcom, com, h.OrdDate, false, "th")))[1];
+        } else {
+            h.ModifiedBy = login.LogInInfo.CurrentUser;
+        }
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        try {
+            playsound = true;
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            var h = _soService.DocSet.Head;
+            isLoading = true;
+            _soService.DocSet = SOFuncService.CalDocSet(_soService.DocSet);
+            var isnew = await Task.Run(() => PrepairDataSave());
+            I_BasicResult s_result = new I_BasicResult();
+            if (isnew) {
+                s_result = await Task.Run(() => _soService.SaveSO(_soService.DocSet, "insert"));
+            } else {
+                s_result = await Task.Run(() => _soService.SaveSO(_soService.DocSet, "update"));
+            }
+            if (s_result.Result == "ok") {
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+                if (isnew) {
+                    h.OrdID = s_result.Message2;
+                }
+
+                await Swal.FireAsync("Success", "บันทึกสำเร็จ", "success");
+                _soService.DocSet = await Task.Run(() => _soService.GetDocSet(h.OrdID, rcom, com));
+                await sessionStorage.SetItemAsync(Globals.SessionActive_SOID, _soService.DocSet.Head.OrdID);
+                await InvokeAsync(StateHasChanged);
+            } else {
+                h.OrdID = "";
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+                //await Swal.FireAsync("Error", s_result.Message1, "error");
+
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                        Title = "Warning",
+                        Html= s_result.Message1,
+                        ConfirmButtonText = "OK",
+                    });
+            }
+
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            playsound = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Order/OrderList");
+    }
+
+
+    async void OpenPrintORDER() {
+        try {
+            isPopupPrint = true;
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            var h = _soService.DocSet.Head;
+           _soService.DocSet = await Task.Run(() => _soService.GetDocSet(h.OrdID, rcom, com));
+            var print_api = await _stockBalanceService.PrintStockBal(_soService.DocSet);
+            if (print_api.Result == "ok") {
+                PrintUrl = print_api.Message2;
+            }
+            await SetActiveControl();
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("Warning", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+
+    }
+}

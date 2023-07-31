@@ -1,0 +1,249 @@
+﻿@page "/Menu/MenuConfig"
+
+ 
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.LoginCrossApp
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Robot.PrintOut
+@using DevExpress.XtraPrinting;
+@using DevExpress.XtraReports.UI;
+
+@inject IHostingEnvironment hostingEnvironment
+@inject ItemService itemService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject POSService posService
+@inject PageHistoryState pageHistory
+
+<style>
+    .fix-center {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-5">
+            <div class="col-md-1 col-sm-3 col-3 text-left">
+                <a ID="btnback" class="btn w-100 text-white" @onclick="@Back">
+                    <i class="fas fa-chevron-left fa-2x"></i>
+                </a>                   
+            </div>
+            <div class="col-md-10 col-sm-6 col-6 pt-1 text-center mx-0">
+                <strong style="font-size:xx-large;" class="text-white">เมนูตั้งค่า</strong>
+            </div>
+        </div>
+
+        <div class="row px-3 pt-4">
+            <div class="col-12">
+                <div class="row pt-2">                    
+
+                    @if (login.CanOpen(xlogin, "5901"))
+                   {
+                        <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@GoToItemDetail">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/product-hunt.png" style="width: 5rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.4rem;">สินค้าและวัตถุดิบ</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (login.CanOpen(xlogin, "9412"))
+                   {
+                        <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@ItemPrice">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/sale-tag-ky.png" style="width: 5rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.4rem;">ราคาขาย</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (login.CanOpen(xlogin, "9002"))
+                   {
+                        <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@GoToUser">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/user.png" style="width: 5rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.4rem;">ตั้งค่าผู้ใช้งาน</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (login.CanOpen(xlogin,"9003"))
+                    {
+                        <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@GoToUserGroup">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/group.png" style="width: 5rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.4rem;">กลุ่มผู้ใช้งาน</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (login.CanOpen(xlogin, "9911"))
+                    {
+                        <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@GoToMasterType">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <i class="fas fa-radiation-alt" style="font-size: 5rem; color:blueviolet;"></i><br /><br />
+                                                <strong style="color: black; font-size: 1.4rem;">ข้อมูลตัวเลือก</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                    
+
+                </div>
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+
+    protected override async Task OnInitializedAsync()
+{
+       pageHistory.AddPageToHistory( nav.Uri);
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null) {
+                nav.NavigateTo("Login", true);
+            } else {
+                xlogin = login.LoginInfo;
+                await Task.Run(LoadData);
+
+            }
+        } else {
+            xlogin = login.LoginInfo;
+            await Task.Run(LoadData);
+
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        string uri = nav.Uri;
+ 
+        isLoading = true;
+        LoadData();
+    }
+
+    void LoadData()
+    {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl()
+    {
+
+    }
+
+    private string GetWebRootPath(string subfolder)
+    {
+        string webRootPath = hostingEnvironment.WebRootPath;
+        string contentRootPath = hostingEnvironment.ContentRootPath;
+
+        string path = webRootPath + @"\" + subfolder;
+        return path;
+    }
+
+    void GoToItemDetail()
+    {
+        var xlogin = login.LoginInfo;
+        itemService.DocSet = ItemService.NewTransaction(xlogin.CurrentUser, xlogin.CurrentRootCompany.CompanyID);
+        nav.NavigateTo("Master/ItemDetail/web2", false);
+    }
+
+    void ItemPrice()
+    {
+        nav.NavigateTo("Master/ItemPriceList/web2");
+    }
+
+    void GoToUser()
+    {
+        nav.NavigateTo("User/UserList/web2");
+    }
+
+    void GoToUserGroup()
+    {
+        nav.NavigateTo("User/UserGroupList/web2");
+    }
+
+    void GoToMasterType()
+    {
+        nav.NavigateTo("Master/MasterTypeList/web2");
+    }
+
+    void Back()
+    {
+        nav.NavigateTo("Menu/MainMenu");
+    }
+
+}

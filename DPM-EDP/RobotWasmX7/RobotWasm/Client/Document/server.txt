@@ -1,0 +1,80 @@
+ 
+
+server dpm
+Server DPM@Bangna
+==============
+anydesk
+addr: 165846192
+pass: @min#ddpm
+External IP : 122.154.29.20
+Internale IP : 172.17.104.250
+==============
+windows login
+RDP : 122.154.29.20:6006
+user: administrator
+pass: @min#DSS
+user: dalert
+pass: @min#DSS
+==============
+Sql login
+user: dalert
+pass: @min#DSS
+==============
+
+DDPM Vertica DB
+
+Host: 122.154.29.17
+Internal IP : 172.17.103.3
+Port: 5433
+DB Schema: cms
+User: cms
+Pass: dpm@cmspass
+
+
+
+===============
+CMS Server test
+=====================
+Anydesk ID: 952042599
+Pass: @min#DDPM
+=====================
+Remote Desktop
+IP: 122.154.29.20:13389
+User: administrator
+Pass: Ddpm@m1n
+=====================
+Postgresql
+IP: 122.154.29.20
+Port: 5432
+Database name: postgres
+User: postgres
+Pass: @min#CMS
+=====================
+Firewall
+HTTP(80): 122.154.29.20:9000
+
+
+
+DPM ระบบจองห้องประชุม
+
+Server
+remote ip: 122.154.29.10
+internal ip: 192.168.20.30
+u: administrator
+p: @min#1
+================
+MySQL
+u: root
+p: @min#DDPM
+DB Data เก็บที่ D:\WEB_SERVER\MySQL_DATA
+================
+HTTP Path
+path: D:\WEB_SERVER\nginx-1.20.2\html 
+(หรือจะกำหนดที่อื่น config D:\WEB_SERVER\nginx-1.20.2\nginx.conf ได้เลยนะครับ)
+================
+PHP Version 7.2.34
+ตัว service php-cgi.exe รันบน port 9000 
+================
+Nginx ทำ auto start service ให้แล้วถ้าต้องการ restart ไปที่ Services>nginx
+PHP ทำ auto start service ให้แล้วถ้าต้องการ restart ไปที่ Services>php
+================

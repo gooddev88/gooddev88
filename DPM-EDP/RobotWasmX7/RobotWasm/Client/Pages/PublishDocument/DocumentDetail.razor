@@ -1,0 +1,511 @@
+﻿@page "/PublishDocument/DocumentDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.DocHead.I_DocHeadSet
+@using Blazorise
+
+<style>
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-checkbox {
+        box-shadow: 0 0 0 2px rgb(0 0 0 / 6%);
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    /*start telerik upload*/
+
+    .k-upload-files {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .k-form-hint {
+        display: block;
+        margin-top: 1em;
+    }
+
+    .demo-section > .kd-demo-heading {
+        padding-bottom: 0;
+        margin-bottom: 1em;
+    }
+
+    .k-file-success {
+        display: none !important;
+    }
+    /*end  telerik upload*/
+
+    /*start basic upload*/
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    /*end  basic upload*/
+
+</style>
+
+@*<TopMenu></TopMenu>
+*@
+@if (!isLoading) {
+
+    <div class="row pt-1">
+        <div class="col-12 text-center">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@Back" Class="px-3" FillMode="@(ThemeConstants.Button.FillMode.Flat)"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                <span style="font-size: x-large;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+            </TelerikButton>
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-6 col-sm-6 col-12 pt-2">
+            <span>หมวดหมู่</span>
+            <TelerikComboBox @bind-Value="@_docmentService.DocSet.head.doc_cate_id"
+                         Data="@CboCate"
+                         ScrollMode="@DropDownScrollMode.Virtual"
+                         ValueField="@(nameof(vw_publishdoc_cate.cate_id))"
+                         TextField="@(nameof(vw_publishdoc_cate.cate_name))"
+                         Width="100%" PageSize="50" ItemHeight="35"
+                         Enabled="@enabled_CateDocment"
+                         Filterable="true"
+                         FilterOperator="@StringFilterOperator.Contains">
+                <ComboBoxSettings>
+                    @*<ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>*@
+                </ComboBoxSettings>
+                <HeaderTemplate>
+                    <div class="fw-bold py-2">&nbsp;&nbsp; หมวดหมู่</div>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <span>@($"{context.cate_name}")</span>
+                </ItemTemplate>
+            </TelerikComboBox>
+        </div>
+        <div class="col-md-6 col-sm-6 col-12 pt-2">
+            <span>หัวข้อเอกสารเผยแพร่</span>
+            <TelerikTextBox PlaceHolder="" Enabled="@enabled_doc_desc" @bind-Value="@_docmentService.DocSet.head.doc_desc" />
+        </div>
+        <div class="col-12 pt-2">
+            <span>คำอธิบาย/เนื้อหา</span>
+            <TelerikTextArea @bind-Value="@_docmentService.DocSet.head.doc_remark"
+                         AutoSize="true"
+                         Class="w-100"
+                         PlaceHolder="">
+            </TelerikTextArea>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_docmentService.DocSet.head.doc_id)) {
+        <div class="row pt-3">
+            <div class="col-12">
+                <span style="font-size:small;"><i class="fa-solid fa-clock"></i>&nbsp; วันที่สร้าง @Convert.ToDateTime(_docmentService.DocSet.head.created_date).ToString("dd/MM/yyyy h:mm")  ผู้สร้าง @_docmentService.DocSet.head.created_by</span><br />
+                @if (!string.IsNullOrEmpty(_docmentService.DocSet.head.modified_by)) {
+                    <span style="font-size:small;color:red;"><i class="fa-solid fa-clock"></i>&nbsp; วันที่แก้ไข @Convert.ToDateTime(_docmentService.DocSet.head.modified_date).ToString("dd/MM/yyyy h:mm")  ผู้แก้ไข @_docmentService.DocSet.head.modified_by</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (_docmentService.DocSet != null) {
+        @if (!string.IsNullOrEmpty(_docmentService.DocSet.head.doc_id)) {
+            
+                <div class="row pt-4">
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="fw-bold">อัพโหลดไฟล์</h5>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+
+
+                                <div class="row pt-3">
+                                    <div class="col-12">
+                                        <div class="file-input-zone">
+                                            <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                            </InputFile>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                        </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        @if (!isUploading) {
+                        <div class="row pt-2">
+                            <div class="col-md-12">
+
+                                <TelerikGrid Data=@_docmentService.DocSet.files
+                             Pageable="false"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             @ref="@TrFileGrid"
+                             Navigable="true">
+
+                                    <GridColumns>
+                                        <GridColumn Title="ดาวน์โหลด" Editable="false" Width="90px">
+                                            <Template>
+                                                @{
+                                    var data = context as vw_xfile_ref;
+                                    <button class="btn btn-sm" @onclick="@(() => DownloadFIle(data))">
+                                        <i class="fa-solid fa-download" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field=@nameof(vw_xfile_ref.filename) Title="ชื่อไฟล์" Width="100%" />
+                        <GridColumn Field=@nameof(vw_xfile_ref.created_date) Title="วันทีอัพโหลด" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                        <GridColumn Title="ลบ" Editable="false" Width="75px">
+                            <Template>
+                                @{
+                                    var data = context as vw_xfile_ref;
+                                    <button class="btn btn-sm" @onclick="@(() => OnDeleteFile(data))"><i class="fa-solid fa-trash" style="font-size:20px"></i>  </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+                    } else {
+                <div class="loader-container">
+                    <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+                </div>
+            }
+    </div>
+</div>
+
+        }
+    }
+
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <span style="font-size:medium;">สถานะ</span><br />
+            <TelerikRadioGroup Data="@RadioGroupsStatus"
+                           Value="@RadioGroupStatus"
+                           ValueChanged="@( (string v) => ValueChangedRadioGroupsStatus(v) )"
+                           Layout="@RadioGroupLayout.Horizontal"
+                           LabelPosition="@RadioGroupLabelPosition.After"></TelerikRadioGroup>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12 text-center mx-auto">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class=""
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+            </TelerikButton>&nbsp;&nbsp;&nbsp;&nbsp;
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@btnToList"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                <i class="fa-solid fa-circle-xmark"></i>&nbsp; ปิด
+            </TelerikButton>
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    private bool isLoading = false;
+    private bool isUploading = false;
+    bool collapse1Visible = true;
+
+    string menuCaption = "";
+    bool enabled_CateDocment { get; set; } = true;
+    bool enabled_doc_desc { get; set; } = true;
+
+    string Username = "";
+    List<vw_publishdoc_cate> CboCate = new List<vw_publishdoc_cate>();
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+
+    public TelerikGrid<vw_xfile_ref> TrFileGrid { get; set; }
+
+    public List<string> RadioGroupsStatus { get; set; } = new List<string>() { "เผยแพร่", "ไม่เผยแพร่" };
+    public string RadioGroupStatus { get; set; } = "ไม่เผยแพร่";
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadDropDown);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_docmentService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_Document);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _docmentService.DocSet = await _docmentService.GetDocSet(docid);
+                } else {
+                    _docmentService.DocSet = PublishDocumentService.NewTransaction();
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+
+    }
+
+    protected async Task LoadData() {
+        Username = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        BindData();
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "430");
+        menuCaption = menu.menu_name;
+    }
+
+    async Task LoadDropDown() {
+        CboCate = await _docmentService.ListDocCates();
+    }
+
+    public async void BindData() {
+        var h = _docmentService.DocSet.head;
+        //if (!string.IsNullOrEmpty(h.doc_id)) {
+        //    enabled_CateDocment = false;
+        //    enabled_doc_desc = false;
+        //}
+        if (h.is_publish == 1) {
+            RadioGroupStatus = "เผยแพร่";
+        } else {
+            RadioGroupStatus = "ไม่เผยแพร่";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void ValueChangedRadioGroupsStatus(string newValue) {
+        var h = _docmentService.DocSet.head;
+        RadioGroupStatus = newValue;
+        switch (RadioGroupStatus) {
+            case "เผยแพร่":
+                h.is_publish = 1;
+                break;
+            case "ไม่เผยแพร่":
+                h.is_publish = 0;
+                break;
+        }
+    }
+
+    bool ValidData() {
+        var h = _docmentService.DocSet.head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.doc_cate_id == "") {
+            Errmsg = "ระบุ หมวดหมู่";
+            isvalid = false;
+        }
+
+        if (h.doc_desc == "") {
+            Errmsg = "ระบุ หัวข้อเอกสารเผยแพร่";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    protected bool PrepairDataSave() {
+        var h = _docmentService.DocSet.head;
+
+        bool isnew = h.doc_id == "" ? true : false;
+
+        if (isnew) {
+            h.doc_id = Guid.NewGuid().ToString();
+            h.created_by = Username;
+        } else {
+            h.modified_date = DateTime.Now;
+            h.modified_by = Username;
+        }
+
+        if (h.is_publish == 1) {
+            h.publish_date = DateTime.Now;
+        }
+       
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = _docmentService.DocSet.head;
+        var isnew = PrepairDataSave();
+        string strPayload = JsonSerializer.Serialize(_docmentService.DocSet);
+        string url = $"api/Document/SaveDocument?action={isnew}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+            await Swal.FireAsync("error", "API Error", "error");
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                await Swal.FireAsync("", r.Message1, "error");
+            } else {
+                //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "success",
+                        Text = $"บันทึกสำเร็จ",
+                        ShowCancelButton = false,
+                        Icon = "success",
+                        ConfirmButtonText = "ตกลง"
+                    });
+                if (string.IsNullOrEmpty(result.Value))
+                {
+                    return;
+                }
+                nav.NavigateTo($"PublishDocument/DocumentList", false);
+                await InvokeAsync(StateHasChanged);
+                //_docmentService.DocSet = await _docmentService.GetDocSet(h.doc_id);
+                //await sessionStorage.SetItemAsync(Globals.ActiveID_Document, h.doc_id);
+                //await Task.Run(LoadData);
+            }
+        }
+    }
+
+    async void btnToList()
+    {
+        nav.NavigateTo($"PublishDocument/DocumentList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back() {
+        nav.NavigateTo($"PublishDocument/DocumentList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    #region upload file
+
+    public async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = _docmentService.DocSet.head;
+        if (string.IsNullOrEmpty(h.doc_id)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+        string user = login.LogInInfo.CurrentUser;
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = await _filego.NewFilesInfoPostgres("PUBLISH_DOCUMENT", "DPM", "", h.doc_id);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+            }
+
+            var data = await _filego.SaveToFileGo(upload_file, user);
+
+            _docmentService.DocSet = await _docmentService.GetLatestFiles(_docmentService.DocSet);
+            TrFileGrid?.Rebind();
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    public async void DownloadFIle(vw_xfile_ref data) {
+        try {
+            var h = _docmentService.DocSet.head;
+            string file_url = await _filego.GetFileUrlPostgres(data.file_id);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+    public async Task OnDeleteFile(vw_xfile_ref data) {
+        try {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "Warning",
+                    Text = $"หากยืนยันการลบ จะไม่สามารถนำไฟล์กลับมาได้อีก",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+            if (string.IsNullOrEmpty(result.Value)) {
+                return;
+            }
+
+            var h = _docmentService.DocSet.head;
+            var rr = await Task.Run(() => _filego.DeleteFileByFileIdPostgres("DPM", "", "PUBLISH_DOCUMENT", h.doc_id, data.file_id, login.LogInInfo.CurrentUser));
+            if (rr.Result == "ok") {
+                _docmentService.DocSet = await _docmentService.GetLatestFiles(_docmentService.DocSet);
+                TrFileGrid?.Rebind();
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "info");
+            }
+        } catch {
+        } finally {
+
+        }
+    }
+
+    #endregion
+}

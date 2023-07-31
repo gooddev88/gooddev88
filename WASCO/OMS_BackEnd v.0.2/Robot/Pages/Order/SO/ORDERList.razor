@@ -1,0 +1,230 @@
+﻿@page "/Order/SO/OrderList"
+
+@using Robot.Data.ML; 
+@using System.Text.Json
+@using static Robot.Data.DA.Order.SO.SOService;
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .k-listview {
+        background-color: transparent;
+    }
+
+    .listview_deschead {
+        font-size: large;
+        color: #20203F;
+    }
+
+    .x-small {
+        font-size: x-small;
+    }
+
+    .rounded-7 {
+        border-radius: 0.7rem;
+    }
+
+    .p-08 {
+        padding: 0.8rem !important;
+    }
+
+    .badge-open-line {
+        background-color: #a3caf3;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-success-line {
+        background-color: #b4eda0;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-pending-line {
+        background-color: #ffebb6;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-lost-line {
+        background-color: pink;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">ประวัติออเดอร์</span></div>
+        </div>
+    </a>
+</div>
+
+<div class="row pt-2">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+
+
+                    <div class="col-md-2 col-12 pt-1">
+                        <span>วันที่เริ่ม</span>
+                        <TelerikDatePicker @bind-Value="@Filter.DateFrom"
+                                           Format="dd/MM/yyyy">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-md-2 col-12 pt-1">
+                        <span>สิ้นสุด</span>
+                        <TelerikDatePicker @bind-Value="@Filter.DateTo"
+                                           Format="dd/MM/yyyy">
+                        </TelerikDatePicker>
+                    </div>
+
+                    <div class="col-md-3 col-12 text-end pt-4">
+                        <TelerikButton @onclick="@SearchAction" Class="w-100" ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">ค้นหา</TelerikButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-md-10 mx-auto">
+
+        <TelerikListView Data="@DocList" Pageable="true" Page="1" PageSize="15">
+            <Template>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-1 rounded-7">
+                            <div class="card-body p-08">
+                                <a @onclick="() => Edit(context)" class="text-decoration-none btn w-100 p-0 lh-sm">
+                                    <div class="row">
+                                        <div class="col-8 pe-0 text-start">
+                                            <span class="listview_deschead">@context.OrdID</span><br />
+                                            <span class="small"> @context.CustName</span><br />
+                                            <span class="small">วันที่ @Convert.ToDateTime(context.OrdDate).ToString("dd/MM/yyyy")</span><br />
+                                            <span class="x-small">@context.CountLine.ToString("n0") รายการ &nbsp; ยอดเงิน @context.NetTotalAmtIncVat.ToString("n2") บาท</span><br />
+                                        </div>
+                                        <div class="col-4 px-1 text-end">
+
+
+                                            @if (context.Status == "OPEN") {
+                                                <span class="badge badge-open-line"><i style="color:cornflowerblue;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } else if (context.Status == "WAIT") {
+                                                <span class="badge badge-pending-line"><i style="color:darkorange;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } else {
+                                                <span class="badge badge-success-line"><i style="color:green;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } <br />
+                                            <span class="x-small px-2 pt-2">ส่วนลด @context.ItemDiscAmtIncVat.ToString("n2")</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Template>
+        </TelerikListView>
+
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    I_SODocFiterSet Filter = SOService.NewFilterSet();
+    List<vw_OSOHead> DocList = new List<vw_OSOHead>();
+
+    List<SelectOption> ListStatus = new List<SelectOption>();
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        Filter = await Task.Run(() => _soService.GetSessionFiterSet());
+        if (Filter == null) {
+            Filter = SOService.NewFilterSet();
+        }
+        await Task.Run(LoadDropDown);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void LoadDropDown() {
+        ListStatus = SOService.ListDocStatus();
+    }
+
+    void SetDefaultFilter() {
+        //Filter.Status = Filter.Status == null ? "WAIT" : Filter.Status;
+        Filter.Status = "WAIT";
+        _soService.SetSessionFiterSet(Filter);
+    }
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList =   SOService.ListDoc(Filter);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "631");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "631")) {//631 บริษัทและสาขา
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "631")) {//631 บริษัทและสาขา
+            
+        }
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task Edit(vw_OSOHead select_data) {
+        isLoading = true;
+        try {
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            _soService.DocSet =  SOService.GetDocSet(select_data.OrdID, rcom, com);
+            await sessionStorage.SetItemAsync(SOService.SessionActive_SOID, select_data.OrdID);
+            await sessionStorage.SetItemAsync(SOService.SessionActive_BrandID, _soService.DocSet.Head.BrandID);
+            nav.NavigateTo($"Order/SO/OrderDetail", false);
+        } catch {
+        } finally {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        //nav.NavigateTo("Dashboard/FirstBoard");
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+}

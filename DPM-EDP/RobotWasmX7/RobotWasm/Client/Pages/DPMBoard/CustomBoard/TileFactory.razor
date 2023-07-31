@@ -1,0 +1,114 @@
+﻿@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.G10
+
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.ThMap
+
+
+@switch (WidgetID) {
+    case "wg101":
+        <WG101_Component BoardID="@BoardID"></WG101_Component>
+        break;
+    case "wg102":
+        <WG102_Component BoardID="@BoardID"></WG102_Component>
+        break;
+    case "wg103":
+        <WG103_Component BoardID="@BoardID"></WG103_Component>
+        break;
+    case "wg104":
+        <WG104_Component BoardID="@BoardID"></WG104_Component>
+        break;
+    case "wg105":
+        <WG105_Component BoardID="@BoardID"></WG105_Component>
+        break;
+    case "wg106":
+        <WG106_Component BoardID="@BoardID"></WG106_Component>
+        break;
+    case "wg107":
+        <WG107_Component BoardID="@BoardID"></WG107_Component>
+        break;
+    case "wg108":
+        <WG108_Component BoardID="@BoardID"></WG108_Component>
+        break;
+    case "wg109":
+        <WG109_Component BoardID="@BoardID"></WG109_Component>
+        break;
+    case "wg110":
+        <WG110_Component BoardID="@BoardID"></WG110_Component>
+        break;
+    case "wg111":
+        <WG111_Component BoardID="@BoardID"></WG111_Component>
+        break;
+    case "wg112":
+        <WG112_Component BoardID="@BoardID"></WG112_Component>
+        break;
+    case "wg113":
+        <WG113_Component BoardID="@BoardID"></WG113_Component>
+        break;
+    case "wg114":
+        <WG114_Component BoardID="@BoardID"></WG114_Component>
+        break;
+    case "wg115":
+        <WG115_Component BoardID="@BoardID"></WG115_Component>
+        break;
+    case "wg116":
+        <WG116_Component BoardID="@BoardID"></WG116_Component>
+        break;
+    case "wg117":
+        <WG117_Component BoardID="@BoardID"></WG117_Component>
+        break;
+    case "wg118":
+        <WG118_Component BoardID="@BoardID"></WG118_Component>
+        break;
+    case "wg119":
+        <WG119_Component BoardID="@BoardID"></WG119_Component>
+        break;
+    case "wg120":
+        <WG120_Component BoardID="@BoardID"></WG120_Component>
+        break;
+    case "wg201":
+        <WG201_Component BoardID="@BoardID"></WG201_Component>
+        break;
+    case "wg202":
+        <WG202_Component BoardID="@BoardID"></WG202_Component>
+        break;
+    case "wg301":
+        <WG301_Component BoardID="@BoardID"></WG301_Component>
+        break;
+    case "wg302":
+        <WG302_Component BoardID="@BoardID"></WG302_Component>
+        break;
+            case "wg303":
+        <WG303_Component BoardID="@BoardID"></WG303_Component>
+        break;
+    case "wg304":
+        <WG304_Component BoardID="@BoardID"></WG304_Component>
+        break;
+        case "wg305":
+        <WG305_Component BoardID="@BoardID"></WG305_Component>
+        break;
+          case "wg401":
+        <WG401_Component BoardID="@BoardID"></WG401_Component>
+        break;
+    case "wg402":
+        <WG402_Component BoardID="@BoardID"></WG402_Component>
+        break;
+    case "wg403":
+        <WG403_Component BoardID="@BoardID"></WG403_Component>
+        break;
+        case "wg404":
+        <WG404_Component BoardID="@BoardID"></WG404_Component>
+       break;
+    case "wg507":
+        <WG507_Component BoardID="@BoardID"></WG507_Component>
+        break;
+    default:
+        break;
+}
+
+
+@code {
+    [Parameter] public string BoardID { get; set; }
+    [Parameter] public string WidgetID { get; set; }
+
+
+}

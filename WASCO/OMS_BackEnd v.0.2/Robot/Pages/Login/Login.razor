@@ -1,0 +1,170 @@
+﻿@page "/Login"
+@page "/Login/{user}"
+@page "/Login/{user}/{changepass}"
+@using System.IO
+
+<style>
+    .btn-link:hover {
+        color: #ff00e0;
+    }
+</style>
+
+
+<div class="container-fluid" style="background-color: #EEC71A; background-image: linear-gradient( 19deg, #EA9409 0%, #EEC71A 100%); padding-bottom: 200px;">
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-7 col-md-8 col-sm-9 pt-150 col-11 mx-auto my-auto">
+            <div class="card rounded" style="border-radius: 1.25rem !important;">
+                <div class="card-body">
+
+                    <div class="row pb-4 pt-4">
+                        <div class="col-md-12 text-center">
+                            @*     <div class="pb-2 pt-2"><img src="/assets/img/logo.png" style="width: 300px;" /></div>*@
+                            <div class="pb-2 pt-2"><img src="/assets/img/wasco_logo.png" style="width: 200px;" /></div>
+                            <div><h5 class="font-weight-bold">ล็อกอินเข้าสู่ระบบ</h5></div>
+                        </div>
+                    </div>
+                    <div class="row pt-2" style="font-size:medium;">
+                        <div class="col-md-12">
+                            <span class="font-weight-bold">Username</span>
+                            <input type="text" class="form-control" id="username" placeholder="กรุณากรอกชื่อผู้ใช้" @bind="@userName">
+                        </div>
+                    </div>
+                    <div class="row pt-2" style="font-size:medium;">
+                        <div class="col-md-12">
+                            <span class="font-weight-bold">Password</span>
+                            <input type="password" class="form-control" id="password1" placeholder="กรุณากรอกรหัสผ่าน" @bind="@password">
+                        </div>
+                    </div>
+                    <div class="row pt-4 pb-2">
+                        <div class="col-md-12">
+                            <button type="button" @onclick="@LoginAction"
+                                    class="btn btn-block btn-lg" style="background-image: linear-gradient( 19deg, #EA9409 0%, #EEC71A 100%); color: black; width: 100%">
+                                <i class="fas fa-sign-in-alt fa-2x"></i> &nbsp; เข้าระบบ
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row pl-2">
+                        <div class="col-6">
+                            <Check TValue="bool" @bind-Checked="@rememberMe">จำไว้</Check>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a class="btn-link text-decoration-none" @onclick="@OnChangePassword">เปลี่ยนรหัสผ่าน</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+
+@code {
+    [Parameter] public string user { get; set; }
+    [Parameter] public string changepass { get; set; }
+    public string userName { get; set; }
+    public string password { get; set; }
+    bool isLoading = true;
+    bool rememberMe { get; set; } = true;
+    private string validate { get; set; }
+
+
+
+
+    protected override async Task OnInitializedAsync() {
+        if (user != null) {
+            user = user.Replace("_", ".");
+        }
+        await GetStorage();
+
+    }
+    private bool Validate() {
+        if (string.IsNullOrEmpty(userName)) {
+            Swal.FireAsync("Warning", "ระบุชื่อผู้ใช้", "info");
+            return false;
+        }
+        password = password == null ? "" : password;
+        return true;
+    }
+    async void LoginAction() {
+        if (!Validate()) {
+            return;
+        }
+        isLoading = true;
+        StateHasChanged();
+        if (!string.IsNullOrEmpty(user)) {
+            login.LoginInfo = LogInService.Login(user, "silent", "", "");
+        } else {
+            login.LoginInfo = LogInService.Login(userName, password, "", "");
+        }
+
+        if (login.LoginInfo.LoginResult == "ok") {
+            await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+            ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(userName);
+
+            isLoading = false;
+            if (login.LoginInfo.UserInRCompany.Count > 1) {
+                await SetStorage(userName, password);
+                nav.NavigateTo("Login/ChangeRCom");
+
+            } else {
+                await SetStorage(userName, password);
+                var url = login.GetFirstBoardUrl();
+                nav.NavigateTo(url);
+
+            }
+        } else if (login.LoginInfo.LoginResult == "new") {
+            nav.NavigateTo($"ChangePassword/{userName}");
+            await InvokeAsync(StateHasChanged);
+            isLoading = false;
+            StateHasChanged();
+        } else {
+            isLoading = false;
+            StateHasChanged();
+            await Swal.FireAsync("Warning", login.LoginInfo.LoginResultInfo, "error");
+        }
+    }
+
+    async void OnChangePassword() {
+        nav.NavigateTo($"ChangePassword/{userName}");
+    }
+
+    async private Task SetStorage(string username, string password) {
+        if (rememberMe) {
+            await protectedLocalStore.SetAsync(Globals.RememberUserLogin, username);
+            await protectedLocalStore.SetAsync(Globals.RememberPasswordLogin, password);
+        } else {
+            await protectedLocalStore.SetAsync(Globals.RememberUserLogin, "");
+            await protectedLocalStore.SetAsync(Globals.RememberPasswordLogin, "");
+        }
+    }
+    async public Task GetStorage() {
+        try {
+            if (!string.IsNullOrEmpty(changepass)) {
+                if (changepass == "yes") {
+                    userName = user;
+                    isLoading = false;
+                    return;
+                }
+            }
+            var u = await protectedLocalStore.GetAsync<string>(Globals.RememberUserLogin);
+            userName = u.Success ? u.Value : "";
+            var p = await protectedLocalStore.GetAsync<string>(Globals.RememberPasswordLogin);
+            password = p.Success ? p.Value : "";
+        } catch { }
+        if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) {
+            LoginAction();
+        } else {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

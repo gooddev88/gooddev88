@@ -1,0 +1,186 @@
+﻿@page "/POSV3/SelectAddr/{srcordest}"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA.User
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA.POSSY
+@using Blazored.LocalStorage
+@using Blazored.SessionStorage
+@using Robot.Data.DA
+
+@inject MyUserService userService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CustomerService customerService
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+@inject SweetAlertService Swal
+
+<style>
+    .form-control {
+        border-radius: 0 !important;
+    }
+
+    .box-shadow-card {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+    }
+</style>
+
+<div class="row pb-3 pt-5">
+    <div class="col-12 text-center mx-0">
+        <strong style="font-size:xx-large;" class="text-dark">@Topic</strong>
+    </div>
+</div>
+
+<div class="row pb-4 pt-3">
+    <div class="col-11 mx-auto pt-1">
+
+        <div class="row mb-3">
+            <div class="col-12 px-2">
+                <div class="input-group">
+                    <DxTextBox Id="txtSearch"
+                               @bind-Text="@SearchText"
+                               BindValueMode="BindValueMode.OnInput"
+                               Enabled="true"
+                               SizeMode="@ControlSizeMode">
+                    </DxTextBox>
+                    <div class="input-group-append">
+                        <a @onclick="@SearchAction" class="btn btn-info btn-sm pt-2 text-white">
+                            <span style="font-size:medium;">ค้นหา</span>
+                        </a>&nbsp;
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 px-2">
+                @foreach (var l in ListAddress)
+                {
+                    <div class="card mb-2 box-shadow-card">
+                        <div class="card-body p-2">
+                            <a class="btn" style="width:100%;" @onclick="@(() => SelectMenuItem(l))">
+                                <div class="row">
+                                    <div class="col-6 text-left">
+                                        <strong style="color:grey; font-size:large;"> @l.PROVINCE_NAME</strong>
+                                    </div>
+                                    <div class="col-6 text-right">
+                                        <strong style="color:gray;font-size:large;"> @l.DISTRICT_POSTAL_CODE</strong>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    @if (@l.PROVINCE_NAME == "กรุงเทพมหานคร")
+                                    {
+                                        <div class="col-6 text-left">
+                                            <span style="color: gray; font-size: small;">เขต <strong>@l.BORDER_NAME</strong></span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: gray; font-size: small;">แขวง <strong>@l.DISTRICT_NAME</strong></span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-6 text-left">
+                                            <span style="color: gray; font-size: small;">อำเภอ <strong>@l.BORDER_NAME</strong></span>
+                                        </div>
+                                        <div class="col-6 text-right">
+                                            <span style="color: gray; font-size: small;">ตำบล <strong>@l.DISTRICT_NAME</strong></span>
+                                        </div>
+                                    }
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+
+
+
+
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public string srcordest { get; set; } = "";
+
+    public string SearchText { get; set; } = "";
+    public string Topic { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (login.LoginInfo == null)
+        {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    private SizeMode ControlSizeMode = SizeMode.Large;
+    List<ThaiPostAddress> ListAddress = new List<ThaiPostAddress>();
+    vw_ThaiPostAddress SelectAddress { get; set; } = new vw_ThaiPostAddress();
+
+    void LoadData()
+    {
+        ListAddress = customerService.SearchAddrThailand(SearchText);
+        if (srcordest == "cus")
+        {
+            Topic = "เลือกที่อยู่";
+        }
+        else
+        {
+            Topic = "เลือกที่อยู่";
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    void SelectMenuItem(ThaiPostAddress i)
+    {
+        var address = ListAddress.Where(o => o.ID == i.ID).FirstOrDefault();
+        var c = customerService.DocSet.Info;
+        var user = userService.DocSet.User;
+
+        if (srcordest.ToLower() == "cus")
+        {
+            c.AddrPostCode = address.DISTRICT_POSTAL_CODE;
+            c.AddrProvince = address.PROVINCE_NAME;
+            c.AddrAmphoe = address.BORDER_NAME;
+            c.AddrTumbon = address.DISTRICT_NAME;
+
+            nav.NavigateTo($"POSV3/RegisterMember");
+            return;
+        }
+
+        if (srcordest.ToLower() == "user")
+        {
+            user.AddrPostCode = address.DISTRICT_POSTAL_CODE;
+            user.AddrProvince = address.PROVINCE_NAME;
+            user.AddrAmphoe = address.BORDER_NAME;
+            user.AddrTumbon = address.DISTRICT_NAME;
+
+            nav.NavigateTo($"User/UserDetail");
+            return;
+        }
+
+    }
+
+    void SearchAction()
+    {
+        LoadData();
+    }
+
+}
+

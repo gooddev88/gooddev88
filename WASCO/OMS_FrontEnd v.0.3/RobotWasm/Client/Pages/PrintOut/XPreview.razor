@@ -1,0 +1,36 @@
+﻿ 
+
+<a @onclick="Download">Download</a>
+<iframe src=@PrintUrl height="100%" width="100%" frameborder="0"></iframe>
+
+@code {
+
+    [Parameter] public string printid { get; set; }
+    [Parameter] public string export { get; set; }
+    string PrintUrl { get; set; } = "";
+
+    bool isLoading = false;
+
+
+
+    protected override void OnParametersSet() {
+        if (export == "1") {
+            PrintUrl = Globals.ApiPrintMasterBaseUrl + $"/Viewer/OMS/Viewer.aspx?id={printid}&export=1";
+        } else {
+            PrintUrl = Globals.ApiPrintMasterBaseUrl + $"/Viewer/OMS/Viewer.aspx?id={printid}&export=0";
+        }
+    }
+
+    protected override async Task OnInitializedAsync() {
+        //string url_print = Globals.ApiPrintMasterBaseUrl + $"/TempFile/Print/" + printid + ".pdf";
+        //await JsRuntime.InvokeVoidAsync("downloadFile", Globals.ApiPrintMasterBaseUrl + $"/TempFile/Print/", printid + ".pdf");
+        //await InvokeAsync(StateHasChanged);
+    }
+
+    async private void Download() {
+        string file_url = Globals.ApiPrintMasterBaseUrl + $"/TempFile/Print/" + printid + ".pdf";
+        nav.NavigateTo(file_url, true);
+        // await JsRuntime.InvokeVoidAsync("downloadFile", Globals.ApiPrintMasterBaseUrl + $"/TempFile/Print/", printid + ".pdf");
+    }
+
+}

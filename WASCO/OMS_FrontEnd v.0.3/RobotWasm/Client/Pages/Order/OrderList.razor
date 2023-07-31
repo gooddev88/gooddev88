@@ -1,0 +1,321 @@
+﻿@page "/Order/OrderList"
+@*@page "/Order/OrderList/{fpage}"*@
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text 
+@using RobotWasm.Shared.Data.ML.Order;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using static RobotWasm.Shared.Data.DA.SOFuncService;
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .k-listview {
+        background-color: transparent;
+    }
+
+    .listview_deschead {
+        font-size: large;
+        color: #20203F;
+    }
+
+    .x-small {
+        font-size: x-small;
+    }
+
+    .rounded-7 {
+        border-radius: 0.7rem;
+    }
+
+    .p-08 {
+        padding: 0.8rem !important;
+    }
+
+    .badge-open-line {
+        background-color: #a3caf3;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-success-line {
+        background-color: #b4eda0;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-pending-line {
+        background-color: #ffebb6;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+
+    .badge-lost-line {
+        background-color: pink;
+        color: #595959;
+        padding: 0.4rem 1rem !important;
+        border-radius: 50rem !important;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">ประวัติออเดอร์</span></div>
+        </div>
+    </a>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2 col-12 pt-1">
+                        <span style="color: gray;">สถานะ</span>
+                        <TelerikDropDownList @bind-Value="@Filter.Status"
+                                             Data="@ListStatus"
+                                             TextField="@nameof(SelectOption.Description)"
+                                             ValueField="@nameof(SelectOption.Value)"
+                                             Filterable="true"
+                                             Width="100%">
+                        </TelerikDropDownList>
+                    </div>
+
+                    <div class="col-md-2 col-12 pt-1">
+                        <span>วันที่เริ่ม</span>
+                        <TelerikDatePicker @bind-Value="@Filter.DateFrom" Enabled=isadmin
+                                           Format="dd/MM/yyyy">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-md-2 col-12 pt-1">
+                        <span>สิ้นสุด</span>
+                        <TelerikDatePicker @bind-Value="@Filter.DateTo" Enabled=isadmin
+                                           Format="dd/MM/yyyy">
+                        </TelerikDatePicker>
+                    </div>
+
+                    <div class="col-md-4 col-12 pt-4"> 
+                        <div class="btn-group" role="group" aria-label="Basic example">
+                            <TelerikButton @onclick="@SearchAction" Class="w-100" ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                <i class="fa-solid fa-magnifying-glass"></i>  &nbsp ค้นหา
+                            </TelerikButton>
+                            &nbsp;
+                            <TelerikButton @onclick="@NewOrder" Class="w-100" ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)">
+                                <i class="fa-solid fa-circle-plus"></i> &nbsp เปิดออเดอร์
+                            </TelerikButton>
+                        </div>
+                    </div>
+                    @if (isadmin) {
+                        <div class="col-md-2 col-12 pt-4 text-end">
+                            <div class="mt-sm">
+                                <TelerikCheckBox Id="chkIsLock" Value="@isLockOrder"  ValueChanged="@( (bool value) => OnCheckBoxValueChanged(value) )" ></TelerikCheckBox>
+                                <label for="chkIsLock">ล๊อกการเปิดออเดอร์</label>
+                            </div>
+                        </div>
+                    }
+                  
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12">
+
+        <TelerikListView Data="@DocList" Pageable="true" Page="1" PageSize="15">
+            <Template>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-1 rounded-7">
+                            <div class="card-body p-08">
+                                <a @onclick="() => Edit(context)" class="text-decoration-none btn w-100 p-0 lh-sm">
+                                    <div class="row">
+                                        <div class="col-8 pe-0 text-start">
+                                            <span class="listview_deschead">@context.OrdID</span>   
+                                            &nbsp;
+                                            @if (context.IsLink) {
+                                                <i class="fa-solid fa-link" style="color: black;"></i>
+                                            }
+                                            &nbsp;
+                                            @if (context.IsPrint) { 
+                                                <i class="fa-solid fa-print" style="color:orangered;"></i>
+                                            }
+                                            <br />
+                                            <span class="small">วันที่ @Convert.ToDateTime(context.OrdDate).ToString("dd/MM/yyyy")</span><br />
+                                            <span class="small"> @context.CustName</span><br /> 
+                                            <span class="x-small">@context.CountLine.ToString("n0") รายการ &nbsp; ยอดเงิน @context.NetTotalAmtIncVat.ToString("n2") บาท</span><br />
+                                        </div>
+                                        <div class="col-4 px-1 text-end">
+                                           
+                                            
+                                           @if (context.Status == "OPEN") {
+                                                <span class="badge badge-open-line"><i style="color:cornflowerblue;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } else if (context.Status == "WAIT") {
+                                                <span class="badge badge-pending-line"><i style="color:darkorange;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            }  else if (context.Status == "CANCEL") {
+                                            <span class="badge badge-pending-line"><i style="color:red;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } else {
+                                                <span class="badge badge-success-line"><i style="color:green;" class="fa-solid fa-circle"></i>&nbsp;@context.Status</span>
+                                            } <br /> 
+                                            <span class="small">เซลล์ &nbsp @context.SalesName</span><br />
+                                            <span class="small px-2 pt-2">ส่วนลด @context.ItemDiscAmtIncVat.ToString("n2")</span><br />
+                                         
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Template>
+        </TelerikListView>
+
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    //[Parameter]  public string? fpage { get; set; }
+    bool isLoading = false;
+    bool isadmin = false;
+    bool isLockOrder = false;
+    I_SODocFiterSet Filter = SOService.NewFilterSet();
+    List<vw_OSOHead> DocList = new List<vw_OSOHead>();
+
+    List<SelectOption> ListStatus = new List<SelectOption>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        Filter = await Task.Run(() => _soService.GetSessionFiterSet());
+        if (Filter == null) {
+            Filter = SOService.NewFilterSet();
+        }
+        #region ถ้าไม่ใช่ admin ให้ตั้งค่าเป็นวันที่ปัจจุบัน
+        #endregion
+        isadmin = login.CanCreate(login.LogInInfo, "621");//621 ออเดอร์
+        if (!isadmin) {
+            Filter.DateTo = DateTime.Now.Date;
+            _soService.SetSessionFiterSet(Filter);
+        }
+        await Task.Run(LoadDropDown);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void LoadDropDown() {
+        ListStatus = SOService.ListDocStatus();
+    }
+
+    void SetDefaultFilter() {
+
+        Filter.Status = Filter.Status == null ? "" : Filter.Status;
+        _soService.SetSessionFiterSet(Filter);
+    }
+
+    async void LoadData() {
+
+        await CheckPermission();
+        SetDefaultFilter();
+        await  CheckLockOrder();
+        DocList = await _soService.ListDoc(Filter);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+        await  SetActiveControl();
+    }
+    async Task CheckLockOrder() {
+        var islock_order = await Task.Run(() => _soService.LockCorder(2));
+        if (!string.IsNullOrEmpty(islock_order.Message2)) {
+            if (islock_order.Message2.ToLower()=="yes") {
+                isLockOrder = true;
+            }else {
+                isLockOrder = false;
+            }
+        }
+    }
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        isadmin = login.CanCreate(login.LogInInfo, "621");//621 ออเดอร์ 
+        if (!isadmin) {
+            Filter.LockShowInSale = login.LogInInfo.CurrentUser;
+        }else {
+            Filter.LockShowInSale = "";
+        }
+        await InvokeAsync(StateHasChanged);
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async void NewOrder() {
+        if (isLockOrder) {
+            await Swal.FireAsync("Warning", "การเปิดออเดอร์ถูกล๊อกไว้", "info");
+            return;
+        }
+        nav.NavigateTo("Order/SelectBrandProduct");
+        await InvokeAsync(StateHasChanged);
+    }
+   
+    async void Edit(vw_OSOHead select_data) {
+        isLoading = true;
+        try {
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID;
+            _soService.DocSet = await _soService.GetDocSet(select_data.OrdID,rcom, com);
+            await sessionStorage.SetItemAsync(Globals.SessionActive_SOID, select_data.OrdID);
+            await sessionStorage.SetItemAsync(Globals.SessionActive_BrandID, _soService.DocSet.Head.BrandID);
+            nav.NavigateTo($"Order/OrderDetail",false);
+        } catch {
+        } finally {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task GoBack() {
+      var comeFrom=  await sessionStorage.GetItemAsync<string>(Globals.SessionComeFrom);
+        if (string.IsNullOrEmpty(comeFrom)) {
+            nav.NavigateTo("Dashboard/FirstBoard");
+        }else {
+            var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+            var com = login.LogInInfo.CurrentCompany.CompanyID; 
+            var user = login.LogInInfo.CurrentUser; 
+            var xlogin = await Task.Run(() => login.CreateCrossAppReq(rcom, user, "OMS", comeFrom, ""));//ไปหน้า start board
+                                                                                                     //output = base_url + $"/Login/LoginFromApp/{result_api.ReqID}";
+            nav.NavigateTo(xlogin.GoToUrl);
+        }
+
+    }
+    private void OnCheckBoxValueChanged(bool value ) {
+        isLockOrder = value;
+        //var item = Deliveries.Where(x => x.ProductName == productName).First();
+        int lockx = value ? 1 : 0;
+        var rr = _soService.LockCorder(lockx);
+        
+    }
+
+}

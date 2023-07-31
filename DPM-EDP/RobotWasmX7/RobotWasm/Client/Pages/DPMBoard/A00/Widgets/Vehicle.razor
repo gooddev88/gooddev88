@@ -1,0 +1,62 @@
+﻿@using RobotWasm.Shared.Data.ML.DPMBaord.Accident
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using static RobotWasm.Client.Pages.DPMBoard.A00.A00Data
+@using static RobotWasm.Shared.Data.ML.DPMBaord.Accident.AccidentParam
+
+
+<TelerikRootComponent>
+    <TelerikChart  Width="100%" Height="100%">
+        <ChartTooltip Visible="true"></ChartTooltip>
+        <ChartLegend Visible="true"></ChartLegend>
+        <ChartSeriesItems>
+            <ChartSeries Type="ChartSeriesType.Bar" Name="ชนิดยานพาหนะ" Data="@series1Data">
+                <ChartSeriesLabels Visible="true" Format="{0:N0}"></ChartSeriesLabels>
+            </ChartSeries>
+        </ChartSeriesItems>
+        <ChartCategoryAxes>
+            <ChartCategoryAxis Categories="@xAxisItems"></ChartCategoryAxis>
+        </ChartCategoryAxes>
+        <ChartLegend Position="ChartLegendPosition.Bottom">
+        </ChartLegend>
+    </TelerikChart>
+    </TelerikRootComponent>
+
+
+        @code {
+        [Parameter] public List<ChartData> Data { get; set; }
+
+    string[] xAxisItems;
+    public List<object> series1Data;
+
+    public TelerikChart roadType { get; set; }
+    
+
+
+   
+    protected override async Task OnParametersSetAsync()
+   {
+    await LoadData();       
+   }
+
+    async private Task LoadData() {
+        try {
+            xAxisItems = new string[Data.Count()];
+            series1Data = new List<object>();
+            int i = 0;
+            foreach (var d in Data) {
+                xAxisItems[i] = d.X;
+                series1Data.Add((object)d.Y);
+                i++;
+            }
+           await InvokeAsync(StateHasChanged);
+              
+        } catch (Exception ex) {
+            throw;
+        }
+    }
+
+
+
+
+}

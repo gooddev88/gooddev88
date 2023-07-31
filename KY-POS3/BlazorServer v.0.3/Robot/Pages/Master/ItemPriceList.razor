@@ -1,0 +1,373 @@
+﻿@page "/Master/ItemPriceList/{pagecomefrom}"
+@page "/Master/ItemPriceList"
+@using Telerik.Blazor.Components.Upload;
+
+
+@layout MainBoardLayout
+
+
+
+<style>
+    .seagreen {
+        background-color: seagreen;
+    }
+
+    .palevioletred {
+        background-color: palevioletred;
+    }
+
+    .myPopUp > .modal-content {
+        min-width: 800px;
+        left: 50%;
+        transform: translate(-50%);
+    }
+
+    .col-auto {
+        flex: 0 0 100%;
+    }
+
+        .col-auto > button[type=button] {
+            width: 100% !important;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+
+
+
+        <div class="row pt-3">
+            <div class="col-md-12 col-sm-12 col-12">
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4>
+                                            <a @onclick="Back">
+                                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                                            </a>
+                                        </h4>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <span>สาขา</span>
+                                        <TelerikComboBox @bind-Value="@Filter.Company"
+                                                         Data="@ListCompany"
+                                                         Placeholder=""
+                                                         TextField="@nameof(CompanyService.CompanyInfoList.Name)"
+                                                         ValueField="@nameof(CompanyService.CompanyInfoList.CompanyID)"
+                                                         ItemHeight="35"
+                                                         Filterable="true"
+                                                         Size="ThemeConstants.DropDownList.Size.Large"
+                                                         Width="100%">
+                                        </TelerikComboBox>
+
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span>ขายผ่าน</span>
+
+                                        <TelerikComboBox @bind-Value="@Filter.ShipTo"
+                                                         Data="@ListShipTo"
+                                                         Placeholder=""
+                                                         TextField="@nameof(ShipToService.ShipTo.ShipToName)"
+                                                         ValueField="@nameof(ShipToService.ShipTo.ShipToID)"
+                                                         ItemHeight="35"
+                                                         Filterable="true"
+                                                         Size="ThemeConstants.DropDownList.Size.Large"
+                                                         Width="100%">
+                                        </TelerikComboBox>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span style="color: gray;">คำนวณภาษี </span>
+                                        <TelerikComboBox @bind-Value="@Filter.PriceTaxcon"
+                                                         Data="@listPriceTaxcon"
+                                                         Placeholder=""
+                                                         TextField="@nameof(MasterTypeLine.Description1)"
+                                                         ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                         ItemHeight="35"
+                                                         Filterable="true"
+                                                         Size="ThemeConstants.DropDownList.Size.Large"
+                                                         Width="100%">
+                                        </TelerikComboBox>
+
+                                    </div>
+                                    <div class="col-3 pt-4">
+                                        <div class="input-group">
+
+                                            <TextEdit @bind-Text="@Filter.Search" PlaceHolder="พิมพ์เพื่อค้นหา" Size="Size.Small" />
+                                            <div class="input-group-append">
+                                                <a @onclick="@SearchAction" class="btn btn-info btn-sm">
+                                                    <label style="color:white;">ค้นหา</label>
+                                                </a>&nbsp;
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+                        </div>
+
+            </div>
+        </div>
+
+  <div class="row pt-2">
+                    <div class="col-md-12">
+                               <a class="btn btn-link btn-sm" @onclick="@((e) => CloseShowPopUp(true))">
+                                    <span>อัพโหลดราคาขาย</span>
+                                </a>
+                                     <a class="btn btn-link btn-sm" @onclick="@DownLoadPrice">
+                                    <span>ดาวน์โหลดราคาขาย</span>
+                                </a>
+                          
+                        </div>
+                        </div>
+                <div class="row pt-2">
+                    <div class="col-md-12">
+                       
+                          <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="20"
+                             Navigable="true">
+                    <GridColumns>
+                      
+                         
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.ItemID) Title="รหัสสินค้า" Width="110px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.ItemName) Title="ชื่อสินค้า" Width="150px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.Price) Title="ราคา" Width="150px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.DateBegin) DisplayFormat="{0:dd/MM/yyyy}" Title="วันที่ใช้งาน" Width="150px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.DateEnd) DisplayFormat="{0:dd/MM/yyyy}" Title="ถึงวันที่" Width="150px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.CompanyName)  Title="สาขา" Width="150px" />
+                        <GridColumn Field=@nameof(vw_ItemPriceInfo.DataSource) Title="DataSource" Width="150px" />
+                        <GridColumn Field="@nameof(vw_ItemPriceInfo.CustID)" Title="ช่องทางขาย" Width="150px" />
+                        
+
+                  
+                         
+                    </GridColumns>
+                </TelerikGrid>
+                    </div>
+                </div>
+
+
+                    <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                               @bind-Visible=@IsPopupVisible Modal="true">
+        <WindowTitle>
+                        <strong>Upload File</strong>
+        </WindowTitle>
+        <WindowActions>
+            <WindowAction Name="Close" />
+        </WindowActions>
+        <WindowContent>
+   @*         <DxUpload Name="myFile"
+                                          CssClass="col-12"
+                                          SelectedFilesChanged="SelectedFilesChanged"
+                                          FileUploaded="OnFileUploaded"
+                                          FileUploadStart="OnFileUploadStart"
+                                          AllowMultiFileUpload="true"
+                                          MaxFileSize="15000000"
+                                          ExternalDropZoneCssSelector="#overviewDemoDropZone"
+                                          ExternalDropZoneDragOverCssClass="custom-drag-over border-light text-white">
+                                    CssClass="@(SelectedFilesCount > 0 ? "w-100" : string.Empty)">
+                                </DxUpload>*@
+        </WindowContent>
+    </TelerikWindow>
+
+                <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                               @bind-Visible=@IsPopupErrorUpload Modal="true">
+                    <WindowTitle>
+                        <strong>Upload File</strong>
+                    </WindowTitle>
+                    <WindowActions>
+                        <WindowAction Name="Close" />
+                    </WindowActions>
+                    <WindowContent>
+                        <h1 style="color:crimson">Error!</h1>
+                        <hr />
+                        <span>
+                            @((MarkupString)upload_log?.Message)
+
+
+                        </span>
+                    </WindowContent>
+                </TelerikWindow>
+
+                 
+         
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter]
+    public string pagecomefrom { get; set; }
+    bool isLoading = true;
+    bool isShowNew = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool IsPopupVisible { get; set; } = false;
+    bool IsPopupErrorUpload { get; set; } = false;
+
+    public string SearchText { get; set; } = "";
+    public string SelectComID { get; set; } = "";
+    public string SelectShipTo { get; set; } = "";
+    public string SelectPriceTaxcon { get; set; } = "";
+    public string SelectUseLevel { get; set; } = "0";
+    public string upload_url = "";
+
+
+    UploadLog upload_log = new UploadLog();
+    ItemPriceService.I_FilterSet Filter = ItemPriceService.NewFilter();
+    List<vw_ItemPriceInfo> DocList = new List<vw_ItemPriceInfo>();
+
+    List<ShipToService.ShipTo> ListShipTo = new List<ShipToService.ShipTo>();
+    List<CompanyService.CompanyInfoList> ListCompany = new List<CompanyService.CompanyInfoList>();
+    List<MasterTypeLine> listPriceTaxcon = new List<MasterTypeLine>();
+    List<SelectOption> ListUseLevel = new List<SelectOption>();
+
+
+    protected override async Task OnInitializedAsync() {
+
+        //if (login.LoginInfo == null) {
+        //    login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        //    if (login.LoginInfo == null) {
+        //        nav.NavigateTo("Login", true);
+        //    }
+        //}
+        //await Task.Run(LoadData);
+        upload_url = nav.BaseUri + "api/master/ItemPrice/UploadItemPrice";
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+         await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9412");//9412 ราคาสินค้า
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "9412")) {//9011 ตั้งค่าตัวเลือก
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9412")) {
+            isShowNew = false;
+        }
+    }
+
+    
+
+    async void LoadData() {
+        LoadDropDownList();
+        Filter.RCompany = login.LoginInfo.CurrentRootCompany.CompanyID;
+        DocList = ItemPriceService.ListItemPrice(Filter);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadDropDownList() {
+        ListCompany = CompanyService.ListCompanyInfoUIC(login.LoginInfo, "BRANCH", true);
+        SelectComID = ListCompany.FirstOrDefault().CompanyID;
+
+        ListShipTo = ShipToService.ListShipTo();
+        SelectShipTo = ListShipTo.FirstOrDefault().ShipToID;
+
+        listPriceTaxcon = MasterTypeService.ListType("", "SALE RPICE TAX CON", false);
+        ListUseLevel = ItemService.ListUseLevel();
+    }
+
+    void CloseShowPopUp(bool isShow) {
+        IsPopupVisible = isShow;
+
+    }
+
+    async void Upload(bool isShow) {
+   
+        IsPopupVisible = isShow;
+
+    }
+
+    async void DownLoadPrice() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string donwload_url = nav.BaseUri + $"api/master/ItemPrice/DownloadItemPrice/{rcom}";
+        nav.NavigateTo(donwload_url, true);
+  
+    }
+
+
+    #region upload
+    int SelectedFilesCount { get; set; }
+    protected void SelectedFilesChanged(IEnumerable<UploadFileInfo> files) {
+        SelectedFilesCount = files.ToList().Count;
+        InvokeAsync(StateHasChanged);
+    }
+   
+
+
+    #endregion
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+
+
+
+    async void Back() {
+              if (string.IsNullOrEmpty(pagecomefrom)) {
+            pagecomefrom = "web2";
+        }
+
+        string forwardurl = "";
+        switch (pagecomefrom) {
+            case "web1":
+                var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+                string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+                nav.NavigateTo(rootappurl);
+                break;
+            case "web2":
+                 var url = @"Menu/MenuMaster/SETUP";
+                nav.NavigateTo("Dashboard/StartBoard");
+                await InvokeAsync(StateHasChanged);
+                break;
+
+        }
+    }
+
+
+     
+}

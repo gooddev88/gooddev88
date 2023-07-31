@@ -1,0 +1,546 @@
+﻿<%@ Page Title="BOM" Language="C#" MasterPageFile="~/POS/SiteA.Master" AutoEventWireup="true" CodeBehind="POSBOMDetail.aspx.cs" ClientIDMode="Static" Inherits="Robot.POS.POSBOMDetail" %>
+
+<%@ Register Assembly="DevExpress.XtraReports.v20.1.Web.WebForms, Version=20.1.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a" Namespace="DevExpress.XtraReports.Web" TagPrefix="dx" %>
+<%@ Register Assembly="DevExpress.Web.v20.1, Version=20.1.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a" Namespace="DevExpress.Web" TagPrefix="dx" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <asp:HiddenField ID="hddmenu" runat="server" />
+
+    <script type="text/javascript">
+
+            <%--Begin ddl--%>
+        //var startTime;
+        //function OnBeginCallback() {
+        //    LoadingPanel.Show();
+        //    startTime = new Date();
+        //}
+        //function OnEndCallback() {
+        //    LoadingPanel.Hide();
+        //    var result = new Date() - startTime;
+        //    result /= 1000;
+        //    result = result.toString();
+        //    if (result.length > 4)
+        //        result = result.substr(0, 4);
+        //    time.SetText(result.toString() + " sec");
+        //    label.SetText("Time to retrieve the last data:");
+        //}
+
+        //ddl load
+        var startTime;
+        function OnBeginCallback() {
+            startTime = new Date();
+        }
+        function OnEndCallback() {
+            var result = new Date() - startTime;
+            result /= 1000;
+            result = result.toString();
+            if (result.length > 4)
+                result = result.substr(0, 4);
+            time.SetText(result.toString() + " sec");
+            label.SetText("Time to retrieve the last data:");
+        }
+
+        function CloseAlert() {
+            var divalert = document.getElementById("divalert");
+            divalert.style.display = "none";
+        }
+
+        function mypopprofile() {
+            btnPostProfile.DoClick();
+        }
+        //end show msg
+
+        //popup show 
+        function onPopupShown(s, e) {
+            var windowInnerWidth = window.innerWidth;
+            if (s.GetWidth() > windowInnerWidth) {
+                s.SetWidth(windowInnerWidth - 4);
+                s.UpdatePosition();
+            }
+        }
+
+        function OnClosePopupAlert() {
+            popAlert.Hide();
+        }
+    </script>
+
+</asp:Content>
+
+
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <dx:ASPxLoadingPanel ID="LoadingPanel" ClientInstanceName="LoadingPanel"
+        Theme="Material"
+        runat="server"
+        Modal="true"
+        HorizontalAlign="Center"
+        VerticalAlign="Middle">
+    </dx:ASPxLoadingPanel>
+    <asp:UpdatePanel ID="udpAlert" runat="server">
+        <ContentTemplate>
+            <dx:ASPxPopupControl ID="popAlert" runat="server" Width="400" CloseAction="OuterMouseClick" CloseOnEscape="true" Modal="True"
+                Theme="Mulberry"
+                PopupHorizontalAlign="WindowCenter" PopupVerticalAlign="WindowCenter" ClientInstanceName="popAlert"
+                HeaderText="Infomation" AllowDragging="True" PopupAnimationType="None" EnableViewState="False" AutoUpdatePosition="true">
+                <ContentCollection>
+                    <dx:PopupControlContentControl runat="server">
+                        <dx:ASPxPanel ID="Panel1" runat="server" DefaultButton="btOK">
+                            <PanelCollection>
+                                <dx:PanelContent runat="server">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title"><strong>
+                                                <asp:Label ID="lblHeaderMsg" runat="server" Text=""></asp:Label></strong> </h5>
+                                            <hr />
+                                            <p class="card-text">
+                                                <asp:Label ID="lblBodyMsg" runat="server" Text=""></asp:Label>
+                                            </p>
+                                            <div style="text-align: right">
+                                                <asp:Button ID="btnOK" CssClass="btn btn-success btn-sm " runat="server" Text="OK" OnClientClick="return OnClosePopupAlert();" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </dx:PanelContent>
+                            </PanelCollection>
+                        </dx:ASPxPanel>
+                    </dx:PopupControlContentControl>
+                </ContentCollection>
+
+            </dx:ASPxPopupControl>
+        </ContentTemplate>
+        <Triggers>
+            <asp:AsyncPostBackTrigger ControlID="btnSave" />
+        </Triggers>
+    </asp:UpdatePanel>
+
+    <asp:UpdateProgress ID="udppmain" runat="server" AssociatedUpdatePanelID="udpmain">
+        <ProgressTemplate>
+            <div style="position: fixed; text-align: center; height: 100%; width: 100%; top: 0; right: 0; left: 0; z-index: 9999999; background-color: #000000; opacity: 0.8;">
+                <span style="border-width: 0px; position: fixed; padding: 50px; font-size: 40px; left: 40%; top: 40%;">Working ...</span>
+            </div>
+        </ProgressTemplate>
+    </asp:UpdateProgress>
+    <asp:UpdatePanel ID="UpdatePanel1" UpdateMode="Conditional" runat="server">
+        <ContentTemplate>
+            <div class="row ">
+                <div class="col-md-4 pr-1">
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-header" style="font-size: small;">
+                                    <ul class="nav nav-pills card-header-pills" role="tablist">
+                                        <li class="nav-item">
+                                            <asp:LinkButton ID="btnBackList" Font-Size="Small"
+                                                CssClass="btn btn-default" runat="server"
+                                                OnClick="btnBackList_Click">                                          
+                            <span style="color:black"> <i class="fas fa-reply-all fa-2x"></i></span>
+                            <span  style="font-size:medium;color:black"> Back</span>                                            
+                                            </asp:LinkButton>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="card-body p-2">
+                                    <asp:Panel ID="pnSearch" runat="server" DefaultButton="btnSearch">
+                                        <div class="row pb-1">
+                                            <div class="col-md-6 pt-1 pr-0">
+                                                <dx:ASPxTextBox ID="txtSearch" runat="server" Width="100%"
+                                                    CssClass="form-control form-control-sm" Theme="Material">
+                                                </dx:ASPxTextBox>
+                                            </div>
+                                            <div class="col-md-6 text-right pt-1">
+                                                <div class="btn-group" role="group" aria-label="Basic example">
+                                                    <asp:LinkButton ID="btnSearch" runat="server" CssClass="btn btn-dark" OnClick="btnSearch_Click">
+                                    <i class="fa fa-search"></i>&nbsp<span >ค้นหา</span> 
+                                                    </asp:LinkButton>
+                                                    <asp:LinkButton ID="btnNew" runat="server" CssClass="btn btn-success" OnClick="btnNew_Click">
+                                    <span >++NEW++</span> 
+                                                    </asp:LinkButton>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </asp:Panel>
+                                </div>
+
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-md-12">
+                                    <div style="overflow-x: auto; width: 100%">
+                                        <dx:ASPxGridView ID="grd" runat="server" ClientInstanceName="grd"
+                                            KeyFieldName="BomID"
+                                            AutoGenerateColumns="False"
+                                            Width="100%"
+                                            CssClass="Sarabun"
+                                            OnDataBinding="grd_DataBinding"
+                                            EnableTheming="True"
+                                            KeyboardSupport="true"
+                                            OnHtmlRowPrepared="grd_HtmlRowPrepared"
+                                            Theme="Moderno"
+                                            OnRowCommand="grd_RowCommand">
+                                            <Settings ShowGroupPanel="False"
+                                                ShowFooter="false" ShowGroupFooter="Hidden" />
+                                            <SettingsPager PageSize="40">
+                                            </SettingsPager>
+                                            <Columns>
+                                                <dx:GridViewDataTextColumn FieldName="ItemID"
+                                                    Caption="Bom No." Width="100px" VisibleIndex="0">
+                                                    <Settings AutoFilterCondition="Contains" />
+                                                    <DataItemTemplate>
+                                                        <asp:LinkButton ID="btnOpen" Width="100px" runat="server"
+                                                            CommandName="Select" CommandArgument='<%# Eval("BomID") %>'>
+                                                                    <%# Eval("BomID") %>
+                                                        </asp:LinkButton>
+                                                    </DataItemTemplate>
+                                                    <CellStyle Wrap="False"></CellStyle>
+                                                </dx:GridViewDataTextColumn>
+                                                <dx:GridViewDataTextColumn FieldName="Description" Width="100%"
+                                                    Caption="รายละเอียด">
+                                                    <Settings AutoFilterCondition="Contains" />
+                                                    <CellStyle Wrap="False"></CellStyle>
+                                                </dx:GridViewDataTextColumn>
+                                                <dx:GridViewDataTextColumn Caption="ประเภท" FieldName="UserForModule" Width="100">
+                                                    <HeaderStyle Wrap="False" CssClass="Sarabun" />
+                                                    <CellStyle Wrap="False" />
+                                                </dx:GridViewDataTextColumn>
+                                                <dx:GridViewDataCheckColumn FieldName="IsDefault" Width="100"
+                                                    Caption="เป็นสูตรเริ่มต้น">
+                                                    <Settings AutoFilterCondition="Contains" />
+                                                    <CellStyle Wrap="False"></CellStyle>
+                                                </dx:GridViewDataCheckColumn>
+                                            </Columns>
+                                        </dx:ASPxGridView>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8 pl-1">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <%--TAB Bom--%>
+                            <div class="row pb-1" style="font-size: smaller;">
+                                <div class="col-md-12">
+                                    <div class="card bg-light">
+                                        <div class="card-header">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <ul class="nav nav-pills card-header-pills" role="tablist">
+                                                        <li class="nav-item">
+                                                            <a class="nav-link active" style="font-size: medium;" id="tab-5-1" data-toggle="tab" href="#home-5-1" role="tab" aria-controls="home-5-1" aria-selected="true"><span>&nbsp ข้อมูลสูตรผลิต</span></a>
+                                                        </li>
+
+                                                        <li class="nav-item">
+                                                            <a class="nav-link" style="font-size: medium;" id="a_tab_dochistory" data-toggle="tab" href="#tab_dochistory" role="tab" aria-controls="c_tab_dochistory" aria-selected="false"><span>TransactionLog</span></a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <%--<h3>
+                                                        <span class="badge badge-pill badge-info"><%= ShowItemType() %></span>
+                                                    </h3>--%>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="tab-content tab-content-solid">
+                                                <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
+                                                    <div class="row pt-1">
+                                                        <div class="col-6">
+                                                            <h4>ข้อมูลสูตรผลิต</h4>
+                                                        </div>
+                                                        <div class="col-6 text-right">
+                                                            <asp:CheckBox ID="chkIsDefault" Text="เป็นสูตรเริ่มต้น" Checked="true" runat="server" />
+                                                            <asp:CheckBox runat="server" Font-Size="Larger" ID="ckIsActive" Text="เปิดใช้งาน" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row pb-1 pt-2">
+                                                              <div class="col-md-3">
+                                                            <span style="color: gray;">ประเภท </span>
+                                                            <asp:DropDownList ID="cboTypeBom" Font-Size="Small" runat="server"  AutoPostBack="true" OnSelectedIndexChanged="cboTypeBom_SelectedIndexChanged"
+                                                                CssClass="form-control" DataTextField="Description1" DataValueField="ValueTXT">
+                                                            </asp:DropDownList>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <span style="color: gray;">Bom No.</span>
+                                                            <asp:TextBox Font-Size="Small" runat="server" ID="txtBomID" CssClass="form-control" />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <span style="color: gray;">สินค้า </span>
+                                                            <dx:ASPxComboBox ID="cboItemIDFG" runat="server"
+                                                                Theme="Material"
+                                                                EnableCallbackMode="true"
+                                                                CallbackPageSize="10"
+                                                                AutoPostBack="true"
+                                                                DropDownWidth="600"
+                                                                DropDownHeight="300"
+                                                                CssClass="Sarabun"
+                                                                OnSelectedIndexChanged="cboItemIDFG_SelectedIndexChanged"
+                                                                ValueType="System.String" ValueField="ItemID"
+                                                                OnItemsRequestedByFilterCondition="cboItemIDFG_OnItemsRequestedByFilterCondition_SQL"
+                                                                OnItemRequestedByValue="cboItemIDFG_OnItemRequestedByValue_SQL" TextField="ItemID" TextFormatString="{0}-{2}"
+                                                                Width="100%" DropDownStyle="DropDownList">
+                                                                <Columns>
+                                                                    <dx:ListBoxColumn FieldName="ItemID" Caption="สินค้า" />
+                                                                    <dx:ListBoxColumn FieldName="TypeID" Caption="ประเภท" Width="70" />
+                                                                    <dx:ListBoxColumn FieldName="Name1" Caption="รายละเอียด" Width="300px" />
+                                                                </Columns>
+                                                                <ClientSideEvents BeginCallback="function(s, e) { OnBeginCallback(); }" EndCallback="function(s, e) { OnEndCallback(); } " />
+                                                            </dx:ASPxComboBox>
+                                                        </div>
+                                                  
+                                                    
+                                                    </div>
+   <div class="row">
+           <div class="col-md-12">
+                                                            <span style="color: gray;">รายละเอียด</span>
+                                                            <asp:TextBox ID="txtDescription" Font-Size="Small" CssClass="form-control" runat="server"></asp:TextBox>
+                                                        </div>
+       </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <span style="color: gray;">หมายเหตุ 1 &nbsp</span>
+                                                            <asp:TextBox ID="txtRemark1" Font-Size="Small" CssClass="form-control" TextMode="MultiLine" Height="60px" runat="server"></asp:TextBox>
+                                                        </div>
+                                                    </div>
+
+
+                                                    <hr />
+
+                                                    <asp:UpdatePanel ID="upitemprice" runat="server" UpdateMode="Conditional">
+                                                        <ContentTemplate>
+
+                                                            <div class="row pb-1">
+                                                                <div class="col-md-12">
+
+                                                                    <div class="row pt-1">
+                                                                        <div class="col-md-12">
+                                                                            <h4>รายการ วัตถุดิบ</h4>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="row pt-3 ">
+                                                                        <div class="col-md-12">
+                                                                            <div class="row ">
+                                                                                <div class="col-md-4">
+                                                                                    <span style="color: gray;">วัตถุดิบ </span>
+                                                                                    <dx:ASPxComboBox ID="cboItemIDRM" runat="server"
+                                                                                        Theme="Material"
+                                                                                        EnableCallbackMode="true"
+                                                                                        CallbackPageSize="10"
+                                                                                        AutoPostBack="true"
+                                                                                        DropDownWidth="600"
+                                                                                        DropDownHeight="300"
+                                                                                        CssClass="Sarabun"
+                                                                                        ValueType="System.String" ValueField="ItemID"
+                                                                                        OnItemsRequestedByFilterCondition="cboItemIDRM_OnItemsRequestedByFilterCondition_SQL"
+                                                                                        OnItemRequestedByValue="cboItemIDRM_OnItemRequestedByValue_SQL" TextField="ItemID" TextFormatString="{0}-{2}"
+                                                                                        Width="100%" DropDownStyle="DropDownList">
+                                                                                        <Columns>
+                                                                                            <dx:ListBoxColumn FieldName="ItemID" Caption="สินค้า" />
+                                                                                            <dx:ListBoxColumn FieldName="TypeID" Caption="ประเภท" Width="60" />
+                                                                                            <dx:ListBoxColumn FieldName="Name1" Caption="รายละเอียด" Width="300px" />
+                                                                                        </Columns>
+                                                                                        <ClientSideEvents BeginCallback="function(s, e) { OnBeginCallback(); }" EndCallback="function(s, e) { OnEndCallback(); } " />
+                                                                                    </dx:ASPxComboBox>
+
+
+                                                                                </div>
+                                                                                <div class="col-md-2">
+                                                                                    <span style="color: gray;">จำนวน </span>
+                                                                                    <asp:TextBox ID="txtRmQty" CssClass="form-control form-control-sm  text-right" onkeypress="return DigitOnly(this,event)" runat="server"></asp:TextBox>
+                                                                                </div>
+                                                                                <div class="col-md-2">
+                                                                                    <span style="color: gray;">ผลิตได้จำนวน </span>
+                                                                                    <asp:TextBox ID="txtFgQty" CssClass="form-control form-control-sm  text-right" Text="1" onkeypress="return DigitOnly(this,event)" runat="server"></asp:TextBox>
+                                                                                </div>
+                                                                                <div class="col-md-2 pt-3 text-right">
+                                                                                    <span></span>
+                                                                                    <asp:LinkButton ID="btnAddBomLine" Width="100%" runat="server" CssClass="btn btn-outline-success" OnClick="btnAddBomLine_Click">
+                                                                                            <i class="fas fa-plus-circle fa-lg"></i>&nbsp<span >เพิ่ม</span> 
+                                                                                    </asp:LinkButton>
+                                                                                </div>
+
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="row pt-2 pb-1">
+                                                                <div class="col-md-12">
+                                                                    <div class="row">
+                                                                        <div class="col-md-12 ">
+                                                                            <dx:ASPxGridView ID="grdBomLine"
+                                                                                runat="server" Width="100%"
+                                                                                EnableTheming="True"
+                                                                                Theme="Moderno"
+                                                                                CssClass="Sarabun"
+                                                                                KeyFieldName="LineNum"
+                                                                                OnRowCommand="grdBomLine_RowCommand"
+                                                                                AutoGenerateColumns="False"
+                                                                                KeyboardSupport="true">
+                                                                                <Settings ShowFilterRow="True" ShowFooter="false" ShowGroupFooter="Hidden"
+                                                                                    ShowFilterBar="Hidden" ShowHeaderFilterButton="True" />
+                                                                                <Columns>
+                                                                                    <dx:GridViewDataTextColumn Caption="วัตถุดิบ" FieldName="ItemIDRM" Width="150px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <CellStyle Wrap="False" />
+                                                                                    </dx:GridViewDataTextColumn>
+                                                                                    <dx:GridViewDataTextColumn Caption="รายละเอียด" FieldName="RMDescription" Width="200px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <CellStyle Wrap="False" />
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                    <dx:GridViewDataTextColumn Caption="จำนวน" FieldName="RmQty" Width="130px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <PropertiesTextEdit DisplayFormatString="n4" />
+                                                                                        <CellStyle Wrap="False" HorizontalAlign="Right" />
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                    <dx:GridViewDataTextColumn Caption="หน่วย" FieldName="RmUnit" Width="130px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <CellStyle Wrap="False" />
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                    <dx:GridViewDataTextColumn Caption="ผลิตได้จำนวน" FieldName="FgQty" Width="130px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <PropertiesTextEdit DisplayFormatString="n4" />
+                                                                                        <CellStyle Wrap="False" HorizontalAlign="Right" />
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                    <dx:GridViewDataTextColumn Caption="หน่วย" FieldName="FgUnit" Width="130px">
+                                                                                        <HeaderStyle Wrap="False" />
+                                                                                        <CellStyle Wrap="False" />
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                    <dx:GridViewDataTextColumn FieldName="" Caption="ลบ" Width="80px">
+                                                                                        <DataItemTemplate>
+                                                                                            <asp:LinkButton ID="btnDel" runat="server" CssClass="btn btn-icons btn-default"
+                                                                                                CommandName="Del" CommandArgument='<%# Eval("LineNum") %>'>
+                                                                                                <i class="fas fa-trash"></i>
+                                                                                            </asp:LinkButton>
+                                                                                        </DataItemTemplate>
+                                                                                        <HeaderStyle></HeaderStyle>
+                                                                                    </dx:GridViewDataTextColumn>
+
+                                                                                </Columns>
+                                                                            </dx:ASPxGridView>
+
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-3 pt-4">
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                </div>
+                                                                <div class="col-md-6 text-center pt-4">
+                                                                    <asp:UpdatePanel ID="udpmain" runat="server" UpdateMode="Conditional">
+                                                                        <ContentTemplate>
+                                                                            <asp:Button ID="btnSave" Width="100%" Height="40"
+                                                                                CssClass="btn btn-success "
+                                                                                OnClick="btnSave_Click"
+                                                                                OnClientClick="this.disabled='true';"
+                                                                                UseSubmitBehavior="false"
+                                                                                runat="server"
+                                                                                Text="บันทึก"></asp:Button>
+                                                                            <asp:LinkButton ID="btnDel" class="dropdown-item" runat="server" Visible="false" OnClick="btnDel_Click"><span>Delete</span> </asp:LinkButton>
+                                                                        </ContentTemplate>
+                                                                        <Triggers>
+                                                                            <asp:AsyncPostBackTrigger ControlID="btnSave" />
+                                                                        </Triggers>
+                                                                    </asp:UpdatePanel>
+                                                                    <div id="divalert" style="display: none" class="alert alert-success" role="alert">
+                                                                        <strong>
+                                                                            <span id="myalertHead"></span></strong>
+                                                                        <br />
+                                                                        <span id="myalertBody"></span>
+                                                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </ContentTemplate>
+                                                        <Triggers>
+                                                            <asp:AsyncPostBackTrigger ControlID="cboItemIDRM" />
+                                                            <asp:AsyncPostBackTrigger ControlID="btnAddBomLine" />
+                                                            <asp:AsyncPostBackTrigger ControlID="grdBomLine" />
+                                                        </Triggers>
+                                                    </asp:UpdatePanel>
+                                                </div>
+
+
+
+                                                <%--TAB HISTORY--%>
+                                                <div class="tab-pane fade" id="tab_dochistory" role="tabpanel" aria-labelledby="c_tab_dochistory">
+
+                                                    <div class="row pt-2">
+                                                        <div class="col-md-12">
+                                                            <div class="row">
+                                                                <div class="col-md-12">
+                                                                    <button type="button" class="btn btn-secondary btn-block btn-fw  fa-2x">
+                                                                        <i class="far fa-clock"></i><span>&nbsp ประวัติการแก้ไข</span></button>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-12">
+                                                                    <div style="overflow-x: auto; width: 100%">
+                                                                        <asp:GridView ID="grd_transaction_log" runat="server"
+                                                                            AutoGenerateColumns="False" Width="100%"
+                                                                            Font-Size="Small" OnPageIndexChanging="grd_transaction_log_PageIndexChanging"
+                                                                            CssClass="table table-striped table-bordered table-hover Sarabun"
+                                                                            EmptyDataText="No transaction log data.."
+                                                                            EmptyDataRowStyle-HorizontalAlign="Center"
+                                                                            ShowHeaderWhenEmpty="true" AllowPaging="true" PageSize="10">
+                                                                            <Columns>
+                                                                                <asp:BoundField DataField="CreatedBy" HeaderText="Action By">
+                                                                                    <HeaderStyle Wrap="False" />
+                                                                                    <ItemStyle Wrap="False" />
+                                                                                </asp:BoundField>
+
+                                                                                <asp:BoundField DataField="CreatedDate" HeaderText="Action Date" HtmlEncode="false" DataFormatString="{0:dd/MM/yyyy HH:mm}">
+                                                                                    <HeaderStyle Wrap="False" />
+                                                                                    <ItemStyle Wrap="False" />
+                                                                                </asp:BoundField>
+
+                                                                                <asp:BoundField DataField="Action" HeaderText="Action">
+                                                                                    <HeaderStyle Wrap="False" />
+                                                                                    <ItemStyle Wrap="False" />
+                                                                                </asp:BoundField>
+                                                                            </Columns>
+                                                                        </asp:GridView>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </ContentTemplate>
+        <Triggers>
+            <asp:AsyncPostBackTrigger ControlID="grd" />
+            <asp:AsyncPostBackTrigger ControlID="btnSearch" />
+        </Triggers>
+    </asp:UpdatePanel>
+    <asp:SqlDataSource ID="sqlSearch" runat="server" ConnectionString="<%$ ConnectionStrings:GAConnectionString %>"></asp:SqlDataSource>
+</asp:Content>
+<asp:Content ID="content_footer" ContentPlaceHolderID="FooterScript" runat="server">
+</asp:Content>

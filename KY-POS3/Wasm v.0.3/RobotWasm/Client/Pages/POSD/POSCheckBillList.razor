@@ -1,0 +1,130 @@
+﻿@page "/POSD/POSCheckBillList"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    .k-listview {
+        background-color: transparent;
+    }
+</style>
+
+<div class="row pt-2">
+    <div class="col-xl-8 col-md-10 col-sm-12 col-12 mx-auto rounded" style="padding: 8px 10px 8px 10px;background-color: #ffd32a;">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:larger;">ออเดอร์รอเช็คบิล</span></div>
+        </div>
+    </a>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-xl-8 col-md-10 col-sm-12 col-12 mx-auto px-0">
+
+        <TelerikListView Data="@ListCheckBill" Pageable="true" Page="1" PageSize="20">
+            <Template>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="row">
+
+                            <div class="col-12">
+                                <a class="btn w-100 h-auto" @onclick="@(async () => await GoToPOSSale(context))">
+                                    <div class="row text-center">
+                                        <div class="col-8 text-start pe-0">
+                                            <span style="font-size:medium; color:orange;">@context.TableName</span>
+                                            &nbsp;
+                                            <span style="font-size:small; color:lightseagreen;">@context.BillID</span>
+                                            <br />
+                                            ยอดเงิน <strong style="font-size:small">@context.NetTotalAmtIncVat.ToString("n2") ฿</strong>
+                                        </div>
+                                        <div class="col-4 px-1 text-end">
+                                            @switch (context.ShipToLocID) {
+                                                case "":
+                                                    <img src="img/SALE/frontstore.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "GRAB":
+                                                    <img src="img/SALE/grab.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "SHOPEE":
+                                                    <img src="img/SALE/shopee_logo.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "LINEMAN":
+                                                    <img src="img/SALE/lineman.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "PANDA":
+                                                    <img src="img/SALE/padda.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "ROBINHOOD":
+                                                    <img src="img/SALE/robinhood.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                case "ONLINE":
+                                                    <img src="img/SALE/online.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                                default:
+                                                    <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 3rem;" />
+                                                    break;
+                                            }
+                                            <div style="font-size:x-small">@context.CreatedDate.ToString("dd/MM/yyyy H:mm")</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <hr style="margin: 0.1rem 0rem 0.1rem 0rem; background-color:transparent !important;" />
+            </Template>
+        </TelerikListView>
+
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    List<POS_SaleHeadModel> ListCheckBill = new List<POS_SaleHeadModel>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+        string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+        ListCheckBill = await _posService.ListPendingCheckBill(rcom,com,"Z");
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task GoToPOSSale(POS_SaleHeadModel select_data) {
+        await _localStorage.SetItemAsync(Globals.SessionActive_PosID, select_data.BillID);
+        _posService.DocSet = await Task.Run(() => _posService.GetDocSet(select_data.BillID, select_data.RComID));
+        nav.NavigateTo($"POSD/POSSaleDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoBack() {
+        _posService.DocSet = await Task.Run(() => POSFuncService.NewTransaction(login.LogInInfo, "webv3", ""));
+        nav.NavigateTo("POSD/POSSaleDetail");
+        await InvokeAsync(StateHasChanged);
+    }
+}

@@ -1,0 +1,262 @@
+﻿@page "/POSV3/RegisterMember"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.DA.User
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA.POSSY
+@using Blazored.LocalStorage
+@using Blazored.SessionStorage
+
+@inject SweetAlertService Swal
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CustomerService customerService
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+
+<style>
+    .btn-success {
+        background-color: #4b6584;
+        border-color: #4b6584;
+    }
+
+        .btn-success:hover {
+            background-color: #4b6584;
+            border-color: #4b6584;
+        }
+
+        .btn-success:not(:disabled):not(.disabled).active, .btn-success:not(:disabled):not(.disabled):active, .show > .btn-success.dropdown-toggle {
+            background-color: #4b6584;
+            border-color: #4b6584;
+        }
+</style>
+
+<div class="row pb-1 pt-5">
+    <div class="col-12 text-center mx-0">
+        <strong style="font-size:xx-large;" class="text-dark">ข้อมูลสมาชิก</strong>
+    </div>
+</div>
+
+<div class="row pt-3">
+    <div class="col-11 mx-auto mx-0">
+
+        <div class="row">
+            <div class="col-12">
+                <label>เบอร์โทร</label>
+                <DxTextBox Id="inputmobile"
+                           InputId="inputmobile"
+                           @bind-Text="@customerService.DocSet.Info.CustomerID"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="true"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>ชื่อ</label>
+                <DxTextBox Id="inputNameTh1"
+                           InputId="inputNameTh1"
+                           @bind-Text="@customerService.DocSet.Info.NameTh1"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="true"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>นามสกุล</label>
+                <DxTextBox Id="inputNameTh2"
+                           InputId="inputNameTh2"
+                           @bind-Text="@customerService.DocSet.Info.NameTh2"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="true"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-4 pb-2">
+            <div class="col-12">
+                <a @onclick="@AddAddress" style="color:white;" class="btn btn-info w-100">
+                    <i class="fas fa-search fa-2x"></i>&nbsp;
+                    <span style="font-size:medium;">กดค้นหาที่อยู่&nbsp;</span>
+                </a>
+            </div>
+        </div>
+
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>ที่อยู่</label>
+                <DxTextBox Id="inputAddrNo"
+                           InputId="inputAddrNo"
+                           @bind-Text="@customerService.DocSet.Info.AddrNo"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="true"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>จังหวัด</label>
+                <DxTextBox Id="inputAddrProvince"
+                           InputId="inputAddrProvince"
+                           @bind-Text="@customerService.DocSet.Info.AddrProvince"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="false"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>อำเภอ/เขต</label>
+                <DxTextBox Id="inputAddrAmphoe"
+                           InputId="inputAddrAmphoe"
+                           @bind-Text="@customerService.DocSet.Info.AddrAmphoe"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="false"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>ตำบล/แขวง</label>
+                <DxTextBox Id="inputAddrTumbon"
+                           InputId="inputAddrTumbon"
+                           @bind-Text="@customerService.DocSet.Info.AddrTumbon"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="false"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <label>รหัสไปรษณีย์</label>
+                <DxTextBox Id="inpuAddrPostCode"
+                           InputId="inpuAddrPostCode"
+                           @bind-Text="@customerService.DocSet.Info.AddrPostCode"
+                           BindValueMode="BindValueMode.OnInput"
+                           Enabled="false"
+                           SizeMode="@ControlSizeMode">
+                </DxTextBox>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="row pt-3">
+    <div class="col-11 mx-auto text-center">
+        <a @onclick="@SaveCustomer" style="width:100%;" class="btn btn-success btn-lg">
+            <label style="color:white; font-size:large;">บันทึก</label>
+        </a>
+    </div>
+</div>
+
+
+@code {
+
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+
+    void LoadData()
+    {
+
+    }
+
+    void AddAddress()
+    {
+        nav.NavigateTo($"POSV3/SelectAddr/cus");
+    }
+
+    bool ValidData()
+    {
+        var h = customerService.DocSet.Info;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        string mobile = h.CustomerID.Trim().Replace(".", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+        h.CustomerID = mobile;
+        if (mobile == "")
+        {
+            Errmsg = "ระบุเบอร์โทร";
+            isvalid = false;
+        }
+
+        if (h.NameTh1.Trim() == "")
+        {
+            Errmsg = "ระบุชื่อ";
+            isvalid = false;
+        }
+
+        if (h.NameTh2.Trim() == "")
+        {
+            Errmsg = "ระบุนามสกุล";
+            isvalid = false;
+        }
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+
+    async void SaveCustomer()
+    {
+        if (!ValidData())
+        {
+            return;
+        }
+
+        var rs = customerService.SaveCustomer(customerService.DocSet.Info);
+        if (rs.Result != "ok")
+        {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+        else
+        {
+            posService.DocSet.Head.CustomerID = customerService.DocSet.Info.CustomerID;
+            posService.DocSet.Head.CustomerName = customerService.DocSet.Info.FullNameTh;
+            await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+            nav.NavigateTo("POSV3/POSSaleDetail");
+        }
+    }
+
+}

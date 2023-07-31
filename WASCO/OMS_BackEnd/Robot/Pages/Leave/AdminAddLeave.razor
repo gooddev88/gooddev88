@@ -1,0 +1,179 @@
+﻿@page "/Leave/AdminAddLeave"
+@using Robot.Data.DA.Leave
+@using Robot.Data.ML
+@using Robot.Data.ML.DPMLeaveModel
+@inject LeaveService leaveService
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-4">
+            <div class="col-md-5 col-sm-9 col-12 mx-auto">
+                <a class="btn p-0" @onclick="@OnBack">
+
+                    <p class="card-title">
+                        <i class="fa fa-chevron-circle-left fa-2x"></i>
+
+                        <span style="font-weight: bold; font-size:x-large; color: black;">สร้างใบลา </span>
+
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-5 col-sm-9 col-12 mx-auto">
+                @if (login.CanEdit(login.LoginInfo, "173")) {
+                    <div class="card">
+                        <div class="card-body">
+                                                <div class="row">
+                        <div class="col-sm-12 col-12">
+                            <span>ประเภทการลา</span> 
+                                                <TelerikComboBox @bind-Value="@SelectLEAVETYPE"
+                                                                                 Data="@ListLEAVETYPE"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+ 
+                        </div>
+                        <div class="col-sm-12 col-12">
+                            <label>พนักงาน</label>
+                  
+
+
+
+                            
+                                        <TelerikComboBox Data="@ListUser"
+                                                         ScrollMode="@DropDownScrollMode.Virtual"
+                                                         ValueField="@(nameof(vw_UserInfo.Username))"
+                                                         TextField="@(nameof(vw_UserInfo.FullName))"
+                                                         Width="100%" PageSize="10" ItemHeight="35"
+                                                         Value="@User"
+                                                         Filterable="true"
+                                                             ValueChanged="@( (string q) => ChangeUser(q))"
+                                                         FilterOperator="@StringFilterOperator.Contains">
+                                            <ComboBoxSettings>
+                                                <ComboBoxPopupSettings Width="450px" Height="300px"></ComboBoxPopupSettings>
+                                            </ComboBoxSettings>
+                                            <HeaderTemplate>
+                                                <div class="fw-bold py-2">&nbsp;&nbsp; ชื่อผู้ใช้ & ชื่อ-นามสกุล  </div>
+                                            </HeaderTemplate>
+                                            <ItemTemplate>
+                                                <span>&nbsp;&nbsp; @($"{context.Username} - {context.FullName} ")</span>
+                                            </ItemTemplate>
+                                        </TelerikComboBox>
+                        </div>
+
+
+                        <div class="col-sm-12 col-12 text-start">
+                            <label>&nbsp;</label>
+                            <a @onclick="@OnNew" class="btn btn-success text-white w-100">
+                                <i class="fas fa-check-circle fa-lg"></i>&nbsp;
+                                สร้าง
+                            </a>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                }
+
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+@code {
+    bool isLoading = true;
+    public IEnumerable<vw_UserInfo> ListUser;
+    public string User { get; set; } = "";
+    public int FiscalYear { get; set; } = LeaveService.GetYearFiscalYear(DateTime.Now.Date);
+    public string SelectLEAVETYPE { get; set; } = "";
+    public List<MasterTypeLine> ListLEAVETYPE = new List<MasterTypeLine>();
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+
+        LoadDropDownList();
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void LoadDropDownList() {
+        ListLEAVETYPE = MasterTypeService.ListType("", "LEAVE TYPE", true);
+
+    }
+    async public Task LoadData() {
+        ListUser = await Task.Run(() => MyUserService.Listvw_UserInfo());
+        isLoading = false;
+    }
+
+    public async void ChangeUser(string user) {
+        user = user == null ? "" : user;
+    }
+
+    async void OnBack() {
+        nav.NavigateTo($"Leave/UserLeaveList", false);
+    }
+
+    async void OnNew() {
+
+        if (SelectLEAVETYPE == "") {
+            await Swal.FireAsync("", "!! ระบุ ประเภทการลา", "error");
+            return;
+        }
+
+        if (User == "")
+        {
+            await Swal.FireAsync("", "!! ระบุ พนักงาน", "error");
+            return;
+        }
+        var com = login.LoginInfo.CurrentUserInfo.DefaultCompany;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var user = login.LoginInfo.CurrentUserInfo;
+        await sessionStorage.RemoveItemAsync(LeaveService.sessionActiveId);
+        await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, user);
+
+     //   var u = MyUserService.GetViewUserInfo(User);
+
+        //leaveService.DocSet = LeaveService.NewTransaction(rcom,com, SelectLEAVETYPE);
+        //leaveService.DocSet.Leave.Username = u.Username;
+        //leaveService.DocSet.Leave.FullName = u.FullName;
+        //leaveService.DocSet.Leave.PositionID = u.PositionID;
+        //leaveService.DocSet.Leave.PositionName = MasterTypeService.GetType("JOB POSITION", u.PositionID)?.Description1;
+        //leaveService.DocSet.Leave.CreatedBy = login.LoginInfo.CurrentUser;
+        //nav.NavigateTo($"Leave/LeaveDetail/0", false);
+
+
+
+
+          var u = MyUserService.GetViewUserInfo(User); 
+                var Leave = leaveService.DocSet.Leave;
+ 
+
+        leaveService.DocSet = LeaveService.NewTransaction(rcom, com, SelectLEAVETYPE);
+        leaveService.DocSet.Leave.Username = User;
+        leaveService.DocSet.Leave.FullName = u.FullName;
+        leaveService.DocSet.Leave.PositionID = u.PositionID;
+        leaveService.DocSet.Leave.PositionName = MasterTypeService.GetType("JOB POSITION",u.PositionID)?.Description1;
+        leaveService.DocSet.Leave.WorkYear = FiscalYear;
+        leaveService.DocSet.Leave.CreatedBy = login.LoginInfo.CurrentUser;
+        nav.NavigateTo($"Leave/LeaveDetail/0", false);
+
+    }
+}

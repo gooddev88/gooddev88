@@ -1,0 +1,100 @@
+﻿@page "/Dashboard/StartBoard"
+@using Robot.Data.ML.Login;
+
+@*@using Robot.Data.DA.Document
+@using Robot.Data.ML.Login;
+*@
+
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+</style>
+@foreach (var menu in UserInMenu.Where(o => o.TypeID == "MENUGROUP")) {
+    @if (menu.IsOpen == true) {
+
+        <div class="row pb-2 pt-2">
+            <div class="col-12">
+                <h5> <strong>@menu.MenuName</strong> </h5>
+            </div>
+        </div>
+        <div class="row px-2">
+            @foreach (var lm in UserInMenu.Where(o => o.GroupID == menu.GroupID && o.TypeID != "MENUGROUP")) {
+                @if (lm.IsOpen == true) {
+                    <div class="col-md-3 col-sm-6 col-6 p-1">
+                        <a @onclick="@(() => ChangeURL(lm.Url,lm.MenuID))" class="w-100 btn btn-light">
+                            <div>
+                                <img src="@lm.Icon" width="60" height="60" />
+                            </div>
+                            <h5>@lm.MenuName</h5>
+                        </a>
+                    </div>
+                }
+
+            }
+        </div>
+
+    }
+}
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+    bool firstRender = true;
+    bool isLoading = false;
+    List<UserMenu> menus = new List<UserMenu>();
+    public int count_doc_wait_appv = 0;
+    public int count_doc_tag = 0;
+    protected override async Task OnInitializedAsync() {
+
+        await Task.Run(() => login.CheckLogin());
+
+        if (login.LoginInfo != null) {
+            UserInMenu = login.LoginInfo.UserInMenuDisplay.ToList();
+        }
+        await Task.Run(LoadData);
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+    async void LoadData() {
+        BindData();
+    }
+
+    void BindData() {
+        if (login.LoginInfo != null) {
+            //Username = login.LoginInfo.CurrentUser;
+            //CompanyName = login.LoginInfo.CurrentCompany?.Name1;
+        }
+    }
+
+    async private Task ChangeURL(string url, string menu) {
+        if (menu == "621") {//621 ออเดอร์
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var user = login.LoginInfo.CurrentUser;
+            LoginCrossRequest req = new LoginCrossRequest { RComID = rcom, AppID = "KYPOS", Username = user, BackPage = "", ToPage = menu };
+            var xlogin = await Task.Run(() => login.CreateCrossAppReq(req));
+            nav.NavigateTo(xlogin.GoToUrl);
+        } else {
+            nav.NavigateTo(url, false);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}
+

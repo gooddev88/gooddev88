@@ -1,0 +1,1093 @@
+﻿@page "/Master/CompanyDetail/{pagecomefrom}"
+@using System.IO
+@using static Robot.Data.ML.I_Result
+
+@inject CompanyService companyService
+@layout MainBoardLayout
+
+
+<style>
+    .file-input-zone {
+        display: block;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        position: relative;
+        width: 32px;
+        height: 32px;
+        background-image: url('/sale/assets/img/upload_logo.png');
+    }
+
+    /*        .file-input-zone input[type=file] {
+                                                        position: absolute;
+                                                        height: 100%;
+                                                        opacity: 0;
+                                                        cursor: pointer;
+                                                    }*/
+    .col-auto {
+        flex: 0 0 100%;
+    }
+
+        .col-auto > button[type=button] {
+            width: 100% !important;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+                   <div class="col-md-6">
+ <a @onclick="Back">
+                                <i class="fas fa-reply-all"></i>&nbsp;กลับ
+
+                            </a>
+</div>
+            <div class="col-6 text-end">
+                <button type="button" @onclick="@SaveDoc" style="height:40px;"
+                        class="btn btn-outline-success px-4">
+                    <i class="fas fa-save fa-lg"></i>&nbsp; บันทึก
+                </button>&nbsp;&nbsp;
+                @if (isShowNew) {
+                    <button type="button" @onclick="@NewDoc" style="height:40px;"
+                        class="btn btn-outline-primary">
+                        <i class="fas fa-plus-circle fa-lg"></i>&nbsp; ++NEW++
+                    </button>
+                }
+
+            </div>
+        </div>
+
+
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">ข้อมูลบริษัทและสาขา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+
+                    <div class="row pt-2">
+                        <div Class="col-8">
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <span>รหัสสาขา</span>
+                                    <input type="text" class="form-control form-control-sm"
+                                           @bind-value="txtcom_id" readonly="@ReadOnlyComID" />
+                                </div>
+                                <div class="col-6">
+                                    <span>เลขผู้เสียภาษี</span>
+
+                                    <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.TaxID" />
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <span>ชื่อ 1</span>
+
+                                    <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.Name1" />
+                                </div>
+                                <div class="col-6">
+                                    <span>ชื่อ 2</span>
+                                    <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.Name2" />
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <span>ที่อยู่เปิดบิล 1</span>
+
+                                    <TelerikTextArea @bind-Value="@companyService.DocSet.ComInfo.BillAddr1"
+                                                     AutoSize="true"
+                                                     Class="w-100"
+                                                     PlaceHolder="">
+                                    </TelerikTextArea>
+                                </div>
+                                <div class="col-6">
+                                    <span>ที่อยู่เปิดบิล 2</span>
+
+                                    <TelerikTextArea @bind-Value="@companyService.DocSet.ComInfo.BillAddr2"
+                                                     AutoSize="true"
+                                                     Class="w-100"
+                                                     PlaceHolder="">
+                                    </TelerikTextArea>
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <span>อักษรย่อ</span><span style="font-size: large; color: red">*</span>
+
+                                    <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.ShortCode" />
+                                </div>
+                                <div class="col-6">
+                                    <span>เลขสาขา</span><span style="font-size: large; color: red">*</span>
+
+                                    <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.BrnCode" />
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <span>ต้นสังกัด</span>
+
+                                    <TelerikComboBox @bind-Value="@selected_rootCompany"
+                                                     Data="@ComList"
+                                                     TextField="@nameof(CompanyInfo.Name1)"
+                                                     ValueField="@nameof(CompanyInfo.CompanyID)"
+                                                     Filterable="true"
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                                <div class="col-6">
+                                    <span>กลุ่ม</span>
+                                    <TelerikComboBox @bind-Value="@selected_ComGroup"
+                                                     Data="@ComGroupList"
+                                                     TextField="@nameof(CompanyInfo.Name1)"
+                                                     ValueField="@nameof(CompanyInfo.CompanyID)"
+                                                     Filterable="true"
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-6">
+                                    <TelerikCheckBox Id="chkIsActive" @bind-Value="@companyService.DocSet.ComInfo.IsWH">  </TelerikCheckBox>
+                                    <label for="chkIsActive" style="font-size:large;">ครัวกลาง</label>
+
+                                </div>
+                            </div>
+                            @*<div class="row pt-2">
+
+                            <div class="col-6">
+                            <span>สกุลเงิน</span>
+                            <DxComboBox Data="@cboCurrency"
+                            TextFieldName="@nameof(CurrencyInfo.Name)"
+                            ValueFieldName="@nameof(CurrencyInfo.CurrencyID)"
+                            FilteringMode="DataGridFilteringMode.Contains"
+                            @bind-Value="@companyService.DocSet.ComInfo.Currency"
+                            SizeMode="@SizeMode.Small">
+                            </DxComboBox>
+                            </div>
+                            </div>*@
+                        </div>
+
+                        <div Class="col-4">
+                            <SpinLoader IsLoading="isUploading">
+                                <LoadingTemplate>
+                                    <div class="row">
+                                        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+                                            <br /><br />
+                                            <div class="row pt-2">
+                                                <div class="col-10 mx-auto">
+                                                    <label style="color:blue; font-size:x-small;">... Loading ...</label><br /><br /><br /><br />
+                                                    <CircleFade Color="blue" Size="100px" Center="true" />
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </LoadingTemplate>
+                                <ContentTemplate>
+                                    @if (companyService.DocSet.ComInfo.CompanyID != "") {
+                                        <div class="row pb-1">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-body">
+
+
+                                                        <div class="row">
+                                                            <div class="col-12">
+                                                                <div class="file-input-zone">
+                                                                    <InputFile OnChange="OnInputFileChanged"
+                                                                           style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                                                    </InputFile>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                        <div class="row pt-1">
+                                                            <div class="col-10 mx-auto mx-0">
+                                                                <a @onclick="@DownLoadImage">
+                                                                    <img src=@ImageUrl style="width:100%; height:100%;" onerror="this.onerror=null; this.src='/assets/img/applogo.png'">
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-12 text-end">
+                                                                <a class="btn btn-default" @onclick="@OnDeleteProfile"> <i class="far fa-trash-alt"></i></a>
+
+                                                            </div>
+                                                        </div>
+                                                        <div class="row" hidden>
+                                                            <div class="col-12 text-end">
+                                                                <a class="btn btn-default" @onclick="@TestApi"> Test</a>
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    @* End Profile*@
+                                </ContentTemplate>
+                            </SpinLoader>
+                        </div>
+                    </div>
+
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapseVisibleAddr">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapseVisibleAddr = !collapseVisibleAddr)">ข้อมูลการติดต่อ</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>ค้นหาที่อยู่</span>
+                            @*       <DxComboBox Data="@ListAddr"
+                            CssClass="w-100"
+                            ListRenderMode="ListRenderMode.Virtual"
+                            FilteringMode="DataGridFilteringMode.Contains"
+                            TextFieldName="@nameof(vw_ThaiPostAddress.FULLADDR)"
+                            SelectedItemChanged="@((vw_ThaiPostAddress city) => ChangeAddr(city))"
+                            @bind-Value="@SelectAddr"
+                            AllowUserInput="false"
+                            DropDownWidthMode="DropDownWidthMode.ContentOrEditorWidth">
+                            </DxComboBox>*@
+                            <TelerikComboBox Value="@SelectAddr"
+                                             Data="@ListAddr"
+                                             ScrollMode="@DropDownScrollMode.Virtual"
+                                             ValueField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                             TextField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                             Width="100%" PageSize="10" ItemHeight="35"
+                                             ValueChanged="@( (string city) => ValueChangeAddr(city) )"
+                                             Filterable="true"
+                                             FilterOperator="@StringFilterOperator.Contains">
+                                <ComboBoxSettings>
+                                    <ComboBoxPopupSettings Width="550px" Height="300px"></ComboBoxPopupSettings>
+                                </ComboBoxSettings>
+                                <HeaderTemplate>
+                                    <div class="fw-bold py-2">&nbsp;&nbsp; ที่อยู่</div>
+                                </HeaderTemplate>
+                                <ItemTemplate>
+                                    <span>@($"{context.FULLADDR}")</span>
+                                </ItemTemplate>
+                            </TelerikComboBox>
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>เลขที่ (House No.)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrNo" />
+                        </div>
+                        <div class="col-6">
+                            <span>หมู่/ถนน (Village No. / Road)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrTanon" />
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>รหัสไปรษณีย์ (Postal Code)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrPostCode" />
+                        </div>
+                        <div class="col-6">
+                            <span>จังหวัด (Province)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrProvince" />
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>เขต/อำเภอ (District / Area)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrAmphoe" />
+                        </div>
+                        <div class="col-6">
+                            <span>จังหวัด (Province)</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.AddrTumbon" />
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>เบอร์โทรศัพท์</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.Mobile" />
+                        </div>
+                        <div class="col-6">
+                            <span>Email</span>
+                            <TextEdit @bind-Text="@companyService.DocSet.ComInfo.Email" />
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapseVisibleAR">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is2">
+                        <Button Clicked="@(()=>collapseVisibleAR = !collapseVisibleAR)">ข้อมูลทางบัญชี</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+
+                    <div class="row pb-1">
+                        <div class="col-12 ">
+                            <h2><strong>Bank</strong></h2>
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-6">
+                            <span>ธนาคาร</span>
+
+                            <TelerikComboBox @bind-Value="@selectBankCode"
+                                             Data="@cboBankCode"
+                                             TextField="@nameof(BankInfo.Name_TH)"
+                                             ValueField="@nameof(BankInfo.BankCode)"
+                                             Filterable="true"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-6">
+                            <span>เลขที่บัญชี</span>
+
+                            <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.BookBankNo" />
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-12">
+                            <span>ชื่อบัญชี</span>
+
+                            <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.BookBankName" />
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-12">
+                            <h2><strong>PromptPay</strong></h2>
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-6">
+                            <span>ประเภท</span>
+
+                            <TelerikComboBox @bind-Value="@selectBankCode"
+                                             Data="@cboPromtpayType"
+                                             TextField="@nameof(SelectOption.Description)"
+                                             ValueField="@nameof(SelectOption.Value)"
+                                             Filterable="true"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-6">
+                            <span>เบอร์มือถือ / เลขบัตรประชาชน / E-Wallet</span>
+
+                            <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.BookBankNo" />
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-12">
+                            <span>QrPaymentData</span>
+
+                            <TelerikTextBox @bind-Value="@companyService.DocSet.ComInfo.QrPaymentData" />
+                        </div>
+                    </div>
+
+                    <div class="row pb-1 pt-2">
+                        <div class="col-12 ">
+                            <h2><strong>Vat</strong></h2>
+                        </div>
+                    </div>
+
+                    <div class="row pb-1">
+                        <div class="col-6 pt-3">
+                        </div><TelerikCheckBox Id="chkIsVat" @bind-Value="@companyService.DocSet.ComInfo.IsVatRegister">  </TelerikCheckBox>
+                        <label for="chkIsVat" style="font-size:large;">จดทะเบียน Vat</label>
+                        <div class="col-6">
+                            <span>คำนวณภาษี</span>
+
+                            <TelerikComboBox @bind-Value="@SelectPriceTaxcon"
+                                             Data="@listPriceTaxcon"
+                                             TextField="@nameof(MasterTypeLine.Description1)"
+                                             ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                             Filterable="true"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-6">
+                            <span>ที่อยู่เปิดบิล 1</span>
+
+                            <TelerikTextArea @bind-Value="@companyService.DocSet.ComInfo.BillAddr1"
+                                             AutoSize="true"
+                                             Class="w-100">
+                            </TelerikTextArea>
+                        </div>
+                        <div class="col-6">
+                            <span>ที่อยู่เปิดบิล 2</span>
+
+                            <TelerikTextArea @bind-Value="@companyService.DocSet.ComInfo.BillAddr2"
+                                             AutoSize="true"
+                                             Class="w-100">
+                            </TelerikTextArea>
+                        </div>
+                    </div>
+
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapseVisibleLoc">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is2">
+                        <Button Clicked="@(()=>collapseVisibleLoc = !collapseVisibleLoc)">สถานที่เก็บ</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+
+                    <div class="row">
+                        <div class="col-md-12">
+
+
+                            <TelerikGrid Data=@companyService.DocSet.Location
+                                         Pageable="false"
+                                         Groupable="false"
+                                         Sortable="true"
+                                         Resizable="false"
+                                         Reorderable="true" 
+                                         @ref="@dxDataGrid2"
+                                         Navigable="true">
+
+                                <GridColumns>
+                                    <GridColumn Field=@nameof(LocationInfo.LocID) Title="รหัส" Width="150" />
+                                    <GridColumn Field=@nameof(LocationInfo.Name) Title="ชื่อที่เก็บ" Width="100%" />
+
+                                </GridColumns>
+                            </TelerikGrid>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapseVisibleTable">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is2">
+                        <Button Clicked="@(()=>collapseVisibleTable = !collapseVisibleTable)">โต๊ะ</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+
+                    <div class="row pb-2 pt-2">
+                        <div class="col-2">
+                            <span>หมายเลขโต๊ะ</span>
+                            <TelerikTextBox @bind-Value="@TableID" />
+                        </div>
+                        <div class="col-3">
+                            <span>ชื่อโต๊ะ</span>
+
+                            <TelerikTextBox @bind-Value="@TableName" />
+                        </div>
+                        <div class="col-2">
+                            <span>ลำดับ</span>
+
+                            <TelerikTextBox @bind-Value="@Sort" />
+                        </div>
+                        <div class="col-2 pt-3">
+                            <a @onclick="@AddTable" class="btn btn-success w-100 text-white">
+                              เพิ่มโต๊ะ
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <TelerikGrid Data=@companyService.DocSet.Table
+                                         Pageable="false"
+                                         Groupable="false"
+                                         Sortable="true"
+                                         Resizable="false"
+                                         Reorderable="false" 
+                                         @ref="@dxDataGrid"
+                                         Navigable="true">
+
+                                <GridColumns>
+
+                                    <GridColumn Field=@nameof(POS_Table.TableID) Title="รหัส" Width="130px" />
+                                    <GridColumn Field=@nameof(POS_Table.TableName) Title="โต๊ะ" Width="100%" />
+                                    <GridColumn Title="ลบ" Editable="false" Width="75px">
+                                        <Template>
+                                            @{
+                                                var data = context as POS_Table;
+                                                    <button class="btn btn-sm" @onclick="@(() => DeleteTable(data))">
+
+                                                        <i class="fas fa-times-circle" style="color:red"></i>
+                                                    </button>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                </GridColumns>
+                            </TelerikGrid>
+
+
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter] public string pagecomefrom { get; set; }
+    public TelerikGrid<LocationInfo> dxDataGrid2 { get; set; }
+    public TelerikGrid<POS_Table> dxDataGrid { get; set; }
+    bool isLoading = true;
+    bool isUploading = false;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public bool ReadOnlyComID { get; set; } = false;
+    bool collapse1Visible = true;
+    bool collapseVisibleAddr = true;
+    bool collapseVisibleAR = true;
+    bool collapseVisibleLoc = true;
+    bool collapseVisibleTable = true;
+    public string ImageUrl { get; set; } = "";
+
+    public string SearchText { get; set; } = "";
+    public string selected_rootCompany { get; set; } = "";
+    public string selected_ComGroup { get; set; } = "";
+
+    public string TableID { get; set; } = "";
+    public string TableName { get; set; } = "";
+    public string Sort { get; set; }
+
+    bool ShowFilterRow = false;
+    string txtcom_id = "";
+    IEnumerable<vw_ThaiPostAddress> ListAddr;
+    public string SelectAddr { get; set; }
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+
+    public List<CompanyInfo> ComList = new List<CompanyInfo>();
+    public List<CompanyInfo> ComGroupList = new List<CompanyInfo>();
+
+    List<BankInfo> cboBankCode = new List<BankInfo>();
+    public string selectBankCode { get; set; } = "";
+
+    List<SelectOption> cboPromtpayType = new List<SelectOption>();
+    public string SelectPromtpayType { get; set; } = "";
+
+    List<MasterTypeLine> listPriceTaxcon { get; set; }
+    public string SelectPriceTaxcon { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await LoadThaiAddr();
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckIsRefresh() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        if (companyService.DocSet == null) {
+            var comid = await sessionStorage.GetItemAsync<string>(CompanyService.sessionActiveId);
+            if (!string.IsNullOrEmpty(comid)) {
+                companyService.DocSet = companyService.GetDocSet(comid, rcom);
+            } else {
+                companyService.DocSet = companyService.NewTransaction(rcom);
+                companyService.DocSet.ComInfo.CreatedBy = login.LoginInfo.CurrentUser;
+
+            }
+
+        }
+    }
+    public async void BindData() {
+        var h = companyService.DocSet.ComInfo;
+        selected_rootCompany = h.RCompanyID;
+        selected_ComGroup = h.GroupCode;
+        selectBankCode = h.BankCode;
+        SelectPromtpayType = h.PromptPayAccType;
+        SelectPriceTaxcon = h.PriceTaxCondType;
+        await loadProfile();
+        await SetActiveControl();
+    }
+
+
+    async Task SetActiveControl() {
+        var h = companyService.DocSet.ComInfo;
+        if (h.CompanyID != "") {
+            ReadOnlyComID = true;
+        } else {
+            ReadOnlyComID = false;
+        }
+        if (string.IsNullOrEmpty(txtcom_id)) {
+            txtcom_id = h.CompanyID;
+        }
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9201");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+        var h = companyService.DocSet.ComInfo;
+        if (h.CompanyID == "") {
+            isShowDelete = false;
+        }
+        if (!login.CanCreate(login.LoginInfo, "9201")) {//9201 บริษัทและสาขา
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "9201")) { //9201 บริษัทและสาขา
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "9201")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+    async Task LoadData() {
+
+        LoadDropDown();
+        BindData();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void LoadDropDown() {
+        var uirc = login.LoginInfo.UserInRCompany;
+        var uic = login.LoginInfo.UserInCompany;
+        ComList = CompanyService.ListCompany(uirc);
+        ComGroupList = CompanyService.ListCompanyGroup(null, uirc);
+        cboBankCode = BookBankService.ListBank(false);
+        cboPromtpayType = BookBankService.ListPromptPayType();
+        listPriceTaxcon = MasterTypeService.ListType("", "SALE RPICE TAX CON", false);
+    }
+
+    bool ValidData() {
+        var h = companyService.DocSet.ComInfo;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        string mobile = h.Mobile.Trim().Replace(".", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+        if (string.IsNullOrEmpty(txtcom_id)) {
+            Errmsg = "ระบุรหัสบริษัท";
+            isvalid = false;
+        }
+
+        //h.Mobile = mobile;
+        //if (h.Mobile == "") {
+        //    Errmsg = "ระบุเบอร์";
+        //    isvalid = false;
+        //}
+
+        if (h.Name1 == "") {
+            Errmsg = "ระบุชื่อ 1";
+            isvalid = false;
+        }
+
+        //if (h.TaxID == "") {
+        //    Errmsg = "ระบุเลขผู้เสียภาษี";
+        //    isvalid = false;
+        //}
+        if (selected_rootCompany == "") {
+            Errmsg = "ระบุ ต้นสังกัด";
+            isvalid = false;
+        }
+        //if (selected_ComGroup == "") {
+        //    Errmsg = "ระบุ กลุ่ม";
+        //    isvalid = false;
+        //}
+
+        if (h.ShortCode == "") {
+            Errmsg = "ระบุ ชื่อย่อ";
+            isvalid = false;
+        }
+
+        var isdup = CompanyService.checkIsDupShortID(h.CompanyID, h.ShortCode);
+        if (isdup) {
+            Errmsg = "ชื่อย่อซ้ำในระบบ";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    private bool PrepairDataSave() {
+        var h = companyService.DocSet.ComInfo;
+        var u = login.LoginInfo;
+        bool isnew = h.CompanyID == "" ? true : false;
+
+        if (isnew) {
+            h.CreatedBy = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(txtcom_id)) {
+                h.CompanyID = txtcom_id;
+                companyService.DocSet.NeedRunNextID = false;
+            }
+        } else {
+            h.ModifiedBy = login.LoginInfo.CurrentUser;
+        }
+        h.RCompanyID = selected_rootCompany;
+        h.GroupCode = selected_ComGroup;
+
+        h.BankCode = selectBankCode;
+        h.PromptPayAccType = SelectPromtpayType;
+        h.PriceTaxCondType = SelectPriceTaxcon;
+
+        return isnew;
+    }
+
+    public async void SaveDoc() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var h = companyService.DocSet.ComInfo;
+
+        var isnew = PrepairDataSave();
+        var rs = CompanyService.Save(companyService.DocSet, isnew);
+
+        if (rs.Result == "ok") {//save successufull
+            var customer = CustomerService.ConvertCompany2Customer(companyService.DocSet.ComInfo);
+            var rsc = CustomerService.SaveCustomerByCompany(customer);
+            if (rsc.Result == "fail") {
+                await Swal.FireAsync("", rsc.Message1, "error");
+                return;
+            }
+
+            companyService.DocSet = await Task.Run(() => companyService.GetDocSet(h.CompanyID, rcom));
+            if (isnew) {
+                await sessionStorage.SetItemAsync(CompanyService.sessionActiveId, h.CompanyID);
+            }
+            LoadData();
+            await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+    }
+
+    async Task NewDoc() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        await sessionStorage.RemoveItemAsync(CompanyService.sessionActiveId);
+        companyService.DocSet = companyService.NewTransaction(rcom);
+        txtcom_id = "";
+        await LoadData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //public void ChangeAddr(vw_ThaiPostAddress data) {
+    //    companyService.DocSet.ComInfo.AddrProvince = data.PROVINCE_NAME;
+    //    companyService.DocSet.ComInfo.AddrAmphoe = data.BORDER_NAME;
+    //    companyService.DocSet.ComInfo.AddrTumbon = data.DISTRICT_NAME;
+    //    companyService.DocSet.ComInfo.AddrPostCode = data.DISTRICT_POSTAL_CODE;
+    //}
+
+    public void ValueChangeAddr(string value) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        if (!string.IsNullOrEmpty(value)) {
+            var addrid = value.ToString();
+
+            var data = AddressService.GetViewThaiPostAddress(addrid);
+            if (data != null) {
+                companyService.DocSet.ComInfo.AddrProvince = data.PROVINCE_NAME;
+                companyService.DocSet.ComInfo.AddrAmphoe = data.BORDER_NAME;
+                companyService.DocSet.ComInfo.AddrTumbon = data.DISTRICT_NAME;
+                companyService.DocSet.ComInfo.AddrPostCode = data.DISTRICT_POSTAL_CODE;
+            }
+        } else {
+            SelectAddr = "";
+        }
+    }
+
+    async public Task LoadThaiAddr() {
+        ListAddr = await Task.Run(() => AddressService.ListThaiPostAddress());
+    }
+
+    #region add Table
+
+    bool ValidLineData() {
+        var h = companyService.DocSet.ComInfo;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.CompanyID == "") {
+            Errmsg = "ระบุ สาขา";
+            isvalid = false;
+        }
+
+        if (TableID == "") {
+            Errmsg = "ระบุ หมายเลขโต๊ะ";
+            isvalid = false;
+        }
+        if (TableName == "") {
+            Errmsg = "ระบุ ชื่อโต๊ะ";
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(Sort)) {
+            Errmsg = "ระบุ จัดเรียง";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void AddTable() {
+        if (!ValidLineData()) {
+            return;
+        }
+
+        var h = companyService.DocSet.ComInfo;
+        POS_Table table = CompanyService.NewTable(login.LoginInfo.CurrentRootCompany.CompanyID, h.CompanyID);
+
+        table.TableID = TableID;
+        table.TableName = TableName;
+
+        int xSort = 0;
+        int.TryParse(Sort, out xSort);
+        table.Sort = xSort;
+
+        var rs = CompanyService.AddTable(table);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            companyService.DocSet = companyService.GetDocSet(companyService.DocSet.ComInfo.CompanyID, companyService.DocSet.ComInfo.RCompanyID);
+            ResetControl();
+            Swal.FireAsync("", "เพิ่มสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetControl() {
+        TableID = "";
+        TableName = "";
+        Sort = "0";
+    }
+
+    void DeleteTable(POS_Table data) {
+        var rs = CompanyService.DeleteTable(data);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            companyService.DocSet = companyService.GetDocSet(companyService.DocSet.ComInfo.CompanyID, companyService.DocSet.ComInfo.RCompanyID);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    #endregion
+
+
+    #region profile management
+
+    async Task loadProfile() {
+        isUploading = true;
+
+        var i = companyService.DocSet.ComInfo;
+        ImageUrl = FileGo.GetThumbUrl(i.RCompanyID, i.CompanyID, FileGo.Type_CompanyProfile, i.CompanyID);
+        if (string.IsNullOrEmpty(ImageUrl)) {
+            ImageUrl = "/assets/img/applogo.png";
+        }
+        isUploading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnDeleteProfile() {
+        try {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "Warning",
+                    Text = $"ต้องการลบรูปใช่หรือไม่",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+
+
+            if (string.IsNullOrEmpty(result.Value)) {
+                return;
+            }
+
+            //string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //string com = login.LoginInfo.CurrentCompany.CompanyID;
+            var h = companyService.DocSet.ComInfo;
+            string user = login.LoginInfo.CurrentUser;
+
+
+            isUploading = true;
+            var rr = await Task.Run(() => fileGo.DeleteFile(h.RCompanyID, h.CompanyID, FileGo.Type_CompanyProfile, h.CompanyID, user));
+            if (rr.Result == "ok") {
+                await loadProfile();
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "error");
+            }
+
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task DownLoadImage() {
+        try {
+            var i = companyService.DocSet.ComInfo;
+            string file_url = FileGo.GetFileUrl(i.RCompanyID, i.CompanyID, FileGo.Type_CompanyProfile, i.CompanyID);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+        }
+    }
+
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = companyService.DocSet.ComInfo.CompanyID;
+        var h = companyService.DocSet.ComInfo;
+        if (string.IsNullOrEmpty(h.CompanyID)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+
+        string user = login.LoginInfo.CurrentUser;
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                //var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                //imgUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_CompanyProfile, h.RCompanyID, h.CompanyID, h.CompanyID);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+            }
+            await Upload();
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task Upload() {
+        try {
+            var h = companyService.DocSet.ComInfo;
+            string user = login.LoginInfo.CurrentUser;
+            isUploading = true;
+            var login_filego = FileGo.GetFileGoLogin();
+
+            string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            } else {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail") {
+                    upload_file.Clear();
+                    await Swal.FireAsync("Error", update_result.Message1, "error");
+                } else {
+                    //ShowMessage(true, "Upload Success");
+
+                    var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+                    var rr = FileGo.SaveXFileRef(xfile_ref);
+                    var rrr = await Task.Run(() => fileGo.DeleteOldFileAfterSave(h.RCompanyID, h.CompanyID, FileGo.Type_CompanyProfile, h.CompanyID, user));
+                    await loadProfile();
+                }
+            }
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+    async void Back() {
+        //nav.NavigateTo($"Master/UserGroupList", false);
+        //await InvokeAsync(StateHasChanged);
+        var url = pageHistory.GetGoBackPage();
+        nav.NavigateTo(companyService.PreviousPageUrl);
+        //nav.NavigateTo("Master/CompanyList");
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    async Task TestApi() {
+        var login_filego = FileGo.GetTestLogin();
+        string dataEndpointUri = $"{login_filego.RootUrl}/api/Values/GetData";
+        try {
+
+
+            // string dataEndpointUri = $"http://192.168.1.200:765/api/Values/GetData";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => clientService.GetAllAsync<string>(dataEndpointUri));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+                await Swal.FireAsync("ZZZ", query.StatusCode + " : " + dataEndpointUri, "success");
+            } else {
+                var o = (string)query.Result;
+                await Swal.FireAsync("XXX", o + " : " + dataEndpointUri, "success");
+            }
+        } catch (Exception ex) {
+            await Swal.FireAsync("YYY", ex.Message + " : " + dataEndpointUri, "success");
+        } finally {
+            isUploading = false;
+        }
+    }
+    #endregion
+
+}

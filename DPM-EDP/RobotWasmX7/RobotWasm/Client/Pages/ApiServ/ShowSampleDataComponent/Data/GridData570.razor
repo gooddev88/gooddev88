@@ -1,0 +1,236 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.Data
+@using RobotWasm.Shared.Data.DimsDB;
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DATA570</h4>
+        <h5>สถานะเครื่องจักรกลสาธารณภัย แบ่งตามจังหวัด</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+ 
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata"
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sk1_id))" Title="sk1_id" DisplayFormat="{0:n0}" Width="110px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.equipid))" Title="equipid" DisplayFormat="{0:n0}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.typedesc))" Title="typedesc" Width="160px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.ecde))" Title="ecde" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.amount))" Title="amount" DisplayFormat="{0:n0}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.brand))" Title="brand" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.mcmodel))" Title="mcmodel" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.chassisno))" Title="chassisno" Width="160px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.licno))" Title="licno" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.licdesc))" Title="licdesc" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.licdate))" Title="licdate" DisplayFormat="{0:dd/MM/yyyy}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.engbrand))" Title="engbrand" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.engmodel))" Title="engmodel" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.fueltype))" Title="fueltype" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.engno))" Title="engno" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.cc))" Title="cc" DisplayFormat="{0:n2}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.hp))" Title="hp" DisplayFormat="{0:n2}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.motorbrand))" Title="motorbrand" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.motormodel))" Title="motormodel" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.moterno))" Title="moterno" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.motorpower))" Title="motorpower" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.transmiss))" Title="transmiss" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.transmissdesc))" Title="transmissdesc" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sk2))" Title="sk2" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.daterate))" Title="daterate" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.datefirst))" Title="datefirst" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.pricefirst))" Title="pricefirst" DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.transferfrom))" Title="transferfrom" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.oldcode))" Title="oldcode" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.daterec))" Title="daterec" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.imagefile))" Title="imagefile" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.srcbudget))" Title="srcbudget" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.budgetdesc))" Title="budgetdesc" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sources))" Title="sources" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sourcesdesc))" Title="sourcesdesc" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.createby))" Title="createby" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.createdate))" Title="createdate" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.updateby))" Title="updateby" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.updatedate))" Title="updatedate" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.active))" Title="active" DisplayFormat="{0:n0}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.auditby))" Title="auditby" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.auditdate))" Title="auditdate" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.status))" Title="status" DisplayFormat="{0:n0}" Width="120px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sv_name))" Title="sv_name" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sv_posi))" Title="sv_posi" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sv_posi))" Title="sv_posi" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.ad_name))" Title="ad_name" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.ad_posi))" Title="ad_posi" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.daterec))" Title="daterec" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.dispose))" Title="dispose" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.datedispose))" Title="datedispose" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.dpid))" Title="dpid" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.mtypeid))" Title="mtypeid" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.typename_th))" Title="typename_th" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.typecode))" Title="typecode" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.groupcode))" Title="groupcode" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.mgroupid))" Title="mgroupid" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.groupname))" Title="groupname" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.motorunit))" Title="motorunit" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.unitid))" Title="unitid" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.unitname))" Title="unitname" Width="180px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.inttials))" Title="inttials" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sprovincename))" Title="sprovincename" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.sampname))" Title="sampname" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.stambonname))" Title="stambonname" Width="140px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.is_lot))" Title="is_lot" DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.imageupdate))" Title="imageupdate" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                            <GridColumn Field="@(nameof(emc_sk1all_cms.etl_date))" Title="etl_date" DisplayFormat="{0:dd/MM/yyyy H:mm}" Width="150px" />
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "x";
+    public Data570Set.DocSet data_set { get; set; }
+    public List<emc_sk1all_cms> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=data570");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<Data570Set.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                        isLoading = false;
+                return;
+            }
+            data_set = (Data570Set.DocSet)query.Result;
+            ndata = data_set.rows;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

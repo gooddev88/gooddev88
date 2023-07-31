@@ -1,0 +1,322 @@
+﻿@page "/Master/Location/LocDetail"
+@using System.Text.Json
+@using System.Text
+
+@using Blazorise
+@using Blazorise.Extensions;
+@using Microsoft.IdentityModel.Tokens;
+@using Robot.Data.DA.Document;
+@using Robot.Data.DA.HR;
+@using static Robot.Data.ML.I_Result;
+
+@inject LocService locService
+<style>
+    .k-input-spinner {
+        display: none;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+     
+
+        @if (@ShowTopic) {
+
+            <div class="row pt-1">
+                <div class="col-md-9 mx-auto">
+                    <div class="row">
+                        <div class="col-12">
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card shadow-sm  bg-white rounded">
+                                        <div class="card-body">
+                                            <div class="row"> 
+                                                        <div class="col-md-6">
+                                                            <h4>
+                                                                <a @onclick="Backlist">
+                                                                    <i class="fas fa-reply-all"></i>&nbsp;  @menuCaption
+
+                                                                </a>
+                                                            </h4>
+                                                          
+                                                        </div> 
+                                                            <div class="col-md-6 text-end">
+                                                                <a @onclick="@OnDelete" class="text-decoration-none">
+                                                                    <i class="far fa-trash-alt"></i>
+                                                                    ลบ
+                                                                </a>
+                                                            </div>
+                                            </div>
+                                                    <div class="row pt-1">
+                                                        <div class="card-body">
+                                                            <div class="row">
+                                                                
+                                                                
+                                                        <div class="col-md-12">
+                                                            <small>รหัสคลัง</small>
+
+                                                            <TelerikTextBox @bind-Value="@locService.DocSet.locationInfo.LocID"
+                                                                                FillMode="@FillMode" Size="@ThemeConstants.DropDownList.Size.Small" 
+                                                                                Enabled=@IsReadOnly />
+
+                                                        </div>
+
+                                                        <div class="col-md-12">
+                                                            <small>ชื่อคลัง</small> 
+                                                                    <TelerikTextBox @bind-Value="@locService.DocSet.locationInfo.Name"
+                                                                                FillMode="@FillMode"
+                                                                                Size="@ThemeConstants.DropDownList.Size.Small"
+                                                                                /> 
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <small>Loc Code</small>
+                                                            <TelerikTextBox @bind-Value="@locService.DocSet.locationInfo.LocCode"
+                                                                        FillMode="@FillMode"
+                                                                        Size="@ThemeConstants.DropDownList.Size.Small" />
+                                                        </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div class="row pt-2">
+                                                        <div class="col-6">
+
+                                                            <a @onclick="@btnSave" class="text-decoration-none">
+                                                                <i class="far fa-save"></i> บันทึก
+                                                            </a>
+
+
+                                                        </div>
+
+                                                    </div> 
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        }
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter] public string topic { get; set; } = "";
+    bool isLoading = true;
+    bool isShowSave = true;
+    bool isShowNew = true;
+    bool isShowApprove = false;
+    bool isShowCancel = false;
+    bool isUploading = true;
+    bool ShowTopic = true;
+    bool ShowQuestion = false;
+    bool ShowChoice = false;
+
+    public bool IsReadOnly { get; set; } = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+
+
+    public string Remark { get; set; } = "";
+    public string keyword { get; set; } = "";
+
+    public string FillMode { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+
+
+
+    protected override async Task OnInitializedAsync() {
+        //pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await LoadDropDown();
+        await Task.Run(LoadDropDownList);
+
+
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task CheckIsRefresh() {
+        if (locService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(LocService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                locService.DocSet = locService.GetDocSet(0,rcom,com);
+            } else {
+                string d_type = topic == null ? "" : topic;
+                await sessionStorage.RemoveItemAsync(LocService.sessionActiveId);
+                locService.DocSet = locService.NewTransaction( rcom, com);
+            }
+        }
+    }
+
+
+
+
+    async void LoadData() {
+        isLoading = true;
+        //var h = locService.DocSet.locService;
+        BindData();
+        SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetActiveControl() {
+        var h = locService.DocSet.locationInfo;
+        if (h.LocID != "") {
+            IsReadOnly = false;
+        } else {
+            IsReadOnly = true;
+        }
+        CheckPermission();
+    }
+    private void CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "171");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+
+        if (!login.CanCreate(login.LoginInfo, "171")) {//171 คลัง
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "171")) {
+        }
+        if (!login.CanOpen(login.LoginInfo, "171")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+
+    async void LoadDropDownList() {
+
+    }
+    async private Task LoadDropDown() {
+
+    }
+    public void BindData() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var h = locService.DocSet.locationInfo;
+
+
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    bool ValidData() {
+        var h = locService.DocSet.locationInfo;
+        bool isvalid = true;
+        string Errmsg = "";
+        return isvalid;
+    }
+
+    private bool PrepairDataSave() {
+        var h = locService.DocSet.locationInfo;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var createby = login.LoginInfo.CurrentUser;
+        var modified_by = login.LoginInfo.CurrentUser;
+        var modified_date = DateTime.Now.Date;
+
+        bool isnew = h.ID == 0 ? true : false;
+
+        //CreateTag();
+
+        return isnew;
+    }
+
+
+    public async void btnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        var h = locService.DocSet.locationInfo;
+
+        var isnew = PrepairDataSave();
+        var r = LocService.Save(locService.DocSet, isnew, login.LoginInfo);
+        if (r.Result == "ok") {//save successufull
+
+            locService.DocSet = await Task.Run(() => locService.GetDocSet(h.ID, rcom, com));
+            if (isnew) {
+                await sessionStorage.SetItemAsync(LocService.sessionActiveId, h.ID);
+            }
+            LoadData();
+            await Swal.FireAsync("Success", "Save successful", "success");
+        } else {
+            if (isnew) {
+                h.ID = 0;
+            }
+            await Swal.FireAsync("Error", r.Message1, "error");
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+
+    public async void OnDelete() {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันลบแบบสอบถาม",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+        var h = locService.DocSet.locationInfo;
+        var r = LocService.Delete(h.ID,rcom,com,user);
+        if (r.Result == "ok") {
+            await Swal.FireAsync("Success", r.Message1, "success");
+            nav.NavigateTo($"/Master/Location/LocList", false);
+        } else {
+            await Swal.FireAsync("Error", r.Message1, "error");
+        }
+
+
+    }
+
+
+
+
+
+
+    async void Backlist() {
+        nav.NavigateTo($"/Master/Location/LocList", false);
+
+
+    }
+
+
+
+
+}

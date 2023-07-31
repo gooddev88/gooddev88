@@ -1,0 +1,216 @@
+﻿@page "/Order/SelectPromotion"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using static RobotWasm.Shared.Data.DA.SOFuncService;
+
+<style>
+
+    div.noSelect {
+        -moz-user-select: none; /* Mozilla browsers */
+        -khtml-user-select: none; /* WebKit browsers */
+        user-select: none; /* Standard syntax */
+    }
+    .xx-small {
+        font-size: xx-small;
+    }
+
+    .small {
+        font-size: small;
+    }
+
+    .medium {
+        font-size: medium;
+    }
+
+    .img-fluid {
+        margin: auto;
+    }
+
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">Promotion</span></div>
+        </div>
+    </a>
+
+</div>
+
+@if (_soService.DocSet != null) {
+    <div class="row">
+        <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+
+  
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+
+                        
+ 
+
+                            <div class="row pt-2">
+                                <div class="col-md-12">
+                                    @if (_soService.PromotionList != null) { 
+                                        @if (_soService.PromotionList.Count() > 0) {
+                                            @foreach (var p in _soService.PromotionList) {
+
+                                                <a class="p-0 text-decoration-none text-dark" @onclick="() => SelectPro(p)">
+                                                    <div class="row pt-1 noSelect">
+
+                                                        <div class="col-12 text-start">
+                                                            <div><strong style="font-size:small;">@p.ProDesc</strong></div>
+
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                                <hr class="my-3" />
+                                            }
+                                         
+                                    } else {
+                                        <div class="row">
+                                            <div class="col-6 mx-auto">
+                                                <img src="/img/no_data.jpg" style="width: 100%;" />
+                                                <div class="text-center">ไม่พบโปรโมชั่น</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    } 
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+    public string rcom { get; set; } = "";
+    public string com { get; set; } = "";
+
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadDropDown());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID;
+        var user = login.LogInInfo.CurrentUser;
+        var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+        if (_soService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID);
+            if (!string.IsNullOrEmpty(docid)) {
+                _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+            } else {
+                _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                _soService.DocSet.Head.BrandID = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_BrandID);
+                try {
+                    var lat = await sessionStorage.GetItemAsync<string>(Globals.SessionLat);
+                    var lon = await sessionStorage.GetItemAsync<string>(Globals.SessionLon);
+                    _soService.DocSet.Head.TName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaTName);
+                    _soService.DocSet.Head.AName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaAName);
+                    _soService.DocSet.Head.PName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaPName);
+                    _soService.DocSet.Head.Lat = Convert.ToDecimal(lat);
+                    _soService.DocSet.Head.Lon = Convert.ToDecimal(lon);
+                } catch (Exception) {
+
+                }
+                GoBack();
+            }
+        }
+    }
+
+    async void LoadDropDown() {
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() { 
+        var h = _soService.DocSet.Head; 
+        if (_soService.PromotionList == null) {
+            _soService.PromotionList = new List<Promotions>();
+        }
+
+        _soService.PromotionList = await Task.Run(() => _soService.ListPromotion(h.RComID,h.ComID,h.OrdDate));
+
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+
+
+    void GoSelectCustomer() {
+        nav.NavigateTo("Order/SelectCustomer");
+    }
+
+    async void SelectPro(Promotions select_item) {
+        //async public Task<I_PromotionSet> GetPromotion(string rcom, string com, string brandid, string cateid, string locid, string proid) {
+        var h = _soService.DocSet.Head;
+        _soService.PromotionSet = await Task.Run(() => _promotionService.GetPromotionSet(h.RComID, h.ComID, h.BrandID, "", h.ShipFrLocID, select_item.ProID));
+       nav.NavigateTo("Order/SelectProduct");
+             await InvokeAsync(StateHasChanged);
+        //if (select_item.PatternID=="P000") {
+        //    _soService.PromotionSet = await Task.Run(() => _soService.GetPromotion(h.RComID, h.ComID,h.BrandID,"",h.ShipFrLocID, select_item.ProID));
+        //    nav.NavigateTo("Order/SelectProduct");
+        //    await InvokeAsync(StateHasChanged);
+        //}else {
+        //    _soService.PromotionSet = await Task.Run(() => _soService.GetPromotion(h.RComID, h.ComID, select_item.ProID));
+        //   // nav.NavigateTo("Order/ProductInOrder");
+        //    nav.NavigateTo("Order/SelectProduct");
+        //   await InvokeAsync(StateHasChanged);
+        //}
+
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Order/OrderDetail");
+    }
+}

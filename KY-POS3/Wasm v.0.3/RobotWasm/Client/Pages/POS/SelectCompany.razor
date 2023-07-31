@@ -1,0 +1,136 @@
+﻿@page "/POS/SelectCompany"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Client.Helper.DeviceHelper;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@inject IJSRuntime JSRuntime
+
+<style>
+
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">เลือกสาขา</span></div>
+        </div>
+    </a>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body pb-0">
+                @foreach (var l in ListCompany) {
+                    <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectCom(l))">
+                        <div class="row pt-1">
+                            <div class="col-2">
+                                <img class="me-3" src="/img/menulogo.png" alt="" width="48" height="48">
+                            </div>
+                            <div class="col-10 text-start pe-0 pt-2">
+                                <span style="font-size: calc(0.60em + 1.5vmin);">@l.Name</span>
+                            </div>
+                        </div>
+                    </a>
+                    <hr class="my-2" />
+                    @*                    <div class="row pt-1">
+                <div class="col-12">
+                <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectCom(l))">
+                <div class="d-inline"><span style="font-size:large;">@l.Name</span></div>
+                <div class="d-inline float-end"><i class="fa-solid fa-angle-right" style="font-size: 1.5em;"></i></div>
+                </a>
+                </div>
+                </div>
+                <hr class="my-3" />*@
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    List<CompanyInfoList> ListCompany = new List<CompanyInfoList>();
+    public BrowserInfo browserInfo { get; set; }
+    protected BrowserDetectJsInterop deviceModule { get; private set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            deviceModule = new BrowserDetectJsInterop(JSRuntime);
+            browserInfo = await deviceModule.BrowserInfo();
+            firstRender = false;
+        }
+    }
+
+    async void LoadData() {
+        ListCompany = await _companyService.ListCompanyInfoByComID(login.LogInInfo.UserInCompany);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnSelectCom(CompanyInfoList select_data) {
+
+        string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+        if (com != null) {
+            if (select_data.CompanyID != com) {
+                await _localStorage.RemoveItemAsync("kitchen_Fiter");
+            }
+        }
+        await _localStorage.RemoveItemAsync(Globals.localStorageComID);
+        await _localStorage.SetItemAsync(Globals.localStorageComID, select_data.CompanyID);
+
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        var rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID);
+        LoginRequest n = new LoginRequest { UserName = user, Password = "silent", Rcom = rcom, Com = select_data.CompanyID, Apps = "", RememberMe = true };
+        login.LogInInfo= await Task.Run(() => login.DoLogin(n));
+
+
+        bool IsMobile = false;
+        if (browserInfo != null) {
+            List<string> DeviceType = new List<string> { "mobile" };
+            IsMobile = DeviceType.Contains(browserInfo.DeviceType);
+            //IsMobile = Convert.ToBoolean(browserInfo.IsMobile);
+        }
+
+        if (IsMobile) {
+            nav.NavigateTo($"Dashboard/FirstBoard", false);
+        } else{
+            if (string.IsNullOrEmpty(login.LogInInfo.CurrentCompany.ShortCode)) {
+                await Swal.FireAsync("", "ตั้งชื่อย่อ สาขาก่อนเปิดบิลขาย", "error");
+                return;
+            }
+
+            await sessionStorage.RemoveItemAsync(Globals.SessionActive_PosID);
+            _posService.DocSet = null;
+            nav.NavigateTo($"POSD/POSSaleDetail", false);
+        }
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Dashboard/FirstBoard");
+    }
+}

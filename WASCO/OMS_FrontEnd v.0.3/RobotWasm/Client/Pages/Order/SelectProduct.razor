@@ -1,0 +1,388 @@
+﻿@page "/Order/SelectProduct"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Order;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using static RobotWasm.Shared.Data.DA.SOFuncService;
+
+<style>
+
+    .xx-small {
+        font-size: xx-small;
+    }
+
+    .small {
+        font-size: small;
+    }
+
+    .medium {
+        font-size: medium;
+    }
+
+    .img-fluid {
+        margin: auto;
+    }
+
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+
+    .k-checkbox {
+        border-color: black;
+        background-color: #ffffff;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">รายการสินค้า</span></div>
+        </div>
+    </a>
+
+</div>
+
+@if (_soService.DocSet != null) {
+    <div class="row">
+        <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+         
+            <div class="row pt-2">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row pb-2">
+                                <div class="col-12">
+                                    @if (_soService.PromotionSet != null) {
+                                        <a @onclick="GoPromotion">
+                                            <img src="/img/Home/price_tag.png" style="width:20px" /> &nbsp;
+                                            <span style="font-size:large">@_soService.PromotionSet.Promotion.ProDesc</span>
+                                        </a>
+                                     
+                                    }<br>
+                                    <span Style="font-size:small">หมวดหมู่</span>
+                                </div>
+                              
+                            </div>
+                            <div class="row">
+                                <div class="col-12 text-end">
+                                    <TelerikCheckBox Id="chkIsShowNoStock" @bind-Value="@chkIsShowNoStock"></TelerikCheckBox>
+                                    <label for="chkIsShowNoStock" style="font-size:smaller">แสดงที่ไม่มีสต๊อก</label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                @if (ListCateProduct!=null) {
+                                    @foreach (var l in ListCateProduct.Take(12).OrderBy(o => o.Sort)) {
+                                        <div class="col-3 text-center">
+                                            <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await SelectCate(l))">
+                                                <div><i class="fa-brands fa-product-hunt fa-3x" style="color:orange;"></i></div>
+                                                <span class="medium">@l.Description1</span>
+                                            </a>
+                                        </div>
+                                    }
+                                }
+                            
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <span class="d-inline-block"> เลือกสินค้า</span>
+                                    <div class="d-inline-block float-end">
+                                        <h4 class="badge bg-warning text-dark medium">@(Cate == "" ? "ALL" : Cate)</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <TelerikTextBox PlaceHolder="คำค้นหาสินค้า" Class="box-sd-inputsearch form-control rounded" Value="@SearchText" ValueChanged="@OnTextChanged_ListProduct"></TelerikTextBox>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-md-12">
+                                    @if (_soService.PromotionSet != null) {
+
+
+                                        @if (ListItem.Count() > 0) {
+                                            <TelerikListView Data="@ListItem" Pageable="true" Page="1" PageSize="20">
+                                            <Template>
+                                                <a class="p-0 text-decoration-none text-dark" @onclick="() => AddLineItem(context)">
+                                                <div class="row pt-1">
+                                                    <div class="col-4">
+                                                            <img class="m-auto" src="@context.ImageUrl" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                                                     style="width: 180px;object-fit: cover;width:180px;height:auto" />
+                                                    </div>
+                                                    <div class="col-8 text-start">
+                                                        <div><strong style="font-size:small;">@context.ItemID @context.ItemName</strong></div>
+                                                        <div>
+                                                                    @if (@context.IsSpecialPrice) {
+                                                                        <span class="medium">ราคาพิเศษ <img src="/img/icon/sale-icon.png" style="width:30px" /> </span>
+                                                                       
+                                                                        <b>&nbsp; @context.PriceProIncVat.ToString("n2")</b>
+                                                                    } else {
+                                                                        <span class="medium">ราคา <b>@context.PriceIncVat.ToString("n2")</b></span>
+                                                                    }
+
+                                                                <span class="medium" >เหลือ <span class="badge bg-success">@context.BalQty.ToString("n0")</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </a>
+                                                <hr class="my-3" />
+                                            </Template>
+                                        </TelerikListView>
+                                    } else {
+                                        <div class="row">
+                                            <div class="col-6 mx-auto">
+                                                <img src="/img/no_data.jpg" style="width: 100%;" />
+                                                <div class="text-center">ไม่พบสินค้า</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    } 
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+    public string rcom { get; set; } = "";
+    public string com { get; set; } = "";
+    string SearchText = "";
+    string Cate = "";
+    bool chkIsShowNoStock = false;
+    List<vw_MasterTypeLine> ListCateProduct = new List<vw_MasterTypeLine>();
+    List<ItemDesplay> ListItem = new List<ItemDesplay>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadDropDown());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID;
+        var user = login.LogInInfo.CurrentUser;
+        var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+        if (_soService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID);
+            if (!string.IsNullOrEmpty(docid)) {
+                _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+            } else {
+                _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                _soService.DocSet.Head.BrandID = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_BrandID);
+                try {
+                    var lat = await sessionStorage.GetItemAsync<string>(Globals.SessionLat);
+                    var lon = await sessionStorage.GetItemAsync<string>(Globals.SessionLon);
+                    _soService.DocSet.Head.TName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaTName);
+                    _soService.DocSet.Head.AName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaAName);
+                    _soService.DocSet.Head.PName = await sessionStorage.GetItemAsync<string>(Globals.SessionAreaPName);
+                    _soService.DocSet.Head.Lat = Convert.ToDecimal(lat);
+                    _soService.DocSet.Head.Lon = Convert.ToDecimal(lon);
+                } catch (Exception) {
+
+                }
+                GoBack();
+            }
+        }
+    }
+
+    async void LoadDropDown() {
+        ListCateProduct = await _masterTypeService.ListViewMasterType(rcom, "ITEM CATE", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() { 
+        var h = _soService.DocSet.Head;
+        if (chkIsShowNoStock) {
+            ListItem = _soService.PromotionSet.PromotionItems.Where(o =>
+                                                             (o.ItemID.ToLower().Contains(SearchText.ToLower())
+                                                             || o.ItemName.ToLower().Contains(SearchText.ToLower())
+                                                             || SearchText == ""
+                                                             )
+
+     ).ToList();
+        }else {
+            ListItem = _soService.PromotionSet.PromotionItems.Where(o =>
+                                                             (o.ItemID.ToLower().Contains(SearchText.ToLower())
+                                                             || o.ItemName.ToLower().Contains(SearchText.ToLower())
+                                                             || SearchText == ""
+                                                             ) && o.BalQty!=0
+
+     ).ToList();
+        }
+ 
+        //if (_soService.ListProduct == null) {
+        //    _soService.ListProduct = new List<ItemDesplay>();
+        //}
+
+        //if (_soService.ListProduct.Count() == 0) {
+        //    _soService.ListProduct = await Task.Run(() => _soService.ListSaleItemSelect(h.BrandID, Cate)); 
+        //}
+        //_soService.PromotionSet = await Task.Run(() => _soService.ListSaleItemSelect(h.RComID,h.ComID,h.BrandID, Cate,h.ShipFrLocID,));
+        //if (!string.IsNullOrEmpty(SearchText)) {
+        //    _soService.ListProduct = _soService.ListProduct.Where(o => o.ItemName.Contains(SearchText)).ToList();
+        //}
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    public async void OnTextChanged_ListProduct(object Search) {
+        SearchText = Search == null ? "" : Search.ToString(); 
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    async Task SelectCate(vw_MasterTypeLine select_data) {
+        if (select_data != null) {
+            Cate = select_data.ValueTXT;
+            await Task.Run(LoadData);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void GoSelectCustomer() {
+        nav.NavigateTo("Order/SelectCustomer");
+    }
+
+    async void AddLineItem(ItemDesplay select_item) {
+        var doc = _soService.DocSet;
+        _soService.DocSet = SOFuncService.AddLine(rcom, com, doc);
+        doc.LineActive.Qty = doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum).Sum(o => o.Qty);
+        //var item = _soService.ListProduct.Where(o => o.ItemID == doc.LotActive.ItemID).FirstOrDefault();
+        doc.LineActive.ItemID = select_item.ItemID;
+        doc.LineActive.ItemName = select_item.ItemName;
+        doc.LineActive.IsSpecialPrice = select_item.IsSpecialPrice;
+        doc.LineActive.PriceIncVat = select_item.PriceIncVat;
+        if (select_item.IsSpecialPrice) {
+            doc.LineActive.PriceIncVat = select_item.PriceProIncVat;
+        }else {
+            doc.LineActive.PriceIncVat = select_item.PriceIncVat;
+        }
+        doc.LineActive.PatternID = _soService.PromotionSet.Promotion.PatternID;
+        doc.LineActive.ProID = _soService.PromotionSet.Promotion.ProID;
+        doc.LineActive.ProName = _soService.PromotionSet.Promotion.ProDesc;
+        doc.LineActive.IsComplete = true;
+        doc.LineActive.ImageUrl = select_item.ImageUrl;
+        doc.LineActive.LocID = select_item.LocID;
+        doc.LineActive.QtyShip = select_item.BalQty;
+        doc.LineActive.ImageUrl = select_item.ImageUrl;
+        doc.LineActive.Unit = select_item.UnitID;
+
+        //doc.LineActive.BaseTotalAmtIncVat = select_item.PriceIncVat * doc.LineActive.Qty;
+        //doc.LineActive.TotalAmtIncVat = doc.LineActive.BaseTotalAmtIncVat -( doc.LineActive.DiscAmtIncVat * doc.LineActive.Qty)
+        // doc = SOFuncService.CalDocSet(doc);
+
+        nav.NavigateTo("Order/ProductInOrder");
+        await InvokeAsync(StateHasChanged);         
+        #region delete
+        //var data = await _stockBalanceService.GetListViewSTKBalByItemId(rcom, com, select_item.ItemID);
+        //if (data.Count() > 0) {
+        //    _soService.DocSet= SOFuncService.AddLine(rcom, com, doc);
+        //    foreach (var l in data) {
+        //        var locinfo = await _companyService.GetLocationInfoByLocID(rcom,com,l.LocID);
+        //        vw_OSOLot n = new vw_OSOLot();
+        //        n.RComID = rcom;
+        //        n.ComID = com;
+        //        n.OrdID = "";
+        //        n.LineLineNum = doc.LineActive.LineNum;
+        //        n.LineNum = SOFuncService.GenLotLineNum(doc);
+        //        n.DocTypeID = doc.LineActive.DocTypeID;
+        //        n.OrdDate = DateTime.Now.Date;
+        //        n.CustID = doc.Head.CustID;
+        //        n.ItemID = l.ItemID;
+        //        n.ItemName = l.ItemName;
+        //        n.IsStockItem = true;
+        //        n.Qty = l.BalQty > 0 ? 1 : 0;
+        //        n.QtyBal = l.BalQty;
+        //        n.Unit = l.UnitID;
+        //        n.LocID = l.LocID;
+        //        n.LocName = locinfo?.Name ?? "ไม่พบ";
+        //        n.LotNo = "";
+        //        n.SerialNo = "";
+        //        n.Status = "NEW";
+        //        n.IsActive = true;
+        //        doc.Lot.Add(n);
+        //    }
+        //    doc.LotActive = doc.Lot.Where(o => o.Status == "NEW").OrderByDescending(o => o.LineNum).FirstOrDefault();
+        //    if (data.Count() > 1) {
+        //        nav.NavigateTo("Order/SelectItemInLocation");
+        //        await InvokeAsync(StateHasChanged);
+        //    } else {
+        //        doc.LineActive.Qty = doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum).Sum(o => o.Qty);
+        //        var item = _soService.ListProduct.Where(o => o.ItemID == doc.LotActive.ItemID).FirstOrDefault();
+        //        doc.LineActive.ItemName = item.ItemName;
+        //        doc.LineActive.Price = item.Price;
+        //        doc = SOFuncService.CalDocSet(doc);
+        //        doc.LineActive.TotalAmtIncVat = doc.LineActive.BaseTotalAmt;
+        //        nav.NavigateTo("Order/ProductInOrder");
+        //        await InvokeAsync(StateHasChanged);
+        //    }
+
+        //}
+        #endregion 
+    }
+
+   void GoPromotion() {
+        SOFuncService.ClearPendingLot(_soService.DocSet); 
+        nav.NavigateTo("Order/SelectPromotion");
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Order/OrderDetail");
+    }
+}

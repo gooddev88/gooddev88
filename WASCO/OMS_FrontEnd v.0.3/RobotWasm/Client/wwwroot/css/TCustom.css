@@ -1,0 +1,8 @@
+﻿.loader-container {
+    text-align: center;
+    display: inline-table;
+    padding-top: 10px;
+    position: absolute;
+    left: 50%;
+    top:50%;
+}

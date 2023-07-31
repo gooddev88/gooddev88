@@ -1,0 +1,187 @@
+﻿@page "/POS/POSBillHistory/{pagecomefrom}"
+@layout MainBoardLayout
+@inherits POSBillHistoryBase
+
+
+
+<style>
+
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+
+    label {
+        margin-bottom: 0rem !important;
+    }
+
+    .cursor {
+        cursor: pointer;
+    }
+</style>
+
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+              <div class="row">
+            <div class="col-6"> 
+                    <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Menu/MenuMaster/POS">@menuGroupCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="#">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            <div class="col-6 text-end"> 
+                       <strong style="font-size:large; color:black;">ประวัติขาย</strong>
+            </div>
+        </div>
+
+@*
+        <div class="row pt-2 pb-2">
+            <div class="col-md-12 text-center">
+                <a @onclick="@Back">
+                    <strong style="font-size:xx-large; color:crimson;">ประวัติขาย</strong>
+                </a>
+            </div>
+        </div>*@
+        <hr />
+        <div class="row ">
+            <div class="col-md-3 pt-2">
+                <h3>กรองข้อมูล</h3>
+            </div>
+        </div>
+        <div class="row ">
+            <div class="col-md-3 pt-2">
+
+                <TelerikDatePicker @bind-Value="filter.Begin"
+                                   Format="dd/MM/yyyy">
+                </TelerikDatePicker>
+            </div>
+            <div class="col-md-3  pt-2">
+
+                <TelerikDatePicker @bind-Value="filter.End"
+                                   Format="dd/MM/yyyy">
+                </TelerikDatePicker>
+            </div>
+            <div class="col-md-3  pt-2">
+                <TelerikComboBox @bind-Value="@filter.ComID"
+                                 Data="@ListCompany"
+                                 Placeholder=""
+                                 ItemHeight="35"
+                                 TextField="@nameof(CompanyService.CompanyInfoList.Name)"
+                                 ValueField="@nameof(CompanyService.CompanyInfoList.CompanyID)"
+                                 Filterable="true"
+                                 Size="ThemeConstants.DropDownList.Size.Large"
+                                 Width="100%">
+                </TelerikComboBox>
+
+            </div>
+            <div class="col-md-3  pt-2">
+                <TelerikComboBox @bind-Value="@filter.ShipTo"
+                                 Data="@ListShipTo"
+                                 Placeholder=""
+                                 ItemHeight="35"
+                                 TextField="@nameof(Robot.Data.DA.POSSY.ShipToService.ShipTo.ShipToName)"
+                                 ValueField="@nameof(Robot.Data.DA.POSSY.ShipToService.ShipTo.ShipToID)"
+                                 Filterable="true"
+                                 Size="ThemeConstants.DropDownList.Size.Large"
+                                 Width="100%">
+                </TelerikComboBox>
+            </div>
+        </div>
+        <div class="row ">
+            <div class="col-md-12  pt-2 pb-2">
+                <div class="input-group">
+                    <TextEdit @bind-Text="@filter.Search" PlaceHolder="พิมพ์เพื่อค้นหา" Size="Size.Small" />
+                    <div class="input-group-append">
+                        <a @onclick="@LoadData" class="btn btn-success btn-sm">
+                            <label style="color:white;">ค้นหา</label>
+                        </a>&nbsp;
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (BillHistoryList.Count() != 0) {
+            <div class="row px-3 pt-2">
+                <div class="col-md-12">
+                    <TelerikListView Data=@BillHistoryList
+                                 Pageable="true"
+                                 PageSize="20">
+                        <HeaderTemplate>
+                        </HeaderTemplate>
+                        <Template>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <a style="height: auto; width:100%;" @onclick="@(() => GoToPOSSale(@context))">
+                                        <div class="row">
+                                            <div class="col-8">
+                                                @if (@context.ShipToLocID == "") {
+                                                <strong style="color: black; font-size: medium;">หน้าร้าน- @context.MacNo</strong>
+                                                } else {
+                                                <strong style="color: black; font-size: medium;">@context.ShipToLocID-@context.MacNo</strong>
+                                                } &nbsp;
+                                            <label style="color:black; font-size:small;">@context.INVID</label>&nbsp;
+                                          
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <label style="color:black; font-size:small;">@context.CreatedDate.ToString("dd/MM/yyyy H:mm")</label>&nbsp;
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <label style="color:black; font-size:medium;">สุทธิ <strong>@context.NetTotalAmtIncVat.ToString("n2")</strong> บาท</label>&nbsp;
+                                            <label style="color:black; font-size:small;">@context.BillID</label>&nbsp;
+                                        </div>
+                                        <div class="col-4 text-end">
+                                              @if (@context.TableID == "T-000") {
+                                                <b style="color:black; font-size:small;">กลับบ้าน</b>
+                                                } else {
+                                                <b style="color:black; font-size:small;">โต๊ะ @context.TableName</b>
+                                                }
+                                        </div>
+                                    </div>
+
+                                </a>
+                            </div>
+                        </div>
+                        <hr>
+                    </Template>
+                </TelerikListView>
+
+            </div>
+        </div>
+
+        } else {
+            <div class="text-center">
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <div class="card">
+                            <div class="body">
+                                <h2 style="color: gray;">... ไม่พบบิลขาย ...</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+

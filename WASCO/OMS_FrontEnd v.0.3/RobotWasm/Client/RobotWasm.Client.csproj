@@ -1,0 +1,147 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\DA\Board\**" />
+    <Compile Remove="Data\DA\Document\**" />
+    <Compile Remove="Data\DA\POS\**" />
+    <Compile Remove="Data\DA\Q\**" />
+    <Compile Remove="Data\DA\Tableau\**" />
+    <Compile Remove="Pages\POS\**" />
+    <Compile Remove="Pages\Sample\**" />
+    <Compile Remove="Pages\Upload\**" />
+    <Compile Remove="wwwroot\amchart\**" />
+    <Compile Remove="wwwroot\chart\**" />
+    <Compile Remove="wwwroot\geojson\**" />
+    <Content Remove="Data\DA\Board\**" />
+    <Content Remove="Data\DA\Document\**" />
+    <Content Remove="Data\DA\POS\**" />
+    <Content Remove="Data\DA\Q\**" />
+    <Content Remove="Data\DA\Tableau\**" />
+    <Content Remove="Pages\POS\**" />
+    <Content Remove="Pages\Sample\**" />
+    <Content Remove="Pages\Upload\**" />
+    <Content Remove="wwwroot\amchart\**" />
+    <Content Remove="wwwroot\chart\**" />
+    <Content Remove="wwwroot\geojson\**" />
+    <EmbeddedResource Remove="Data\DA\Board\**" />
+    <EmbeddedResource Remove="Data\DA\Document\**" />
+    <EmbeddedResource Remove="Data\DA\POS\**" />
+    <EmbeddedResource Remove="Data\DA\Q\**" />
+    <EmbeddedResource Remove="Data\DA\Tableau\**" />
+    <EmbeddedResource Remove="Pages\POS\**" />
+    <EmbeddedResource Remove="Pages\Sample\**" />
+    <EmbeddedResource Remove="Pages\Upload\**" />
+    <EmbeddedResource Remove="wwwroot\amchart\**" />
+    <EmbeddedResource Remove="wwwroot\chart\**" />
+    <EmbeddedResource Remove="wwwroot\geojson\**" />
+    <None Remove="Data\DA\Board\**" />
+    <None Remove="Data\DA\Document\**" />
+    <None Remove="Data\DA\POS\**" />
+    <None Remove="Data\DA\Q\**" />
+    <None Remove="Data\DA\Tableau\**" />
+    <None Remove="Pages\POS\**" />
+    <None Remove="Pages\Sample\**" />
+    <None Remove="Pages\Upload\**" />
+    <None Remove="wwwroot\amchart\**" />
+    <None Remove="wwwroot\chart\**" />
+    <None Remove="wwwroot\geojson\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+  
+ 
+  
+    <Compile Remove="Data\DA\Master\ApiCateService.cs" />
+  
+ 
+  
+    <Compile Remove="Data\DA\Master\NewsService.cs" />
+  
+ 
+  
+    <Compile Remove="Data\DA\Xfiles\Model\FilesInfo.cs" />
+    <Compile Remove="Data\DA\Xfiles\Model\vw_files.cs" />
+    <Compile Remove="Data\DA\Xfiles\Model\xfiles.cs" />
+    <Compile Remove="Data\DA\Xfiles\XFilesService.cs" />
+    <Compile Remove="Service\Api\PaginatedResult.cs" />
+    <Compile Remove="Service\Api\ResultExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\IndexBackup.razor" />
+    <Content Remove="Pages\Login\LoginX.razor" />
+    <Content Remove="Pages\Master\MasterTypeDetail.razor" />
+    <Content Remove="Pages\Master\NewsDetail.razor" />
+    <Content Remove="Pages\Master\NewsList.razor" />
+    <Content Remove="Pages\Master\TransactionHistoryLog.razor" />
+    <Content Remove="Pages\Menu\Portal\PortalMenu.razor" />
+    <Content Remove="Pages\PrintOut\XPreview.razor" />
+    <Content Remove="Shared\ScrollMenu.razor" />
+    <Content Remove="wwwroot\css\TCustom.css" />
+    <Content Remove="wwwroot\js\GPS.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+ 
+
+	  <PackageReference Include="BlazorBarcodeScanner.ZXing.JS" Version="0.2.8" />
+ 
+
+	  <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+ 
+
+	  <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
+ 
+
+	  <PackageReference Include="Blazorise.Bootstrap5" Version="1.0.6" />
+ 
+
+	  <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.0.6" />
+ 
+
+	  <PackageReference Include="BrowserInterop" Version="1.1.2" />
+ 
+
+	  <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.2.1" />
+ 
+
+	  <PackageReference Include="Markdig" Version="0.30.3" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.5" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.2" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.2" PrivateAssets="all" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	  <PackageReference Include="Telerik.UI.for.Blazor" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\RobotWasm.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\DA\Data\" />
+    <Folder Include="Data\DA\Xfiles\Model\" />
+    <Folder Include="Pages\Menu\Portal\" />
+    <Folder Include="Pages\PrintOut\" />
+    <Folder Include="wwwroot\Document\" />
+  </ItemGroup>
+
+</Project>

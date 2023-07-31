@@ -1,0 +1,507 @@
+﻿@page "/Q/QFloodDetail"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.Q.QFloodServiceModel
+@using Blazorise
+
+<style>
+    .detail {
+        display: flex;
+        /*align-items: center;*/
+        justify-content: flex-start;
+        line-height: 1.2em;
+    }
+
+    .k-button-solid-error,.k-button-solid-error:hover, .k-button-solid-error.k-hover {
+    border-color: #FF396F;
+    background-color: #FF396F;
+}
+
+    /*notification*/
+    .demo-notification {
+        position: absolute;
+    }
+
+        .demo-notification .k-notification {
+            width: 420px;
+        }
+
+    #demo-runner {
+        height: 400px;
+    }
+
+    .notification-parent {
+        position: relative;
+        height: 250px;
+    }
+
+    .k-badge {
+        margin-left: 5px;
+    }
+
+    .k-notification-container {
+        margin: 6px 0;
+    }
+
+    /*end notification*/
+
+    .k-checkbox {
+        box-shadow: 0 0 0 2px rgb(0 0 0 / 6%);
+    }
+
+
+    /*        .k-checkbox:checked, .k-checkbox.k-checked {
+                border-color: #03a9f4;#FF396F
+                background-color: #03a9f4;
+            }*/
+</style>
+
+<div class="row pt-1">
+    <div class="col-12">
+    </div>
+</div>
+
+@if (!isLoading) {
+
+    <div class="row">
+        <div class="col-6">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@Back" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                <i class="fa-solid fa-reply"></i>&nbsp; กลับ
+            </TelerikButton>
+        </div>
+        <div class="col-6 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class=""
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+            </TelerikButton>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-12">
+            <div class="card mb-2 shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="detail">
+                                <i class="fa-solid fa-location-dot fa-2x me-3" style="color:#05D0A4;"></i>&nbsp;
+                                <div>
+                                    <b style="font-size:larger;">@_qfloodService.DocSet.Flood.m_name</b>
+                                    <p style="font-size:medium;" class="mb-0">
+                                        ต.@_qfloodService.DocSet.Flood.t_name อ.@_qfloodService.DocSet.Flood.a_name จ.@_qfloodService.DocSet.Flood.p_name
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-12">
+            <div class="card mb-2 shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">พื้นที่ (ตามข้อมูล กรม ปค.)</b><br />
+                            <span>รหัสหมู่บ้าน : @_qfloodService.DocSet.Flood.ab_01</span>&nbsp;&nbsp;
+                            <span>รหัสชุมชน : @_qfloodService.DocSet.Flood.ab_02</span>
+                        </div>
+                    </div>
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ระดับความเสี่ยง</b><br />
+                            <TelerikDropDownList Data="@cboLevelRisk"
+                                             @bind-Value="@_qfloodService.DocSet.Flood.aa_01"
+                                             TextField="@nameof(SelectOption.Description)"
+                                             ValueField="@nameof(SelectOption.Value)"
+                                             DefaultText="">
+                                <DropDownListSettings>
+                                    <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                </DropDownListSettings>
+                            </TelerikDropDownList>
+                        </div>
+                    </div>
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ความเสี่ยงประเภทอุทกภัย</b><br />
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ac_01" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำท่วมขัง</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ac_02" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำล้นตลิ่ง</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ac_03" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำท่วมฉับพลัน/ไหลหลาก</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-12">
+            <div class="card mb-2 shadow">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">โอกาสในการเกิด (Likelihood)</b>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ค่าเฉลี่ยในการเกิดอุทกภัย</b><br />
+                            @*<RadioGroup TValue="bool" Name="ad">
+                                <Radio Value="@_qfloodService.DocSet.Flood.ad_01">ปีละครั้ง/มากกว่า</Radio>
+                                <Radio Value="@_qfloodService.DocSet.Flood.ad_02">2 ปีต่อครั้ง</Radio>
+                                <Radio Value="@_qfloodService.DocSet.Flood.ad_03">3 ปีต่อครั้ง</Radio>
+                                <Radio Value="@_qfloodService.DocSet.Flood.ad_04">4-9 ปีต่อครั้ง</Radio>
+                                <Radio Value="@_qfloodService.DocSet.Flood.ad_05">10 ปีต่อครั้ง/น้อยกว่า</Radio>
+                            </RadioGroup>*@
+                            <TelerikRadioGroup Data="@RadioGroups1"
+                                           Value="@RadioGroup1"
+                                           ValueChanged="@( (string v) => ValueChangedRadioGroups1(v) )"
+                                           Layout="@RadioGroupLayout.Horizontal"
+                                           LabelPosition="@RadioGroupLabelPosition.After"></TelerikRadioGroup>
+
+                            @*<TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ad_01" Size="@Size"></TelerikCheckBox>
+                                <label>ปีละครั้ง/มากกว่า</label>&nbsp;&nbsp;
+                                <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ad_02" Size="@Size"></TelerikCheckBox>
+                                <label>2 ปีต่อครั้ง</label>&nbsp;&nbsp;
+                                <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ad_03" Size="@Size"></TelerikCheckBox>
+                                <label>3 ปีต่อครั้ง</label>&nbsp;&nbsp;
+                                <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ad_04" Size="@Size"></TelerikCheckBox>
+                                <label>4-9 ปีต่อครั้ง</label>&nbsp;&nbsp;
+                                <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ad_05" Size="@Size"></TelerikCheckBox>
+                                <label>10 ปีต่อครั้ง/น้อยกว่า</label>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-12">
+            <div class="card mb-2 shadow">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ความเสี่ยงผลกระทบ (Impact))</b>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ความเสี่ยงความรุนแรง</b><br />
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ae_01" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำท่วมแต่ไม่ท่วมบ้าน</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ae_02" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำท่วมบ้าน/บางส่วน แต่อาศัยได้</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ae_03" Size="@Size"></TelerikCheckBox>
+                            <span>น้ำท่วมบ้าน/บางส่วนและอาศัยไม่ได้ต้องอพยพ</span>
+                        </div>
+                    </div>
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ความเสี่ยงเสียหายร่วม</b><br />
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.af_01" Size="@Size"></TelerikCheckBox>
+                            <span>เส้นทางคมนาคม</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.af_02" Size="@Size"></TelerikCheckBox>
+                            <span>สาธารณะประโยชน์</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.af_03" Size="@Size"></TelerikCheckBox>
+                            <span>พื้นที่การเกษตร</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.af_04" Size="@Size"></TelerikCheckBox>
+                            <span>ประมง</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-1 pb-2">
+        <div class="col-12">
+            <div class="card mb-2 shadow">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-12">
+                            <b style="font-size:medium;">ช่วงเดือนที่มีความเสี่ยง</b>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_01" Size="@Size"></TelerikCheckBox>
+                            <span>มกราคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_02" Size="@Size"></TelerikCheckBox>
+                            <span>กุมภาพันธ์</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_03" Size="@Size"></TelerikCheckBox>
+                            <span>มีนาคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_04" Size="@Size"></TelerikCheckBox>
+                            <span>เมษายน</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_05" Size="@Size"></TelerikCheckBox>
+                            <span>พฤษภาคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_06" Size="@Size"></TelerikCheckBox>
+                            <span>มิถุนายน</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_07" Size="@Size"></TelerikCheckBox>
+                            <span>กรกฎาคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_08" Size="@Size"></TelerikCheckBox>
+                            <span>สิงหาคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_09" Size="@Size"></TelerikCheckBox>
+                            <span>กันยายน</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_10" Size="@Size"></TelerikCheckBox>
+                            <span>ตุลาคม</span>&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_11" Size="@Size"></TelerikCheckBox>
+                            <span>พฤศจิกายน</span>&nbsp;&nbsp;
+                            <TelerikCheckBox @bind-Value="@_qfloodService.DocSet.Flood.ag_12" Size="@Size"></TelerikCheckBox>
+                            <span>ธันวาคม</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <TelerikNotification @ref="@Notification"
+                     Class="demo-notification"
+                     VerticalPosition="@VerticalPosition"
+                     HorizontalPosition="@HorizontalPosition">
+    </TelerikNotification>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+    private bool isLoading = false;
+    bool collapse1Visible = true;
+
+    public QFloodDocSet DocSet { get; set; }
+    public a_mm Village { get; set; }
+    string Username = "";
+    public List<SelectOption> cboLevelRisk = new List<SelectOption>();
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+
+    public List<string> RadioGroups1 { get; set; } = new List<string>() { "ปีละครั้ง/มากกว่า", "2 ปีต่อครั้ง", "3 ปีต่อครั้ง", "4-9 ปีต่อครั้ง", "10 ปีต่อครั้ง/น้อยกว่า" };
+    public string RadioGroup1 { get; set; } = "ปีละครั้ง/มากกว่า";
+
+    #region Notification
+    public TelerikNotification Notification { get; set; }
+    public NotificationHorizontalPosition HorizontalPosition { get; set; } = NotificationHorizontalPosition.Right;
+    public NotificationVerticalPosition VerticalPosition { get; set; } = NotificationVerticalPosition.Bottom;
+    public bool NotificationButtonEnabled { get; set; } = true;
+
+    #endregion
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_qfloodService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_MCODE);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _qfloodService.DocSet = await _qfloodService.GetDocSet(docid);
+                } else {
+                    _qfloodService.DocSet = await _qfloodService.NewTransaction(docid);
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+
+    }
+
+    protected async Task LoadData() {
+        //Username = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        LoadDropDown();
+        BindData();
+    }
+
+    void LoadDropDown() {
+        cboLevelRisk = QFloodService.ListLevelRisk();
+    }
+
+    public async void BindData() {
+        var h = _qfloodService.DocSet.Flood;
+        if (h.id == 0) {
+            string dataid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_QGroup);
+            h.data_id = dataid;
+            Village = await _qfloodService.GetVillage(h.m_code);
+            h.r_code = Village.rcode == null ? "" : Village.rcode;
+
+            h.m_name = Village.mname;
+            h.t_name = Village.tname;
+            h.a_name = Village.aname;
+            h.p_name = Village.pname;
+            h.ab_01 = Village.mcode;
+            h.ab_02 = Village.tcode;
+        }
+
+        if (h.ad_01 == true) {
+            RadioGroup1 = "ปีละครั้ง/มากกว่า";
+        }
+        if (h.ad_02 == true) {
+            RadioGroup1 = "2 ปีต่อครั้ง";
+        }
+        if (h.ad_03 == true) {
+            RadioGroup1 = "3 ปีต่อครั้ง";
+        }
+        if (h.ad_04 == true) {
+            RadioGroup1 = "4-9 ปีต่อครั้ง";
+        }
+        if (h.ad_05 == true) {
+            RadioGroup1 = "10 ปีต่อครั้ง/น้อยกว่า";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void ValueChangedRadioGroups1(string newValue) {
+        var h = _qfloodService.DocSet.Flood;
+        RadioGroup1 = newValue;
+        switch (RadioGroup1) {
+            case "ปีละครั้ง/มากกว่า":
+                h.ad_01 = true;
+                h.ad_02 = false;
+                h.ad_03 = false;
+                h.ad_04 = false;
+                h.ad_05 = false;
+                break;
+            case "2 ปีต่อครั้ง":
+                h.ad_01 = false;
+                h.ad_02 = true;
+                h.ad_03 = false;
+                h.ad_04 = false;
+                h.ad_05 = false;
+                break;
+            case "3 ปีต่อครั้ง":
+                h.ad_01 = false;
+                h.ad_02 = false;
+                h.ad_03 = true;
+                h.ad_04 = false;
+                h.ad_05 = false;
+                break;
+            case "4-9 ปีต่อครั้ง":
+                h.ad_01 = false;
+                h.ad_02 = false;
+                h.ad_03 = false;
+                h.ad_04 = true;
+                h.ad_05 = false;
+                break;
+            case "10 ปีต่อครั้ง/น้อยกว่า":
+                h.ad_01 = false;
+                h.ad_02 = false;
+                h.ad_03 = false;
+                h.ad_04 = false;
+                h.ad_05 = true;
+                break;
+        }
+    }
+
+    bool ValidData() {
+        var h = _qfloodService.DocSet.Flood;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.aa_01 == "") {
+            Errmsg = "ระบุ ระดับความเสี่ยง";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            NotificationButtonEnabled = false;
+            Notification.Show(new NotificationModel() {
+                    Text = Errmsg,
+                    ThemeColor = ThemeConstants.Notification.ThemeColor.Error
+                });
+        }
+        return isvalid;
+    }
+
+    protected bool PrepairDataSave() {
+        var h = _qfloodService.DocSet.Flood;
+
+        bool isnew = h.id == 0 ? true : false;
+
+        if (isnew) {
+            h.created_by = Username;
+        } else {
+            h.modified_by = Username;
+        }
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = _qfloodService.DocSet.Flood;
+        var isnew = PrepairDataSave();
+        string strPayload = JsonSerializer.Serialize(_qfloodService.DocSet);
+        string url = $"api/QFlood/SaveQFlood?action={isnew}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        //if (isnew) {
+        //    var rs = ApiMasterService.Save(apimasterService.DocSet.Head);
+        //}
+        NotificationButtonEnabled = false;
+        if (status.ToString().ToLower() != "ok") {
+            //ShowAlert(status.ToString(), false);
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                Notification.Show(new NotificationModel() {
+                        Text = r.Message1,
+                        ThemeColor = ThemeConstants.Notification.ThemeColor.Error
+                    });
+            } else {
+                Notification.Show(new NotificationModel() {
+                        Text = "บันทึกสำเร็จ",
+                        ThemeColor = ThemeConstants.Notification.ThemeColor.Success
+                    });
+                _qfloodService.DocSet = await _qfloodService.GetDocSet(h.m_code);
+                await sessionStorage.SetItemAsync(Globals.ActiveID_MCODE, h.m_code);
+                LoadData();
+            }
+        }
+    }
+
+    async void Back() {
+        string dataid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_QGroup);
+        nav.NavigateTo($"Q/QFlood/{dataid}", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

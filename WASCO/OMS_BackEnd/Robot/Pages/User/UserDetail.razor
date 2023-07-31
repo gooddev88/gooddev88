@@ -1,0 +1,828 @@
+﻿
+@page "/User/UserDetail"
+@using  Robot.Data.GADB.TT
+@using Robot.Data.DA
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.ML
+@using Robot.Data.DA.Master
+@using Robot.Data.DA.Login
+@using Robot.Data.DA.USER
+
+@inject GAEntities db
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject UserService UserService
+@inject StateContainer StateContainer
+@inject LogInService login
+@inject NavigationManager navigation
+@inject SweetAlertService Swal
+@inject MasterTypeService mastertypeservice
+
+<style>
+</style>
+
+<div class="row pt-2">
+    <div class="col-md-12 mx-auto">
+        <div class="row pt-2">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" style="background-color: lightgray !important">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="button" @onclick="@Back" class="btn btn-default">
+                                    <span style="font-size: large; color: black ">
+                                        <i class="fas fa-reply-all fa-2x "></i>&nbsp;
+                                        <strong>
+                                            กลับหน้ารายการ
+                                        </strong>
+                                    </span>
+                                </button>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <span style="font-size: large; color: black">
+                                    <i class="fas fa-user fa-2x"></i> &nbsp;
+                                    <strong>
+                                        ข้อมูลผู้ใช้งาน
+                                    </strong>
+                                </span>
+                            </div>
+                            <div class="col-md-4 text-right ">
+                                <button type="button" @onclick="@DeleteUser"
+                                        class="btn btn-default btn-lg">
+                                    <span style="font-size: x-large; color: black">
+                                        <i class="fas fa-user-times " style="color:red"></i>
+                                    </span>
+                                </button>
+
+                            </div>
+                        </div>
+                        <div class="card-body bg-light">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="row " runat="server" id="divHome">
+                                        <div class="col-md-12">
+
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <span>เลขบัตรปชช.</span>
+                                                    <DxTextBox Id="txtUsername"
+                                                               InputId="txtUsername"
+                                                               Enabled="@IsEditState"
+                                                               @bind-Text="@UserService.DocSet.User.Username"
+                                                               BindValueMode="BindValueMode.OnInput"
+                                                               SizeMode="@ControlSizeMode">
+                                                    </DxTextBox>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <span>ชื่อ</span> <span style="color: red; font-size: medium;">*</span>
+                                                    <DxTextBox Id="txtFirstName"
+                                                               InputId="txtFirstName"
+                                                               @bind-Text="@UserService.DocSet.User.FirstName"
+                                                               BindValueMode="BindValueMode.OnInput"
+                                                               SizeMode="@ControlSizeMode">
+                                                    </DxTextBox>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <span>นามสกุล</span> <span style="color: red; font-size: medium;">*</span>
+                                                    <DxTextBox Id="txtLastName"
+                                                               InputId="txtLastName"
+                                                               @bind-Text="@UserService.DocSet.User.LastName"
+                                                               BindValueMode="BindValueMode.OnInput"
+                                                               SizeMode="@ControlSizeMode">
+                                                    </DxTextBox>
+                                                </div>
+                                            </div>
+
+                                            <div class="row pt-1">
+
+                                                <div class="col-md-3">
+                                                    <span>ชื่อเล่น</span>
+                                                    <DxTextBox Id="txtNickName"
+                                                               InputId="txtNickName"
+                                                               @bind-Text="@UserService.DocSet.User.NickName"
+                                                               BindValueMode="BindValueMode.OnInput"
+                                                               SizeMode="@ControlSizeMode">
+                                                    </DxTextBox>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <span>เพศ</span>
+                                                    <DxComboBox Data="@ListGender"
+                                                                TextFieldName="@nameof(MasterTypeLine.Description1)"
+                                                                ValueFieldName="@nameof(MasterTypeLine.ValueTXT)"
+                                                                FilteringMode="DataGridFilteringMode.Contains"
+                                                                @bind-Value="@UserService.DocSet.User.Gender"
+                                                                SizeMode="@ControlSizeMode">
+                                                    </DxComboBox>
+                                                </div>
+                                            </div>
+
+                                            <div class="row pt-1">
+                                                <div class="col-md-3">
+                                                    <span>หน่วยงาน</span>
+                                                    <DxComboBox Data="@ListDepartment"
+                                                                TextFieldName="@nameof(MasterTypeLine.Description1)"
+                                                                ValueFieldName="@nameof(MasterTypeLine.ValueTXT)"
+                                                                FilteringMode="DataGridFilteringMode.Contains"
+                                                                @bind-Value="@UserService.DocSet.User.DepartmentID"
+                                                                SizeMode="@ControlSizeMode">
+                                                    </DxComboBox>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <span>ตำแหน่ง</span>
+                                                    <DxComboBox Data="@ListPosition"
+                                                                TextFieldName="@nameof(MasterTypeLine.Description1)"
+                                                                ValueFieldName="@nameof(MasterTypeLine.ValueTXT)"
+                                                                FilteringMode="DataGridFilteringMode.Contains"
+                                                                @bind-Value="@UserService.DocSet.User.PositionID"
+                                                                SizeMode="@ControlSizeMode">
+                                                    </DxComboBox>
+                                                </div>
+
+
+                                            </div>
+
+                                            <div class="row" hidden="hidden">
+                                                <div class="col-md-12">
+                                                    <div class="col-md-3">
+                                                        <span>Employee Code</span>
+                                                        <DxTextBox Id="txtEmployeeCode"
+                                                                   InputId="txtEmployeeCode"
+                                                                   @bind-Text="@UserService.DocSet.User.EmpCode"
+                                                                   BindValueMode="BindValueMode.OnInput"
+                                                                   SizeMode="@ControlSizeMode">
+                                                        </DxTextBox>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <span>Citizen ID</span>
+                                                        <DxTextBox Id="txtCitizenId"
+                                                                   InputId="txtEmployeeCode"
+                                                                   @bind-Text="@UserService.DocSet.User.CitizenId"
+                                                                   BindValueMode="BindValueMode.OnInput"
+                                                                   SizeMode="@ControlSizeMode">
+                                                        </DxTextBox>
+                                                    </div>
+
+                                                    <div class="col-md-2 pt-4">
+                                                        <DxCheckBox Checked="@UserService.DocSet.User.IsActive"><span style="font-size:large">Active</span></DxCheckBox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row pt-4 text-center">
+                                <div class="col-md-12">
+                                    <button type="button" @onclick="@Save" class="btn btn-success btn-lg">
+                                        บันทึกข้อมูล
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--<div class="row pt-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header" style="background-color: #218c74 !important">
+                    <div class="row" style="color:white">
+                        <div class="col-md-10"><i class="fas fa-home"></i>&nbsp;<span>Contract Info</span></div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row pt-1 " style="font-size: smaller;">
+                        <div class="col-md-3">
+                            <span>เลขที่ (House No.)</span>
+                            <DxTextBox Id="txtAddrNo"
+                                       InputId="txtAddrNo"
+                                       @bind-Text="@UserService.DocSet.User.AddrNo"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                        <div class="col-md-3">
+                            <span>หมู่/ถนน (Village No. / Road)</span>
+                            <DxTextBox Id="txtAddrMoo"
+                                       InputId="txtAddrMoo"
+                                       @bind-Text="@UserService.DocSet.User.AddrMoo"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                        <div class="col-md-6">
+                            <span>ค้นหา ตำบล-อำเภอ-จังหวัด</span>
+                            <br />
+                        </div>
+                    </div>
+
+                    <div class="row pt-1 " style="font-size: smaller;">
+                        <div class="col-md-3">
+                            <span>รหัสไปรษณีย์ (Postal Code)</span>
+                            <DxTextBox Id="txtAddrPostCode"
+                                       InputId="txtAddrPostCode"
+                                       @bind-Text="@UserService.DocSet.User.AddrPostCode"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                        <div class="col-md-3">
+                            <span>ตำบล/แขวง (Sub-district)</span>
+                            <DxTextBox Id="txtAddrTumbon"
+                                       InputId="txtAddrTumbon"
+                                       @bind-Text="@UserService.DocSet.User.AddrTumbon"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                        <div class="col-md-3">
+                            <span>เขต/อำเภอ (District / Area)</span>
+                            <DxTextBox Id="txtAddrAmphoe"
+                                       InputId="txtAddrAmphoe"
+                                       @bind-Text="@UserService.DocSet.User.AddrAmphoe"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                        <div class="col-md-3">
+                            <span>จังหวัด (Province)</span>
+                            <DxTextBox Id="txtAddrProvince"
+                                       InputId="txtAddrProvince"
+                                       @bind-Text="@UserService.DocSet.User.AddrProvince"
+                                       BindValueMode="BindValueMode.OnInput"
+                                       SizeMode="@ControlSizeMode">
+                            </DxTextBox>
+                        </div>
+                    </div>
+                    <div class="row pt-1 " style="font-size: smaller;">-->
+        @*<div class="col-md-3">
+                <span>ประเทศ  (Country)</span>
+                <dx:ASPxComboBox ID="cboAddrCountry" runat="server"
+                                 DropDownStyle="DropDownList" Theme="Material"
+                                 ValueField="CountryID" ValueType="System.String" TextFormatString="{0} ({1})" Width="100%">
+                    <Columns>
+                        <dx:ListBoxColumn FieldName="CountryID" Width="100px" Caption="Country code" />
+                        <dx:ListBoxColumn FieldName="CountryName" Width="300px" Caption="Country name" />
+                        <dx:ListBoxColumn FieldName="CurrencyID" Width="150px" Caption="Currency" />
+                    </Columns>
+                </dx:ASPxComboBox>
+            </div>*@
+        <!--<div class="col-md-3">
+                                <span>Mobile phone</span><span style="color: red;">*</span>
+                                <DxTextBox Id="txtMobile"
+                                           InputId="txtMobile"
+                                           @bind-Text="@UserService.DocSet.User.Mobile"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="@ControlSizeMode">
+                                </DxTextBox>
+                            </div>
+                            <div class="col-md-6">
+                                <span>Email</span>
+                                <DxTextBox Id="txtEmail"
+                                           InputId="txtEmail"
+                                           @bind-Text="@UserService.DocSet.User.Email"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="@ControlSizeMode">
+                                </DxTextBox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
+        <div class="row pt-3" id="divlogin" Visible="@IsEditState">
+            <div class="col-md-12" hidden="hidden">
+                <div class="card">
+                    <div class="card-header" style="background-color: #218c74 !important">
+                        <div class="row" style="color:white">
+                            <div class="col-md-12">
+                                <i class="fas fa-key fa-2x"></i>&nbsp;<span style="font-size:large">Login</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="btn-group">
+                                    <DxCheckBox Checked="@UserService.DocSet.User.IsNewUser"><span style="font-size:medium">ต้องเปลียนรหัสผ่านเมื่อ Login ครั้งต่อไป</span></DxCheckBox>&nbsp;
+                                    <DxCheckBox Checked="@UserService.DocSet.User.IsProgramUser"><span style="font-size:medium">สามารถใช้โปรแกรม</span></DxCheckBox>
+                                    @*<DxCheckBox Visible="true" Checked="@UserService.DocSet.User.UseTimeStamp"><span style="font-size:small">ออกรายงานบันทึกเวลา</span></DxCheckBox>*@
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <button type="button" @onclick="@ResetPassword" class="btn btn-default">
+                                    <i class="fa fa-key"></i>&nbsp;<span>Reset Password</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12  text-right">
+                                <asp:Label ID="lblShowNewPasswordAfterReset" class="label label-warning" Visible="false" runat="server" Text=""></asp:Label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" style="background-color: #218c74 !important">
+                        <div class="row" style="color:white">
+                            <div class="col-md-12"><i class="fas fa-door-open fa-2x"></i> &nbsp;<span>Permission Info</span></div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="accordion">
+
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #218c74 !important ">
+                                                    <a class="collapsed card-link" data-toggle="collapse" href="#collapsefive">
+                                                        <span style="color: white">กำหนดสิทธิ์ ตามกลุ่มการใช้งาน</span>
+                                                    </a>
+                                                </div>
+                                                <div id="collapsefive" class="collapse" data-parent="#accordion">
+                                                    <div class="card-body bg-light" style="font-size:medium;">
+                                                        <div class="row" runat="server" id="divusergroup">
+                                                            <div class="col-md-12">
+
+                                                                <DxCheckBox Checked="@isUserGroupAll" CheckedExpression="@(() => isUserGroupAll)" CheckedChanged="@((bool value) => CheckedUserGroupChange(value))">เลือกทั้งหมด</DxCheckBox>
+                                                                <ul style="padding-left: 20px;">
+                                                                    @foreach (var pv in XUserInGroup) {
+                                                                        <ol style="padding-left: 5px;"> <DxCheckBox @bind-Checked="@pv.X"><span>@pv.Name</span></DxCheckBox></ol>
+                                                                    }
+                                                                </ul>
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row pt-2">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #218c74 !important ">
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <a class="card-link" data-toggle="collapse" href="#collapseOne">
+                                                                <span style="color: white">สิทธิ์ในสาขา</span>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div id="collapseOne" class="collapse" data-parent="#accordion">
+                                                    <div class="card-body bg-light" style="font-size:medium;">
+                                                        <DxCheckBox Checked="@isUserInCompanyAll" CheckedExpression="@(() => isUserInCompanyAll)" CheckedChanged="@((bool value) => CheckedUserInCompanyChange(value))">เลือกทั้งหมด</DxCheckBox>
+                                                        <ul style="padding-left: 20px;">
+                                                            @foreach (var pv in XUserInCompany) {
+                                                                <ol style="padding-left: 5px;"> <DxCheckBox @bind-Checked="@pv.X"><span>@pv.CompanyName</span></DxCheckBox></ol>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="row pt-2">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #218c74 !important ">
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <a class="card-link" data-toggle="collapse" href="#collapsesix">
+                                                                <span style="color: white">สิทธิ์กลุ่มบริษัท</span>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div id="collapsesix" class="collapse" data-parent="#accordion">
+                                                    <div class="card-body bg-light" style="font-size:medium;">
+                                                        <DxCheckBox Checked="@isUserInRComAll" CheckedExpression="@(() => isUserInRComAll)" CheckedChanged="@((bool value) => CheckedUserInRComChange(value))">เลือกทั้งหมด</DxCheckBox>
+                                                        <ul style="padding-left: 20px;">
+                                                            @foreach (var pv in XUserInRCom) {
+                                                                <ol style="padding-left: 5px;"> <DxCheckBox @bind-Checked="@pv.X"><span>@pv.RCompanyName</span></DxCheckBox></ol>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row pt-2">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #218c74 !important ">
+                                                    <a class="collapsed card-link" data-toggle="collapse" href="#collapseTwo">
+                                                        <span style="color: white">สิทธิ์ใช้ Dashboard</span>
+                                                    </a>
+                                                </div>
+                                                <div id="collapseTwo" class="collapse" data-parent="#accordion">
+                                                    <div class="card-body bg-light" style="font-size:medium;">
+                                                        <DxCheckBox Checked="@isUserInBoardAll" CheckedExpression="@(() => isUserInBoardAll)" CheckedChanged="@((bool value) => CheckedUserInBoardChange(value))">เลือกทั้งหมด</DxCheckBox>
+                                                        <ul style="padding-left: 20px;">
+                                                            @foreach (var pv in XUserInBoard) {
+                                                                <ol style="padding-left: 5px;"> <DxCheckBox @bind-Checked="@pv.X"><span>@pv.Name</span></DxCheckBox></ol>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row pt-2">
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-header" style="background-color: #218c74 !important ">
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <a class="card-link" data-toggle="collapse" href="#collapseThree">
+                                                                <span style="color: white">กำหนดสิทธิ์ ตามเมนู</span>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="collapseThree" class="collapse" data-parent="#accordion">
+                                                    <div class="card-body bg-light" style="font-size:medium;">
+                                                        <DxCheckBox Checked="@isMenuAll" CheckedExpression="@(() => isMenuAll)" CheckedChanged="@((bool value) => CheckedMenuChange(value))">เลือกทั้งหมด</DxCheckBox>
+                                                        <ul style="padding-left: 20px;">
+                                                            @foreach (var pv in XMenu) {
+                                                                <ol style="padding-left: 5px;"> <DxCheckBox @bind-Checked="@pv.X"><span>@pv.MenuName</span></DxCheckBox></ol>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+@code{
+    List<MasterTypeLine> ListGender = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListDepartment = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListPosition = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListUserType = new List<MasterTypeLine>();
+
+
+    // Permission
+    List<UserService.XUserInGroup> XUserInGroup = new List<UserService.XUserInGroup>();
+    List<UserService.XUserInCompany> XUserInCompany = new List<UserService.XUserInCompany>();
+    List<UserService.XUserInRCom> XUserInRCom = new List<UserService.XUserInRCom>();
+    List<UserService.XUserInBoard> XUserInBoard = new List<UserService.XUserInBoard>();
+    List<UserService.XMenu> XMenu = new List<UserService.XMenu>();
+
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public bool IsEditState { get; set; } = true;
+    public bool divlogin { get; set; } = true;
+    string Search { get; set; } = "";
+    bool ShowDisable = false;
+
+    bool isUserGroupAll { get; set; } = false;
+    bool isUserInCompanyAll { get; set; } = false;
+    bool isUserInRComAll { get; set; } = false;
+    bool isUserInBoardAll { get; set; } = false;
+    bool isMenuAll { get; set; } = false;
+
+    protected override void OnInitialized() {
+        //if (UserService.DocSet == null)
+        //{
+        //    UserService.DocSet = UserService.NewTransaction();
+        //}
+        LoadData();
+    }
+
+
+    void LoadData() {
+        var h = UserService.DocSet.User;
+
+        ListGender = MasterTypeService.ListType("","GENDER", true);
+        ListDepartment = MasterTypeService.ListType("","DEPARTMENT", true);
+        ListPosition = MasterTypeService.ListType("","JOB POSITION", true);
+        ListUserType = MasterTypeService.ListType("","USER TYPE", true);
+
+
+        XUserInGroup = UserService.ListGroup(h.Username);
+        XUserInCompany = UserService.ListCompany(h.Username);
+        XUserInRCom = UserService.ListRCompany(h.Username);
+        XUserInBoard = UserService.ListBoard(h.Username);
+        XMenu = UserService.ListMenu(h.Username);
+
+        BindData();
+        SetActiveControl();
+    }
+
+    private void SetActiveControl() {
+        var h = UserService.DocSet.User;
+        if (h.Username == "") {
+
+            IsEditState = true;
+            divlogin = false;
+        } else {
+            IsEditState = false;
+            divlogin = true;
+        }
+    }
+
+    private void BindData() {
+        var h = UserService.DocSet.User;
+
+        //MapCheckBoxUserInGroup(XUserInGroup);
+        //if (h.IsActive == true)
+        //{
+        //    lnkResetPassword.Visible = true;
+        //}
+        //else
+        //{
+        //    lnkResetPassword.Visible = false;
+        //}
+    }
+
+    //void MapCheckBoxUserInGroup(List<UserService.XUserInGroup> XUserInGroup)
+    //{
+    //    foreach (var l in XUserInGroup)
+    //    {
+    //        if (UserService.DocSet.XGroup != null)
+    //            l.X = UserService.DocSet.XGroup.Where(x => x.X == l.X).Any() ? true : false;
+    //    }
+    //}
+
+    private void SetLineData() {
+        foreach (var pv in XUserInGroup) {
+            if (pv.X) {
+                var l = new UserService.XUserInGroup();
+                l.X = pv.X;
+                l.isChecked = pv.X;
+                l.Name = pv.Name;
+                l.RComID = pv.RComID;
+                l.UserGroupID = pv.UserGroupID;
+                l.UserName = pv.UserName;
+                l.IsActive = pv.IsActive;
+                UserService.DocSet.XGroup.Add(l);
+            }
+        }
+
+        foreach (var pv in XUserInCompany) {
+            if (pv.X) {
+                var l = new UserService.XUserInCompany();
+                l.X = pv.X;
+                l.isChecked = pv.X;
+                l.UserName = pv.UserName;
+                l.CompanyID = pv.CompanyID;
+                l.CompanyName = pv.CompanyName;
+                l.RComID = pv.RComID;
+                l.CompanyType = pv.CompanyType;
+                l.CompanyTypeName = pv.CompanyTypeName;
+                l.IsActive = pv.IsActive;
+                UserService.DocSet.XCompany.Add(l);
+            }
+        }
+
+        foreach (var pv in XUserInRCom) {
+            if (pv.X) {
+                var l = new UserService.XUserInRCom();
+                l.X = pv.X;
+                l.isChecked = pv.X;
+                l.UserName = pv.UserName;
+                l.RCompanyName = pv.RCompanyName;
+                l.RComID = pv.RComID;
+                UserService.DocSet.XRCompany.Add(l);
+            }
+        }
+
+        foreach (var pv in XUserInBoard) {
+            if (pv.X) {
+                var l = new UserService.XUserInBoard();
+                l.X = pv.X;
+                l.isChecked = pv.X;
+                l.Username = pv.Username;
+                l.DashBoardID = pv.DashBoardID;
+                l.Name = pv.Name;
+                UserService.DocSet.XBoard.Add(l);
+            }
+        }
+
+        foreach (var pv in XMenu) {
+            if (pv.X) {
+                var l = new UserService.XMenu();
+                l.X = pv.X;
+                l.isChecked = pv.X;
+                l.Username = pv.Username;
+                l.MenuID = pv.MenuID;
+                l.MenuCode = pv.MenuCode;
+                l.MenuName = pv.MenuName;
+                l.NeedCreatePermission = pv.X;
+                l.NeedOpenPermission = pv.X;
+                l.NeedEditPermission = pv.X;
+                l.NeedDeletePermission = pv.X;
+                l.NeedPrintPermission = pv.X;
+                l.IsCreate = pv.X;
+                l.IsOpen = pv.X;
+                l.IsEdit = pv.X;
+                l.IsDelete = pv.X;
+                l.IsPrint = pv.X;
+                UserService.DocSet.XMenu.Add(l);
+            }
+        }
+
+    }
+
+    async void Save() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var isnew = PrepairDataSave();
+
+        SetLineData();
+
+        I_Result.I_BasicResult Result;
+        if (isnew) {
+            Result = UserService.Save(UserService.DocSet);
+        } else {
+            Result = UserService.Save(UserService.DocSet);
+        }
+
+        if (Result.Result == "ok") {
+            UserService.DocSet = UserService.GetDocSet(UserService.DocSet.User.Username);
+            await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            navigation.NavigateTo($"/USER/UserList", true);
+            //SetActiveControl();
+            //this.StateHasChanged();
+        } else {
+            if (isnew) {
+                UserService.DocSet.User.Username = "";
+            }
+            await Swal.FireAsync("", Result.Message1, "error");
+        }
+
+    }
+
+    private bool PrepairDataSave() {
+        bool isNew = UserService.DocSet.User.Username == "" ? true : false;
+        var h = UserService.DocSet.User;
+        if (isNew) {
+            //h.AlertID = idgenservice.GetNewIDV2("ALERT", "", h.AlertDate.Date, false, "th")[1];
+
+        }
+
+        ListGender = MasterTypeService.ListType("","GENDER", true);
+        ListDepartment = MasterTypeService.ListType("","DEPARTMENT", true);
+        ListPosition = MasterTypeService.ListType("","JOB POSITION", true);
+        ListUserType = MasterTypeService.ListType("","USER TYPE", true);
+
+        if (h.Gender != "") {
+            var x = ListGender.Where(o => o.ValueTXT == h.Gender).FirstOrDefault();
+            if (x != null) {
+                h.Gender = x.ValueTXT;
+            }
+
+        }
+        if (h.DepartmentID != "") {
+            var x = ListDepartment.Where(o => o.ValueTXT == h.DepartmentID).FirstOrDefault();
+            if (x != null) {
+                h.DepartmentID = x.ValueTXT;
+            }
+        }
+        if (h.PositionID != "") {
+            var x = ListPosition.Where(o => o.ValueTXT == h.PositionID).FirstOrDefault();
+            if (x != null) {
+                h.PositionID = x.ValueTXT;
+            }
+
+        }
+
+        h.EmpCode = h.Username;
+        h.CitizenId = h.Username;
+        h.IsNewUser = false;
+        h.DefaultCompany = "KYPOS";
+
+        return isNew;
+    }
+
+    bool ValidData() {
+        bool isvalid = true;
+        string Errmsg = "";
+        var h = UserService.DocSet.User;
+
+        if (h.Username == "") {
+            Swal.FireAsync("", "ระบุ เลขบัตรปชช.", "error");
+            return false;
+        }
+        if (h.FirstName == "") {
+            Swal.FireAsync("", "ระบุ ชื่อ ", "error");
+            return false;
+        }
+
+        if (h.LastName == "") {
+            Swal.FireAsync("", "ระบุ นามสกุล ", "error");
+            return false;
+        }
+        if (h.DepartmentID == "") {
+            Swal.FireAsync("", "ระบุ หน่วยงาน ", "error");
+            return false;
+        }
+        if (h.PositionID == "") {
+            Swal.FireAsync("", "ระบุ ตำแหน่ง ", "error");
+            return false;
+        }
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void ResetPassword() {
+        var h = UserService.DocSet.User;
+        var rr = UserService.ResetPassword(h.Username);
+        if (rr.Result == "ok") {
+            Swal.FireAsync("", "รหัส่ผ่านถูกรีเซ็ตเป็น " + rr.Message2, "success");
+            LoadData();
+        } else {
+            Swal.FireAsync("", rr.Message1, "error");
+        }
+
+    }
+
+    void CheckedUserGroupChange(bool isCheck) {
+        isUserGroupAll = isCheck;
+        XUserInGroup.ForEach(x => x.X = isCheck);
+        this.StateHasChanged();
+    }
+
+    void CheckedUserInCompanyChange(bool isCheck) {
+        isUserInCompanyAll = isCheck;
+        XUserInCompany.ForEach(x => x.X = isCheck);
+        this.StateHasChanged();
+    }
+
+    void CheckedUserInRComChange(bool isCheck) {
+        isUserInRComAll = isCheck;
+        XUserInRCom.ForEach(x => x.X = isCheck);
+        this.StateHasChanged();
+    }
+
+    void CheckedUserInBoardChange(bool isCheck) {
+        isUserInBoardAll = isCheck;
+        XUserInBoard.ForEach(x => x.X = isCheck);
+        this.StateHasChanged();
+    }
+
+    void CheckedMenuChange(bool isCheck) {
+        isMenuAll = isCheck;
+        XMenu.ForEach(x => x.X = isCheck);
+        this.StateHasChanged();
+    }
+
+    void Back() {
+        navigation.NavigateTo($"/USER/UserList", true);
+    }
+
+    //void newUser() {
+    //    UserService.DocSet = UserService.NewTransaction();
+    //    navigation.NavigateTo($"/USER/UserDetairel");
+    //    LoadData();
+    //}
+    void DeleteUser() {
+        var h = UserService.DocSet.User;
+        UserService.DeleteUser(h.Username); ;
+        navigation.NavigateTo($"/USER/UserList", true);
+    }
+
+}

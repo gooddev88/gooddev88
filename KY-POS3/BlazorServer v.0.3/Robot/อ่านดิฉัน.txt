@@ -1,0 +1,68 @@
+Test line Liff
+https://localhost:44337/Login/LoginLineLiff/Uba38d3f30baebd3c6404f2b0c76fef90/liffmenu
+
+
+Radzen UI Library
+https://www.youtube.com/watch?v=qGctTw3Pw48
+
+
+Import LTE DashBoard To Blazors
+https://www.youtube.com/watch?v=8BIseB-qK_8
+
+Merge LTE To Blazors
+https://www.youtube.com/watch?v=ILTrxpehdnQ
+
+Contron Signal R Event
+https://stackoverflow.com/questions/59999763/how-can-i-invoke-method-in-circuithandler-of-blazor-server-side
+
+
+ทดสอบปริ้นผ่าน link
+https://www.youtube.com/watch?v=jXx7R1yuPOQ
+https://kyprint/slip/4
+
+
+
+install xtraReport to project
+https://docs.devexpress.com/XtraReports/403469/web-reporting/blazor-reporting/native/quick-start/use-microsoft-template
+
+
+
+
+Reset Database
+
+
+  --Reset KYPOS TEST
+
+ delete [KYPOS_X2].[dbo].[UserInCompany] where Username <>'tammon.y'
+ delete [KYPOS_X2].[dbo].[UserInfo]  where Username <>'tammon.y'
+ truncate table [KYPOS_X2].[dbo].[UserInBoard]
+ truncate table [KYPOS_X2].[dbo].[TransactionLog]
+
+
+ truncate table [KYPOS_X2].[dbo].[CustomerInfo]
+ truncate table [KYPOS_X2].[dbo].[IDGenerator]
+ truncate table [KYPOS_X2].[dbo].[ItemInfo]
+ truncate table [KYPOS_X2].[dbo].[ItemPriceInfo]
+ truncate table [KYPOS_X2].[dbo].[LineLogIn]
+ truncate table [KYPOS_X2].[dbo].[LineLogInRequest]
+ truncate table [KYPOS_X2].[dbo].[OINVHead]
+ truncate table [KYPOS_X2].[dbo].[OINVLine]
+ truncate table [KYPOS_X2].[dbo].[ORCAdjust]
+ truncate table [KYPOS_X2].[dbo].[ORCHead]
+ truncate table [KYPOS_X2].[dbo].[ORCLine]
+
+
+
+ --** test stock
+ truncate table [KYPOS_X2].[dbo].[POS_STKMove]
+ truncate table [KYPOS_X2].[dbo].[POS_STKBal]
+ truncate table [KYPOS_X2].[dbo].[POS_StkAdjustLine]
+ truncate table [KYPOS_X2].[dbo].[POS_StkAdjustHead]
+ truncate table [KYPOS_X2].[dbo].[POS_SalePayment]
+ truncate table [KYPOS_X2].[dbo].[POS_SaleLine] 
+ truncate table [KYPOS_X2].[dbo].[POS_SaleHead] 
+ truncate table [KYPOS_X2].[dbo].[POS_POLine]
+ truncate table [KYPOS_X2].[dbo].[POS_POHead]
+ truncate table [KYPOS_X2].[dbo].[POS_ORDERLine]
+ truncate table [KYPOS_X2].[dbo].[POS_ORDERHead]
+ truncate table [KYPOS_X2].[dbo].[POS_ORDERBomLine]

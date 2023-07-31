@@ -1,0 +1,118 @@
+﻿@page "/POS/POSMenuMore"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@using Blazored.LocalStorage
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div class="row pt-2 pb-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+            <div class="col-12 text-left">
+                <a ID="btnback" class="" @onclick="@Back">
+                    <img src="/SALE/assets/img/applogo.png" alt="" style="max-width:5rem;" />&nbsp;
+                    <strong style="font-size:xx-large; color:crimson;">ดำเนิดการเพิ่มเติม</strong>
+                </a>
+            </div>
+        </div>
+
+       <div class="row pb-3 px-3 pt-2">
+           <div class="col-12">
+               <a ID="btnback" class="rounded" @onclick="@GoToBill">
+                   <div class="card" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;">
+                       <div class="card-body p-3">
+                           <div class="row pt-2">
+                               <div class="col-12">
+                                   <img src="/SALE/assets/img/invoice.png" alt="" style="width: 3rem;" />&nbsp;
+                                   <b>ประวัติบิล</b>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </a>
+           </div>
+       </div>
+
+        <hr />
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+    DateTime? SelectbillDate = DateTime.Now.Date;
+
+    public string SelectComID { get; set; } = "";
+
+
+    List<CompanyService.CompanyInfoList> ListCompany = new List<CompanyService.CompanyInfoList>();
+    LogInCrossAppReq LogInCrossAppReq = new LogInCrossAppReq();
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        ListCompany = CompanyService.ListCompanyInfoUIC(login.LoginInfo, "BRANCH", false);
+        SelectComID = ListCompany.FirstOrDefault().CompanyID;
+        isLoading = false;
+    }
+
+    async void GoToBill()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSBillHistory", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        //nav.NavigateTo($"POS/POSSaleDetail", false);
+        //await InvokeAsync(StateHasChanged);
+                     var url = pageHistory.GetGoBackPage();
+                nav.NavigateTo(url);
+                await InvokeAsync(StateHasChanged);
+    }
+
+}

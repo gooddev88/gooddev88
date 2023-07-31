@@ -1,0 +1,124 @@
+﻿@page "/POSV3/POSDisCount"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.ML
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject SweetAlertService Swal
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<div class="row pt-2 px-2">
+    <div class="col-12">
+        <div class="card" style="border-radius: 10px;">
+            <div class="card-body p-3">
+                <div class="row">
+                    <div class="col-md-3 col-sm-3 col-3 text-left">
+                        <a ID="btnback" class="" @onclick="@Back">
+                            <img src="/SALE/assets/img/back.png" style="max-width:3rem;" />
+                        </a>&nbsp;
+                    </div>
+                    <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-left">
+                        <strong style="font-size:2rem; color:crimson;">เพิ่มส่วนลด</strong>
+                    </div>
+                    <div class="col-md-3 col-sm-3 col-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (posService.DocSet.Head.ShipToLocID == "")
+{
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <DxComboBox Data="@DisCount"
+                        CssClass="w-100"
+                        TextFieldName="@nameof(SelectOption.Value)"
+                        ValueFieldName="@nameof(SelectOption.Description)"
+                        FilteringMode="DataGridFilteringMode.Contains"
+                        @bind-Value="@SelectDisCount"
+                        SizeMode="SizeMode.Large">
+            </DxComboBox>
+        </div>
+    </div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <DxTextBox CssClass="w-100"
+                       @bind-Text="@txtDisAmtPer"
+                       BindValueMode="BindValueMode.OnInput"
+                       SizeMode="SizeMode.Large">
+            </DxTextBox>
+        </div>
+    </div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <a class="btn btn-success w-100 p-2 text-white"
+               @onclick="@AddDisCount">เพิ่ม</a>
+        </div>
+    </div>}
+
+
+
+@code
+{ bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+    List<SelectOption> DisCount = new List<SelectOption>();
+    IEnumerable<TableInfoService.POS_TableModel> Tables;
+    public string SelectDisCount { get; set; } = "P";
+    public string txtDisAmtPer { get; set; } = "0";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(LoadData);
+        isLoading = false;
+    }
+    void LoadData()
+    {
+        DisCount = posService.ListDisCount();
+    }
+
+    async void AddDisCount()
+    {
+        if (SelectDisCount == "P")
+        {
+            decimal disc = 0;
+            decimal.TryParse(txtDisAmtPer, out disc);
+            posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == "DISCPER01").FirstOrDefault();
+            posService.AddItem(posService.DocSet, 1, disc);
+
+            txtDisAmtPer = "0";
+        }
+        else
+        {
+            decimal disc = 0;
+            decimal.TryParse(txtDisAmtPer, out disc);
+            posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == "DISCAMT01").FirstOrDefault();
+            posService.AddItem(posService.DocSet, 1, disc);
+            txtDisAmtPer = "0";
+        }
+
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+    }
+
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    } }

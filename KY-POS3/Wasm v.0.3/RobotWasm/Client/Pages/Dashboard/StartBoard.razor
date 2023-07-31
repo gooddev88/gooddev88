@@ -1,0 +1,114 @@
+﻿@page "/Dashboard/StartBoard"
+@using RobotWasm.Client.Helper.DeviceHelper;
+@inject IJSRuntime JSRuntime
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #70a9318a !important;
+            border-color: #70a931 !important;
+        }
+
+        .btn-light:focus {
+            color: #000;
+            background-color: #70a9318a !important;
+            border-color: #70a931 !important;
+        }
+</style>
+
+@if (!isLoading) {
+
+    <div class="text-center pt-3">
+    <h3>เมนูหลัก Asset Stock</h3>
+</div>
+
+        <div class="row pb-3 pt-4">
+            <div class="col-12">
+                <div class="row">
+
+                    @foreach (var m in UserInMenu.Where(o => o.GroupID == "SETUP" && o.TypeID != "MENUGROUP")) {
+                        @if (m.IsOpen == true) {
+                            <div class="col-md-6 col-sm-6 col-12 px-2 pb-1">
+                            <a @onclick="() => GoToPage(m.Url,m.MenuID)" class="w-100 btn btn-light">
+                                    <div> <i class="@m.Icon" style="font-size:2.5rem"></i> </div>
+                                    @*<h5>@m.MenuID</h5>*@
+                                    <span style="font-size:medium">
+                                        @m.MenuDesc2
+                                    </span>
+                                </a>
+                            </div>
+                        }
+                    }
+
+                @*<div class="col-md-6 col-sm-6 col-11 mx-auto p-1">
+                    <a href="qrpage" class="w-100 btn btn-light" style="background-color: #70a9318a !important;border-color: #70a931 !important;">
+                        <div>  <i class="fa-solid fa-qrcode" style="font-size:2.5rem"></i></div>
+                        <span style="font-size:medium">
+                            Scan QR
+                        </span>
+                    </a>
+                </div>*@
+                </div>
+            </div>
+        </div>
+
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+    public BrowserInfo browserInfo { get; set; }
+    protected BrowserDetectJsInterop deviceModule { get; private set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        var filter_app = new List<string> { "KYPOS_V2" };
+        UserInMenu = login.LogInInfo.UserInMenuDisplay.Where(o => filter_app.Contains(o.App)).ToList();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            deviceModule = new BrowserDetectJsInterop(JSRuntime);
+            browserInfo = await deviceModule.BrowserInfo();
+            firstRender = false;
+        }
+    }
+
+
+    void GoToPage(string url,string menu) {
+        bool isDesktop = false;
+        if (browserInfo != null) {
+            //if (browserInfo.OSName.ToLower().Contains("ios")) {
+            //    isTable = true;
+            //}
+            isDesktop = Convert.ToBoolean( browserInfo.IsDesktop);
+
+        }
+
+        if (isDesktop || menu == "410") {
+            nav.NavigateTo(url);
+        }else {
+            nav.NavigateTo($"Asset/AssetMobileDocList/{menu}");
+        }
+        //if (isTable) {
+        //    //nav.NavigateTo( _boardService.Temp_TableauUrl );
+        //} else {
+        //   // string url = $"DPMBoard/ExclusiveBoard/TableauBoardShow";
+        //    nav.NavigateTo(url);
+        //}
+    }
+
+}

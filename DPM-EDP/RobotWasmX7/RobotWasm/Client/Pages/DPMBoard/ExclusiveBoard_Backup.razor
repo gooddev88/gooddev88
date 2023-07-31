@@ -1,0 +1,173 @@
+﻿@page "/DPMBoard/ExclusiveBoard"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+<style>
+        .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+</style>
+
+@if (!isLoading) {
+        <div class="row">
+        <div class="col-md-12 text-center">
+
+            <h4 Class="text-start font-weight-light">
+        <i class="fab fa-free-code-camp"></i>&nbsp; Exclusive Board
+            </h4> 
+        </div>
+    </div>
+    <div class="row pb-3">
+        <div class="col-md-6 col-12">
+            @if (isShowEditBoard) {
+                <TelerikButton @onclick="@(()=>{isShowEditBoard=!isShowEditBoard;})" ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    กลับหน้าบอร์ด
+                </TelerikButton>
+            } else {
+                <TelerikButton @onclick="@(()=>{isShowEditBoard=!isShowEditBoard;})" ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    ปรับแต่งบอร์ด
+                </TelerikButton>
+            }
+
+        </div>
+    </div>
+    @if (!isShowEditBoard) {
+        <div class="row">
+            @if (boards != null) {
+                foreach (var b in boards.Where(o => o.board_type == "exclusive" && o.IsSelect)) {
+                    <div class="col-md-6 col-12 pb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-8">
+                                    <span style="font-size:medium;">@b.board_description</span><br />
+                                    <span style="font:small;">@b.board_id</span>
+                                 @*<p class="card-text">@b.board_description</p>*@
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <a class="btn text-decoration-none" @onclick="@(() => RemoveBoard(b))">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                        </div>
+                                </div>
+                            </div>
+                            <a href="@GetBoardLink(b.board_id)">
+                                <img src="@GetImage(b.board_id)" class="img-fluid" height="200" />
+                            </a>
+                        </div>
+                    </div>
+                }
+            }
+
+        </div>
+    } else {
+        @if (boards != null) {
+            foreach (var item in boards.Where(o => o.board_type == "exclusive")) {
+                <div class="k-card-list" style="background-color: #D3D3D3; border-left: 2px solid #BCBCBC; padding:10px;">
+                    <TelerikCard ThemeColor="@(item.IsSelect? "secondary" : "light")">
+                        <CardHeader>
+                            <span style="font-size:medium;">@item.board_description &nbsp;</span>
+                            <span style="font-size:small;">@item.board_id</span>
+                            @*<CardSubTitle Class="Kanit">@item.board_description</CardSubTitle>*@
+                        </CardHeader>
+                        <CardBody>
+                            <div class="row">
+                                <div class="col-12">
+                                    <img src="@GetImage(item.board_id)" height="200" />
+                                </div>
+                            </div>
+                        </CardBody>
+                        <CardActions Layout="@CardActionsLayout.Stretched">
+                            <TelerikButton Icon="plus" Enabled="!item.IsSelect" Class="k-flat Kanit" OnClick="@(() => AddBoard(item))">เพิ่มบอร์ด</TelerikButton>
+                        </CardActions>
+                    </TelerikCard>
+                </div>
+            }
+        }
+    }
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+    private bool isLoading = false;
+    public List<vw_board_in_user_select>? boards;
+    private bool isShowEditBoard = false;
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await LoadBoard();
+        await Task.Run(() => LoadData());
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+        public string GetImage(string boardId) {
+        return $"img/A01.svg";
+    }
+    public string GetBoardLink(string boardId) {
+        return $"DPMBoard/{boardId}/DashBoard";
+    }
+
+    protected async Task LoadData() {
+
+    }
+
+        async Task LoadBoard() {
+        isLoading = true;
+        try {
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            var res = await Http.GetAsync($"api/Board/GetUserInBoard?user={user}");
+
+            boards = JsonSerializer.Deserialize<List<vw_board_in_user_select>>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+            isLoading = false;
+        } catch(Exception ex) {
+            var x = ex.Message;
+        } finally {
+            isLoading = false;
+        }     
+    }
+
+        async Task AddBoard(vw_board_in_user_select item) {
+        item.IsSelect = true;
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        var res = await Http.GetAsync($"api/Board/AddUserInBoard?user={user}&board={item.board_id}");
+        var r = JsonSerializer.Deserialize<I_BasicResult>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+    }
+
+    async Task RemoveBoard(vw_board_in_user_select item) {
+        item.IsSelect = false;
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        var res = await Http.GetAsync($"api/Board/RemoveUserInBoard?user={user}&board={item.board_id}");
+        var r = JsonSerializer.Deserialize<I_BasicResult>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+    }
+
+}

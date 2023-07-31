@@ -1,0 +1,61 @@
+﻿@page "/POS/POSMenuMore"
+
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ดำเนิดการเพิ่มเติม</span></div>
+        </div>
+    </a>
+</div>
+
+
+<div class="row pb-3 pt-2">
+    <div class="col-12">
+        <a class="btn p-0 w-100 text-start rounded" @onclick="@GoToBill">
+            <div class="card" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;">
+                <div class="card-body p-2">
+                    <div class="row pt-2">
+                        <div class="col-12">
+                            <img src="img/salehistory.png" alt="" style="width: 3rem;" />&nbsp;
+                            <b>ประวัติบิล</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToBill() {
+        nav.NavigateTo($"POS/POSBillHistory/2", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POS/POSSaleDetail");
+    }
+}

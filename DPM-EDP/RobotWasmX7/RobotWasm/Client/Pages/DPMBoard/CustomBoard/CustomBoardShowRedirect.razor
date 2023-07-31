@@ -1,0 +1,16 @@
+﻿@page "/DPMBoard/CustomBoard/CustomBoardShowRedirect/{boardid}"
+
+@code {
+    [Parameter] public string boardid { get; set; }
+
+
+    protected override async Task OnInitializedAsync() {
+
+    }
+
+        protected override async Task OnParametersSetAsync()
+    {
+        nav.NavigateTo($"/DPMBoard/CustomBoard/CustomBoardShow/{boardid}",false);
+        await InvokeAsync(StateHasChanged);
+    }
+}

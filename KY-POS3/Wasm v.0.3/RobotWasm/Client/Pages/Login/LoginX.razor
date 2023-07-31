@@ -1,0 +1,15 @@
+﻿@page "/LoginX"
+<h3>LoginX</h3>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+              var userLogin = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        } catch(Exception ex) {
+            var xx = ex.Message;
+        }
+      
+       
+    }
+}

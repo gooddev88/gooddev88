@@ -1,0 +1,198 @@
+﻿@page "/Promotion/PromotionList"
+@using Robot.Data.ML;
+
+@inject PromotionService promotionService
+<style>
+   
+</style>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                <BreadcrumbLink To="Dashboard/StartBoard">Main Menu</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem>
+                <BreadcrumbLink To="Stock/StkAdjustList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            @if (isShowNew) {
+                <div class="col-6" style="text-align:right;">
+                    <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                        <i class="fa-solid fa-file-circle-plus"></i>&nbsp;
+                        สร้างโปรโมชั่นใหม่
+                    </Button>
+                </div>
+            }
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion Class="pt-1">
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row">
+
+                        <div class="col-md-3 col-12 pt-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                            </div>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+        <div class="row pt-2">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList
+                     PageSize="30"
+                     Resizable=true
+                     Reorderable=true
+                     Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+            <GridToolBarTemplate>
+                <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+            </GridToolBarTemplate>
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(Promotions.ProID)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as Promotions;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                        <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field=@nameof(Promotions.ProID) Title="รหัสโปรโมชั่น" Width="150px" />
+                <GridColumn Field=@nameof(Promotions.ProDesc) Title="รายละเอียด" Width="250px" />
+                @*<GridColumn Field=@nameof(Promotions.PatternID) Title="Pattern" Width="150px"/>*@
+                <GridColumn Field=@nameof(Promotions.DateBegin) Title="วันที่เริ่ม" Width="140px" DisplayFormat="{0:dd/MM/yyyy}" />
+                <GridColumn Field=@nameof(Promotions.DateEnd) Title="วันที่สิ้นสุด" Width="140px" DisplayFormat="{0:dd/MM/yyyy}" />
+                
+                <GridColumn Field=@nameof(Promotions.XValue) Title="X (จำนวน)" Width="160px" DisplayFormat="{0:N2}"/>
+                    <GridColumn Field=@nameof(Promotions.YValue) Title="Y (ราคา)" Width="160px" DisplayFormat="{0:N2}"/>
+                 <GridColumn Field=@nameof(Promotions.CreatedBy) Title="สร้างโดย" Width="130px"/>
+                <GridColumn Field=@nameof(Promotions.CreatedDate) Title="วันที่สร้าง" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                    
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+<div class="demo-container">
+
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+ 
+
+@code {
+
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    public string SearchText { get; set; } = "";
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    PromotionService.I_PromotionFiterSet Filter = PromotionService.NewFilterSet();
+    bool ExportAllPages { get; set; } = true;
+
+    List<Promotions> DocList = new List<Promotions>();
+    List<SelectOption> ListStatus = new List<SelectOption>();
+
+
+    protected override async Task OnInitializedAsync() {
+        Filter = await Task.Run(() => promotionService.GetSessionFiterSet());
+        if (Filter == null) {
+            Filter = PromotionService.NewFilterSet();
+        }
+        await Task.Run(() => login.CheckLogin());
+        LoadDropDown();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList = PromotionService.ListDoc(Filter);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void LoadDropDown() {
+        //ListStatus = PromotionService.ListStatus();
+    }
+
+    void SetDefaultFilter() {
+        Filter.Rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+        promotionService.SetSessionFiterSet(Filter);
+    }
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "651");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo,"651")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "651")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(Promotions select_data) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        isLoading = true;
+        await sessionStorage.SetItemAsync(PromotionService.sessionActiveId, select_data.ProID);
+        promotionService.DocSet = promotionService.GetDocSet(select_data.ProID, rcom, com);
+        nav.NavigateTo($"Promotion/PromotionDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    public async void NewDoc() { 
+        NewTran(); 
+    }
+    void CheckedChanged(bool value) {
+        //Filter.ShowActive = value;
+    }
+
+   async void NewTran() {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        isLoading = true;
+        await sessionStorage.RemoveItemAsync(PromotionService.sessionActiveId);
+        promotionService.DocSet = PromotionService.NewTransaction(rcom,com);
+        nav.NavigateTo($"Promotion/PromotionDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}

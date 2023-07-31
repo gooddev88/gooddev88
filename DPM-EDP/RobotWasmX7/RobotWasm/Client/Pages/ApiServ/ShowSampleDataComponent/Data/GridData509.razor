@@ -1,0 +1,258 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.Data
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DATA509</h4>
+        <h5>อุบัติเหตุ</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata"
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.acc_id))" Title="acc_id" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.accident_no))" Title="accident_no" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.accident_date))" Title="accident_date" DisplayFormat="{0:dd/MM/yyyy}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.accident_time))" Title="accident_time" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.accident_timerange))" Title="accident_timerange" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.village))" Title="village" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.road))" Title="road" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.road_number))" Title="road_number" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.subdistrict))" Title="subdistrict" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.district))" Title="district" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.branch))" Title="branch" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.province))" Title="province" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.road_type))" Title="road_type" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.road_surface))" Title="road_surface" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.scene_of_road))" Title="scene_of_road" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_crossroads))" Title="is_crossroads" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_uturn))" Title="is_uturn" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.special_notice))" Title="special_notice" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.special_event_notice))" Title="special_event_notice" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.number_of_lanes))" Title="number_of_lanes" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_island_road))" Title="is_island_road" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_ok_vehicle))" Title="is_ok_vehicle" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.parties_type))" Title="parties_type" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.weather))" Title="weather" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.visibility))" Title="visibility" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.damage_value))" Title="damage_value"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.accident_cause))" Title="accident_cause" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_drink))" Title="is_drink" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_over_speed))" Title="is_over_speed" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_violating_traffic_lights))" Title="is_violating_traffic_lights" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_violating_traffic_sign))" Title="is_violating_traffic_sign" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_drive_backward))" Title="is_drive_backward" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_illegal_overtaking))" Title="is_illegal_overtaking" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_phone))" Title="is_phone" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_closecust))" Title="is_closecust" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_substance_abuse))" Title="is_substance_abuse" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_doze_off))" Title="is_doze_off" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_over_weight))" Title="is_over_weight" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_roadblock))" Title="is_roadblock" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_invisible))" Title="is_invisible" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_bad_vehicle))" Title="is_bad_vehicle" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_bad_road))" Title="is_bad_road" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.vehicle_type))" Title="vehicle_type" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.vehicle_subtype))" Title="vehicle_subtype" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.parties_status))" Title="parties_status" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_insure))" Title="is_insure" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.parties_sex))" Title="parties_sex" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.paties_age))" Title="paties_age"  DisplayFormat="{0:n0}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.paties_agerange))" Title="paties_agerange" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.paties_nationality))" Title="paties_nationality" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.paries_action))" Title="paries_action" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.injured_status))" Title="injured_status" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.has_driving_license))" Title="has_driving_license" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.alcohol_test_status))" Title="alcohol_test_status" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.safety_equipment))" Title="safety_equipment" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.domicile))" Title="domicile" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.death_place))" Title="death_place" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.help_by))" Title="help_by" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.behaviors))" Title="behaviors" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.guilty_of_law))" Title="guilty_of_law" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.no_helmet))" Title="no_helmet" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_motorcycle))" Title="is_motorcycle" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_drink_and_drive))" Title="is_drink_and_drive" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.no_seat_belts))" Title="no_seat_belts" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.no_driving_license))" Title="no_driving_license" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_over_speed2))" Title="is_over_speed2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_violating_traffic_sign2))" Title="is_violating_traffic_sign2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_violating_traffic_lights2))" Title="is_violating_traffic_lights2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_drive_backward2))" Title="is_drive_backward2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_illegal_overtaking2))" Title="is_illegal_overtaking2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_phone2))" Title="is_phone2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_doze_off2))" Title="is_doze_off2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_closecust2))" Title="is_closecust2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_substance_abuse2))" Title="is_substance_abuse2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_over_weight2))" Title="is_over_weight2" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_sit_back_pickup))" Title="is_sit_back_pickup" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.is_other_cause))" Title="is_other_cause" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.parties_qty))" Title="parties_qty"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.lat))" Title="lat"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.lon))" Title="lon"  DisplayFormat="{0:n2}" Width="130px" />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.file_name))" Title="file_name" Width="130px"  />
+                            <GridColumn Field="@(nameof(Data509Set.acd_accident_person.etl_date))" Title="etl_date" DisplayFormat="{0:dd/MM/yyyy}" Width="130px" />
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public Data509Set.DocSet data_set { get; set; }
+    public List<Data509Set.acd_accident_person> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.rows.Where(o =>
+         (
+             o.province.ToLower().Contains(search)
+             || o.village.ToLower().Contains(search)
+             || o.district.ToLower().Contains(search)
+             || o.subdistrict.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=data509");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<Data509Set.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                        isLoading = false;
+                return;
+            }
+            data_set = (Data509Set.DocSet)query.Result;
+            ndata = data_set.rows;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

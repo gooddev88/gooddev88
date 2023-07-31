@@ -1,0 +1,396 @@
+﻿@page "/DPM/Area/AreaInfo"
+@using Robot.Data.DA.DPM.Area
+@using Robot.Data.ML
+@using Robot.Data.ML.DPM
+
+
+
+<div class="row pt-2 pb-3">
+    <div class="col-6 pl-2">
+        @if (isShowBack) {
+            <a onclick="@BackStep"><i class="fas fa-backward"></i>&nbsp ย้อนกลับ</a>
+        }
+
+    </div>
+    <div class="col-6 text-end pr-2">
+        <h2 style="color:darkslategrey"><b>@CurrentStepName</b> </h2>
+    </div>
+</div>
+@if (isShowSearch) {
+    <div class="row pt-2 pb-3">
+        <div class="col-md-12">
+            <TelerikTextBox @bind-Value="@search_text" OnChange="@OnSearch"
+                        FillMode="@ThemeConstants.TextBox.FillMode.Solid" Rounded=@ThemeConstants.TextBox.Rounded.Medium Size="@ThemeConstants.TextBox.Size.Large" PlaceHolder="ค้นหา..."></TelerikTextBox>
+        </div>
+    </div>
+}
+
+@if (CurrentStep == "province") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@provinces
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100
+                     OnRowClick="@OnRowProvinceClickHandler">
+                <GridColumns>
+                    <GridColumn Field=@nameof(a_mm.pcode) Width="100px" Title="รหัสจังหวัด" />
+                    <GridColumn Field=@nameof(a_mm.pname) Width="160px" Title="ชื่อจังหวัด" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+@if (CurrentStep == "district") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@districts
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100
+                     OnRowClick="@OnRowDistinctClickHandler">
+                <GridColumns>
+                    <GridColumn Field=@nameof(a_mm.acode) Width="100px" Title="รหัสอำเภอ" />
+                    <GridColumn Field=@nameof(a_mm.aname) Width="160px" Title="ชื่ออำเภอ" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+@if (CurrentStep == "dimension") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@dimensions
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100
+                     OnRowClick="@OnRowDimensionClickHandler">
+                <GridColumns>
+                    <GridColumn Field=@nameof(SelectOption.Description) Width="160px" Title="มิติข้อมูล" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+@if (CurrentStep == "subdistrict") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@sub_districts
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100
+                     OnRowClick="@OnRowSubDistinctClickHandler">
+                <GridColumns>
+                    <GridColumn Field=@nameof(a_mm.tcode) Width="100px" Title="รหัสตำบล" />
+                    <GridColumn Field=@nameof(a_mm.tname) Width="160px" Title="ชื่อตำบล" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+
+@if (CurrentStep == "mooban") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@moo_bans
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     OnRowClick="@OnRowMoobanClickHandler"
+                     PageSize=100>
+                <GridColumns>
+                    <GridColumn Field=@nameof(a_mm.mcode) Width="100px" Title="รหัสหมู่บ้าน" />
+                    <GridColumn Field=@nameof(a_mm.mname) Width="160px" Title="ชื่อหมู่บ้าน" />
+                    <GridColumn Field=@nameof(a_mm.lat) Width="80px" Title="Latitude" />
+                    <GridColumn Field=@nameof(a_mm.long_) Width="80px" Title="longitude" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+@if (CurrentStep == "apt") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@apt
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100
+                     OnRowClick="@OnRowActClickHandler">
+                <GridColumns>
+
+                    <GridColumn Field=@nameof(a_community.apt_code) Width="100px" Title="รหัส อปท" />
+                    <GridColumn Field=@nameof(a_community.apt_type) Width="100px" Title="ชนิด อปท" />
+                    <GridColumn Field=@nameof(a_community.apt_name) Width="160px" Title="ชื่อ อปท" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+
+@if (CurrentStep == "community") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikGrid Data=@community
+                     Width="100%"
+                     Resizable="true"
+                     Pageable="true"
+                     PageSize=100>
+                <GridColumns>
+
+                    <GridColumn Field=@nameof(a_community.commu_name) Width="160px" Title="ชื่อชุมชน" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+}
+@if (CurrentStep == "mooban_map") {
+    <div class="row">
+        <div class="col-md-12">
+            <TelerikMap Center="@Center"
+                    Zoom="12"
+                    OnShapeClick="@OnShapeClick">
+                <MapLayers>
+                    <MapLayer Type="@MapLayersType.Tile"
+                          Attribution="@Attribution"
+                          Subdomains="@Subdomains"
+                          UrlTemplate="@UrlTemplate">
+                    </MapLayer> 
+
+                    <MapLayer Type="@MapLayersType.Marker"
+                          Data="@marker_datas"
+                          LocationField="@nameof(MarkerModel.LatLng)"
+                          TitleField="@nameof(MarkerModel.Title)">
+                    </MapLayer>
+                </MapLayers>
+            </TelerikMap>
+        </div>
+    </div>
+}
+
+@code {
+    public string CurrentStep { get; set; } = "province";
+    public string CurrentStepName { get; set; } = "จังหวัด";
+    public string select_province { get; set; } = "";
+    public string select_district { get; set; } = "";
+    public string select_sucdistinct { get; set; } = "";
+
+    public string dimension { get; set; } = "mooban";
+    public string select_apt { get; set; } = "";
+    public string select_commu { get; set; } = "";
+
+    public bool isShowSearch = true;
+    public bool isShowBack = true;
+
+    public List<a_mm> provinces { get; set; }
+    public List<a_mm> districts { get; set; }
+    public List<a_mm> sub_districts { get; set; }
+    public List<a_mm> moo_bans { get; set; }
+    public List<a_community> apt { get; set; }
+    public List<a_community> community { get; set; }
+    public List<SelectOption> dimensions { get; set; }
+    public List<MarkerModel> marker_datas { get; set; }
+        public string[] Subdomains { get; set; } = new string[] { "a", "b", "c" };
+    public string UrlTemplate { get; set; } = "https://#= subdomain #.tile.openstreetmap.org/#= zoom #/#= x #/#= y #.png";
+    public string Attribution { get; set; } = "&copy; <a href='https://osm.org/copyright'>OpenStreetMap contributors</a>";
+        public double[] Center { get; set; } = new double[] { 15.517641477912017, 100.63329004520848  };
+    public string search_text { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => LoadData());
+
+    }
+    async private Task LoadData() {
+        search_text = search_text == null ? "" : search_text;
+        if (CurrentStep == "province") {
+            provinces = AreaInfoService.ListProvince(search_text);
+        }
+        if (CurrentStep == "district") {
+            districts = AreaInfoService.ListDistinct(select_province, search_text);
+        }
+        if (CurrentStep == "subdistrict") {
+            sub_districts = AreaInfoService.ListSubDistinct(select_district, search_text);
+        }
+        if (CurrentStep == "mooban") {
+            moo_bans = AreaInfoService.ListMooBan(select_sucdistinct, search_text);
+        }
+        if (CurrentStep == "apt") {
+            apt = AreaInfoService.ListApt(select_district, search_text);
+        }
+        if (CurrentStep == "dimension") {
+            dimensions = AreaInfoService.ListDimension();
+        }
+        if (CurrentStep == "community") {
+            community = AreaInfoService.ListCommu(select_apt, search_text);
+        }
+        SetActiveControl();
+    }
+    private void SetActiveControl() {
+
+        isShowSearch = true;
+        isShowBack = true;
+        if (CurrentStep == "province") {
+            isShowBack = false;
+            CurrentStepName = "จังหวัด";
+        }
+        if (CurrentStep == "district") {
+            CurrentStepName = "อำเภอ";
+        }
+        if (CurrentStep == "subdistrict") {
+            CurrentStepName = "ตำบล";
+        }
+        if (CurrentStep == "mooban") {
+            CurrentStepName = "หมู่บ้าน";
+        }
+        if (CurrentStep == "mooban_map") {
+            CurrentStepName = "ที่ตั้งหมู่บ้าน";
+        }
+        if (CurrentStep == "apt") {
+            CurrentStepName = "อปท";
+        }
+        if (CurrentStep == "dimension") {
+            isShowSearch = false;
+            CurrentStepName = "มิติข้อมูล";
+        }
+        if (CurrentStep == "community") {
+            CurrentStepName = "ชุมชน";
+        }
+    }
+    private async Task OnSearch(object input) {
+        search_text = input.ToString();
+        await Task.Run(() => LoadData());
+
+    }
+    async private Task BackStep() {
+        if (CurrentStep == "mooban_map") {
+            CurrentStep = "mooban";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "mooban") {
+            CurrentStep = "subdistrict";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "subdistrict") {
+            CurrentStep = "district";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "district") {
+            CurrentStep = "province";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "apt") {
+            CurrentStep = "district";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "community") {
+            CurrentStep = "apt";
+            await Task.Run(() => LoadData());
+            return;
+        }
+        if (CurrentStep == "dimension") {
+            CurrentStep = "district";
+            await Task.Run(() => LoadData());
+            return;
+        }
+
+
+    }
+
+
+    async Task OnRowProvinceClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as a_mm;
+        CurrentStep = "district";
+        select_province = data.pcode;
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+
+    }
+    async Task OnRowDistinctClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as a_mm;
+        CurrentStep = "dimension";
+        select_district = data.acode;
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+
+    }
+    async Task OnRowDimensionClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as SelectOption;
+        switch (data.Value) {
+            case "ข้อมูลตามพื้นที่":
+                CurrentStep = "subdistrict";
+
+                break;
+            case "ข้อมูลตาม อปท":
+                CurrentStep = "apt";
+                break;
+            default:
+                break;
+        }
+
+
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+
+    }
+    async Task OnRowSubDistinctClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as a_mm;
+        CurrentStep = "mooban";
+        select_sucdistinct = data.tcode;
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+
+    }
+    async Task OnRowMoobanClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as a_mm;
+        if (string.IsNullOrEmpty(data.lat)) {
+            return;
+        }
+        try {
+            CurrentStep = "mooban_map";
+            marker_datas = new List<MarkerModel>();
+            Center  = new double[] { Convert.ToDouble(data.lat),  Convert.ToDouble(data.long_)};
+            marker_datas.Add(new MarkerModel { LatLng = new double[] { Convert.ToDouble(data.lat), Convert.ToDouble(data.long_) }, Title = data.mcode + " " + data.mname });
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception) {
+
+        }
+
+
+
+
+
+
+    }
+    async Task OnRowActClickHandler(GridRowClickEventArgs args) {
+        search_text = "";
+        var data = args.Item as a_community;
+        CurrentStep = "community";
+        select_apt = data.apt_code;
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+
+    }
+    public void OnShapeClick(MapShapeClickEventArgs args) {
+        //var dataItem = args.DataItem as BubbleModel;
+        //var eventArgs = args.EventArgs as MouseEventArgs;
+
+        //LogToConsole(
+        //    $"shape click: revenue = {dataItem.Revenue}, location = [{string.Join(",", dataItem.LatLng)}]," +
+        //    $"clientX = {eventArgs.ClientX}, clientY = {eventArgs.ClientY}");
+    }
+
+}

@@ -1,0 +1,156 @@
+﻿ 
+ 
+@page "/Sample/Tlk/TMapOpenStreet"
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+<TelerikRootComponent>
+
+<TelerikMap Center="@Center"
+            MinZoom="3"
+            MaxZoom="8"
+            Zoom="3"
+            WrapAround="false"
+            OnClick="@OnMapClick"
+            OnShapeClick="@OnShapeClick"
+            OnMarkerClick="@OnMarkerClick">
+    <MapLayers>
+        <MapLayer Type="@MapLayersType.Tile"
+                  Attribution="@Attribution"
+                  Subdomains="@Subdomains"
+                  UrlTemplate="@UrlTemplate">
+        </MapLayer>
+
+        <MapLayer Type="@MapLayersType.Bubble"
+                  Data="@BubbleData"
+                  LocationField="@nameof(BubbleModel.LatLng)"
+                  ValueField="@nameof(BubbleModel.Population_2010)">
+                  <MapLayerBubbleSettings>
+                      <MapLayerBubbleSettingsStyle>
+                          <MapLayerBubbleSettingsStyleFill Color="#0000ff"></MapLayerBubbleSettingsStyleFill>
+                          <MapLayerBubbleSettingsStyleStroke Color="#000000"></MapLayerBubbleSettingsStyleStroke>
+                      </MapLayerBubbleSettingsStyle>
+                  </MapLayerBubbleSettings>
+        </MapLayer>
+
+        <MapLayer Type="@MapLayersType.Marker"
+                  Data="@MarkerData1"
+                  LocationField="@nameof(MarkerModel.LatLng)"
+                  TitleField="@nameof(MarkerModel.Address)">
+        </MapLayer>
+    </MapLayers>
+</TelerikMap>
+<span>@EventLog</span>
+ 
+</TelerikRootComponent>
+@*<DemoConsole EventLog="@EventLog" OnClearLogClick="@OnClearLogClick" />*@
+@code {
+    public string EventLog { get; set; } = string.Empty;
+
+    public string[] Subdomains { get; set; } = new string[] { "a", "b", "c" };
+    public string UrlTemplate { get; set; } = "https://#= subdomain #.tile.openstreetmap.org/#= zoom #/#= x #/#= y #.png";
+    public string Attribution { get; set; } = "&copy; <a href='https://osm.org/copyright'>OpenStreetMap contributors</a>";
+    public double[] Center { get; set; } = new double[] { 30.268107, -97.744821 };
+
+    public List<MarkerModel> MarkerData1 { get; set; } = new List<MarkerModel>()
+    {
+        new MarkerModel()
+        {
+            LatLng = new double[] { 47.6062, -122.3321 },
+            Address = "Seattle, WA",
+        },
+        new MarkerModel()
+        {
+            LatLng = new double[] { 30.268107, -97.744821 },
+            Address = "Austin, TX"
+        },
+        new MarkerModel()
+        {
+            LatLng = new double[] { 42.4906, -71.2760 },
+            Address = "Bedford, MA",
+        },
+    };
+
+    public List<BubbleModel> BubbleData { get; set; } = new List<BubbleModel>()
+    {
+        new BubbleModel()
+        {
+            LatLng = new double[] { 38.99, -94.62 }, City = "Kansas City", Country = "United States of America", Population_2010 = 1470
+        },
+        new BubbleModel()
+        {
+            LatLng = new double[] { 34, -118.25 }, City = "Los Angeles-Long Beach-Santa Ana", Country = "United States of America", Population_2010 = 12500
+        },
+        new BubbleModel()
+        {
+            LatLng = new double[] { 44.92, -93.3 }, City = "Minneapolis-St. Paul", Country = "United States of America", Population_2010 = 2620
+        },
+    };
+
+    public void OnMapClick(MapClickEventArgs args)
+    {
+        var location = args.Location;
+        var mouseEventArgs = args.EventArgs as MouseEventArgs;
+
+        var log = string.Empty;
+        log += "<div>";
+        log += $"<div><strong>Map Click event</strong> at location <strong>[{location.Latitude}, {location.Longitude}]</strong>.</div>";
+        log += $"<div>Mouse Position: {mouseEventArgs.ClientX}, {mouseEventArgs.ClientY}</div>";
+        log += "</div>";
+
+        LogToConsole(log);
+    }
+
+    public void OnMarkerClick(MapMarkerClickEventArgs args)
+    {
+        var dataItem = args.DataItem as MarkerModel;
+        var mouseEventArgs = args.EventArgs as MouseEventArgs;
+
+        var log = string.Empty;
+        log += "<div>";
+        log += $"<div><strong>Marker Click event</strong> on <strong>{dataItem.Address}</strong> ";
+        log += $"at location <strong>[{string.Join(",", dataItem.LatLng)}]</strong>.</div>";
+        log += $"<div>Mouse Position: {mouseEventArgs.ClientX}, {mouseEventArgs.ClientY}.</div>";
+        log += "</div>";
+
+        LogToConsole(log);
+    }
+
+    public void OnShapeClick(MapShapeClickEventArgs args)
+    {
+        var dataItem = args.DataItem as BubbleModel;
+        var mouseEventArgs = args.EventArgs as MouseEventArgs;
+
+        var log = string.Empty;
+        log += "<div>";
+        log += $"<div><strong>Shape Click event</strong> on <strong>{dataItem.City}</strong> ";
+        log += $"at location <strong>[{string.Join(",", dataItem.LatLng)}]</strong>.</div>";
+        log += $"<div>Mouse Position: {mouseEventArgs.ClientX}, {mouseEventArgs.ClientY}.</div>";
+        log += "</div>";
+
+        LogToConsole(log);
+    }
+
+    public void LogToConsole(string text)
+    {
+        EventLog = EventLog.Insert(0, text);
+    }
+
+    public void OnClearLogClick()
+    {
+        EventLog = string.Empty;
+    }
+
+    public class MarkerModel
+    {
+        public double[] LatLng { get; set; }
+        public string Address { get; set; }
+    }
+
+    public class BubbleModel
+    {
+        public double[] LatLng { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public int Population_2010 { get; set; }
+    }
+}

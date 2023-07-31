@@ -1,0 +1,19 @@
+﻿@page "/Logout"
+@using  Robot.Data.GADB.TT
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Blazored.SessionStorage
+@using Robot.Data
+
+@inject LogInService login
+@inject ISessionStorageService sessionStorage
+@inject SweetAlertService Swal
+@inject NavigationManager nav
+@inject AuthenticationStateProvider authStateProvider
+
+@code {
+    protected override async Task OnInitializedAsync() {
+   await Task.Run(login.SetLogOutSessionLog);
+        nav.NavigateTo("Login", true);
+    }
+
+}

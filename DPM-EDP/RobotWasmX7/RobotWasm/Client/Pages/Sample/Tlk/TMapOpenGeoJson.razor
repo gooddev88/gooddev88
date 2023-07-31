@@ -1,0 +1,171 @@
+﻿ 
+@page "/Sample/Tlk/TMapOpenGeoJson"
+
+@using RobotWasm.Shared.Data.ML.DPMBaord.Accident
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@inject HttpClient Http
+ 
+
+<h3>EventLocationMap</h3>
+
+@using System.Net
+
+<style>
+
+    .loader-container {
+        text-align: center;
+        display: inline-table;
+        padding-top: 10px;
+        position: absolute;
+        left: 50%;
+    }
+</style>
+
+
+<TelerikRootComponent>
+    <TelerikMap Center="@Center"
+                WrapAround="true"
+                MinZoom="1"
+                  OnClick="@OnMapClick"
+                 OnShapeClick="@OnShapeClick"
+                Zoom="5">
+        <MapLayers>
+            <MapLayer Type="@MapLayersType.Shape"
+                      Data="@ThaiLandGeo">
+                <MapLayerShapeSettings>
+                    <MapLayerShapeSettingsStyle>
+                        <MapLayerShapeSettingsStyleFill Color="#FF5733" Opacity="0.5"></MapLayerShapeSettingsStyleFill>
+                        <MapLayerShapeSettingsStyleStroke Color="#ffffff"></MapLayerShapeSettingsStyleStroke>
+                    </MapLayerShapeSettingsStyle>
+                </MapLayerShapeSettings>
+            </MapLayer>
+
+            <MapLayer Type="@MapLayersType.Marker"
+                      Data="@MarkerData"
+                      LocationField="@nameof(MarkerModel.LatLng)"
+                      TitleField="@nameof(MarkerModel.Address)">
+                <MapLayerMarkerSettings>
+                    <MapLayerMarkerSettingsTooltip>
+                        <Template>
+                            @{
+                                var dataItem = context.DataItem as MarkerModel;
+                            }
+
+                            <div>@dataItem.Address</div>
+                        </Template>
+                    </MapLayerMarkerSettingsTooltip>
+                </MapLayerMarkerSettings>
+            </MapLayer>
+        </MapLayers>
+    </TelerikMap>
+</TelerikRootComponent>
+
+@code {
+    public List<AccindentLocationSet> Data { get; set; }
+    public double[] Center { get; set; } = new double[] { 15.517641477912017, 100.63329004520848 };
+
+
+    public string ThaiLandGeo { get; set; } = "";
+    protected override async Task OnInitializedAsync() {
+
+    }
+
+    protected override async Task OnParametersSetAsync() {
+        await LoadMap();
+    }
+
+
+
+    public List<MarkerModel> MarkerData { get; set; } = new List<MarkerModel>()
+                        {
+        // North America
+        new MarkerModel()
+        {
+            LatLng = new double[] { 9.122980524119631, 99.30180777840793 },
+            Address = "สุราษฎร์ธานี",
+        },
+
+
+        new MarkerModel()
+        {
+            LatLng = new double[] { 16.86088359401918, 99.75811671189606},
+            Address = "Sukhothai",
+        },
+
+    };
+
+    public class MarkerModel {
+        public double[] LatLng { get; set; }
+        public string Address { get; set; }
+    }
+
+
+    async public Task LoadMap() {
+
+        //  string url = "https://raw.githubusercontent.com/apisit/thailand.json/master/thailandWithName.json";
+        //  string url = "https://accy.gooddev.net/thailand.json";
+
+
+     ThaiLandGeo = await Http.GetStringAsync ("assets/geojson/thailand.json");
+
+         //   ThaiLandGeo = await Http.GetStringAsync ("assets/geojson/World.json");
+
+        //using (var httpClient = new HttpClient()) {
+        //    try {
+        //        ThaiLandGeo = await Task.Run(() => httpClient.GetStringAsync(url));
+        //    } catch (Exception ex) {
+
+        //        var e = ex.Message;
+        //    }
+
+        //} 
+
+        var response =await  Task.Run(() =>  _clientService.GetAllAsync<List<string>>($"{Globals.BaseURL}/api/cims/master/GetProvince"));
+        var Provinces = (List<string>)response.Result;
+
+
+        await Task.Run(() => _a01Data.GetData(new DateTime(2020, 1, 1), new DateTime(2022, 12, 31), Provinces));
+
+
+
+
+        foreach (var d in _a01Data.doc.EventLocation) {
+            double lat = 0;
+            double lon = 0;
+            double.TryParse(d.lat, out lat);
+            double.TryParse(d.lon, out lon);
+            MarkerData.Add(new MarkerModel { LatLng = new double[] { lat, lon }, Address = d.province });
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    public void OnShapeClick(MapShapeClickEventArgs args)
+    {
+        var xx = args.GeoJsonDataItem;
+        //var dataItem = args.DataItem as BubbleModel;
+        var mouseEventArgs = args.EventArgs as MouseEventArgs;
+
+        //var log = string.Empty;
+        //log += "<div>";
+        //log += $"<div><strong>Shape Click event</strong> on <strong>{dataItem.City}</strong> ";
+        //log += $"at location <strong>[{string.Join(",", dataItem.LatLng)}]</strong>.</div>";
+        //log += $"<div>Mouse Position: {mouseEventArgs.ClientX}, {mouseEventArgs.ClientY}.</div>";
+        //log += "</div>";
+
+        //LogToConsole(log);
+    }
+      public void OnMapClick(MapClickEventArgs args)
+    {
+        var location = args.Location;
+        var mouseEventArgs = args.EventArgs as MouseEventArgs;
+
+        //var log = string.Empty;
+        //log += "<div>";
+        //log += $"<div><strong>Map Click event</strong> at location <strong>[{location.Latitude}, {location.Longitude}]</strong>.</div>";
+        //log += $"<div>Mouse Position: {mouseEventArgs.ClientX}, {mouseEventArgs.ClientY}</div>";
+        //log += "</div>";
+
+        //LogToConsole(log);
+    }
+}

@@ -1,0 +1,382 @@
+﻿@page "/PO/POList/{menu}"
+ 
+@using Robot.POS.DA;
+@using Telerik.Blazor.Components.Upload;
+@using static Robot.POS.DA.POS_POService;
+
+@inject POS_POService POS_poService
+ 
+
+
+
+<style>
+    .seagreen {
+        background-color: seagreen;
+    }
+
+    .palevioletred {
+        background-color: palevioletred;
+    }
+
+    .myPopUp > .modal-content {
+        min-width: 800px;
+        left: 50%;
+        transform: translate(-50%);
+    }
+
+    .col-auto {
+        flex: 0 0 100%;
+    }
+
+        .col-auto > button[type=button] {
+            width: 100% !important;
+        }
+</style>
+
+
+
+
+
+         <div class="row">
+            <div class="col-6">
+          @*      <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink Clicked="@Back">@menuGroupCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Master/Company/CompanyList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>*@
+            </div>
+
+    @if (menu == "2101") {
+        <div class="col-6" style="text-align:right;">
+            <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                <i class="fas fa-plus-circle"></i>&nbsp;
+                สร้างใหม่
+            </Button>
+        </div>
+    }
+    
+
+        </div>
+
+
+        <div class="row pt-3 px-2">
+            <div class="col-md-12 col-sm-12 col-12">
+         @*       <div class="row pb-1">
+                    <div class="col-12 mx-auto text-center">
+                        <a ID="btnback" class="btn btn-dark w-100 text-white" @onclick="@Back">
+                            <span style="font-size: 1.5rem;">
+                                <i class="fas fa-chevron-circle-left"></i>&nbsp;ราคาสินค้า
+                            </span>
+                        </a>
+                    </div>
+                </div>*@
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <span>สาขา</span>
+                                                   <TelerikComboBox  @bind-Value="@Filter.Status"
+                                                 Data="@cboStatus"
+                                             Placeholder=""
+                                                 TextField="@nameof(POS_POService.I_StatusBinding.Desc)"
+                                                 ValueField="@nameof(POS_POService.I_StatusBinding.Value)"
+                                             ItemHeight="35"
+                                             Filterable="true"
+                                             Size="ThemeConstants.DropDownList.Size.Large"
+                                             Width="100%">
+                            </TelerikComboBox>
+                                    
+                                    </div>
+
+                            <div class="col-md-2">
+                                <span>เลือกผู้ขาย (สั่งพิมพ์)</span>
+                                <TelerikComboBox @bind-Value="@Filter.Vendor"
+                                                 Data="@cboVendor"
+                                                 Placeholder=""
+                                                 TextField="@nameof(vw_VendorInfo.FullNameTh)"
+                                                 ValueField="@nameof(vw_VendorInfo.VendorID)"
+                                                 ItemHeight="35"
+                                                 Filterable="true"
+                                                 Size="ThemeConstants.DropDownList.Size.Large"
+                                                 Width="100%">
+                                </TelerikComboBox>
+
+                            </div>
+
+                            <div class="col-md-2">
+                                <label>วันที่ </label>
+
+                                <TelerikDatePicker @bind-Value="Filter.DateFrom"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+
+                            </div>
+                            <div class="col-md-2">
+                                <label>ถึงวันที่ </label>
+                                <TelerikDatePicker @bind-Value="Filter.DateTo"
+                                                   FillMode="@ThemeConstants.DatePicker.FillMode.Solid"
+                                                   Rounded="@ThemeConstants.DatePicker.Rounded.Medium"
+                                                   Format="dd/MM/yyyy">
+                                </TelerikDatePicker>
+
+                            </div>
+
+
+                            <div class="col-4 pt-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+
+                            <div class="col-2 pt-1 text-end">
+                                <div class="mt-sm">
+                                    <TelerikCheckBox Id="chkIsActive" @bind-Value="@Filter.ShowActive"></TelerikCheckBox>
+                                    <label for="chkIsActive">แสดงที่ยกเลิกด้วย</label>
+                                </div>
+
+                            </div>
+
+                                </div>
+                            </div>
+                        </div>
+           
+                    </div>
+               
+    
+        </div>
+
+
+                <div class="row pt-2">
+                    <div class="col-md-12">
+                       
+                          <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="20"
+                             Navigable="true">
+                    <GridColumns>
+
+                        <GridColumn Field="@nameof(vw_POS_POHead.OrdID)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_POS_POHead;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                        <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                                <GridColumn Field=@nameof(vw_POS_POHead.POID) Title="PO NO." Width="110px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.Status) Title="สถานะ" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.PODate) DisplayFormat="{0:dd/MM/yyyy}" Title="วันที่สั่ง" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.ComID) Title="เลขสาขา" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.OrdID) Title="เลขสั่ง" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.OrdFrComName) Title="สาขาที่สั่ง" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.Qty) Title="จำนวนซื้อ" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.Amt) Title="ยอดซื้อ" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.Remark1) Title="หมายเหตุ" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.CreatedDate)  DisplayFormat="{0:dd/MM/yyyy}" Title="วันที่สร้าง" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.CreatedBy) Title="สร้างโดย" Width="150px" />
+                                <GridColumn Field=@nameof(vw_POS_POHead.IsActive) Title="ใช้งาน" Width="150px" />
+                        
+                        
+
+                  
+                         
+                    </GridColumns>
+                </TelerikGrid>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+
+        <div class="demo-container">
+            <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                                    Text="ระบบกำลังประมวลผล ....."
+                                    Visible="@isLoading"
+                                    LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+        </div>
+
+@code {
+    [Parameter] public string menu { get; set; } = "";
+    //[Parameter] public string xpage { get; set; } = "";
+
+    bool isLoading = true;
+    bool isShowNew = true;
+
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    List<vw_VendorInfo> cboVendor = new List<vw_VendorInfo>();
+
+    List<I_StatusBinding> cboStatus = new List<I_StatusBinding>();
+    POS_POService.I_POFiterSet Filter = POS_POService.NewFilterSet();
+    List<vw_POS_POHead> DocList = new List<vw_POS_POHead>();
+
+
+    protected override async Task OnInitializedAsync() {
+        Filter = await Task.Run(() => POS_poService.GetSessionPOSPOFiterSet());
+        if (Filter == null) {
+            Filter = POS_POService.NewFilterSet();
+        }
+        Filter.DocType = "";  
+        await Task.Run(() => LoadDropDownList());
+        await Task.Run(() => LoadDevDropDownList());
+        SetCaption();
+        await Task.Run(() => login.CheckLogin()); 
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    void SetCaption() {
+
+        //var isAdmin = login.CanEdit(login.LogInInfo, menu);
+
+        //if (menu == "401") {// 401 Asset Acquisition
+
+        //    Filter.DocType = "acquisition";
+        //    CaptionRefID = "PO No.";
+        //    isShowDocumentNo = true;
+        //    isShowBatch = true;
+        //    isShowUserFrom = false;
+        //    isShowUserTo = true;
+        //    CaptionEmployeeTo = "Employee";
+
+        //    canCreateDoc = false;
+        //    return;
+        //}
+
+        //if (menu == "402") {//402 Asset Transfer Out
+        //    Filter.DocType = "transfer_out";
+        //    CaptionRefID = "Tranfer No";
+        //    isShowDocumentNo = false;
+        //    isShowBatch = true;
+        //    isShowUserFrom = false;
+        //    isShowUserTo = true;
+        //    CaptionEmployeeTo = "Employee name";
+
+        //    canCreateDoc = false;
+        //    return;
+        //}
+
+
+
+    }
+
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList = POS_POService.ListDoc(Filter,login);
+        isLoading = false;
+        BindData();
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    private void SetDefaultFilter() {
+        Filter.RCom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+        POS_poService.SetSessionPOSPOFiterSet(Filter);
+    }
+
+    async Task LoadDevDropDownList() {
+        cboVendor = VendorService.ListViewVendorByID("");
+
+    }
+
+    async Task LoadDropDownList() {
+
+        cboStatus = POS_POService.ListStatus();
+        if (Filter.Status=="") {
+            Filter.Status = cboStatus.FirstOrDefault().Value;
+        }else {
+            var has_data = cboStatus.Where(o => o.Value == Filter.Status).FirstOrDefault();
+            if (has_data==null  ) {
+                Filter.Status = cboStatus.FirstOrDefault().Value;
+            } 
+        }
+
+
+    }
+
+    void BindData() {
+
+
+    }
+
+    async Task SetActiveControl() {
+    
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menux = LogInService.GetMenuInfo(login.LoginInfo, "menu");
+        menuCaption = menux.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menux.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, menu)) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, menu)) {
+
+        }
+       
+    }
+
+
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    void CheckedChanged(bool value) {
+        Filter.ShowActive = value;
+    }
+
+
+
+
+
+    async void NewDoc() {
+      
+        nav.NavigateTo($"/PO/PONewDoc/{menu}", false);
+        isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async void Edit(vw_POS_POHead select_data) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+        isLoading = true;
+        await sessionStorage.SetItemAsync(POS_POService.sessionActiveId, select_data.POID);
+        POS_poService.DocSet = POS_POService.GetDocSetByID(select_data.POID, rcom);
+        nav.NavigateTo($"/PO/PODetail/{menu}", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+  
+}

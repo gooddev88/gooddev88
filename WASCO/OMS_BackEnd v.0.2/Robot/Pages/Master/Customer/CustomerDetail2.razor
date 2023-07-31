@@ -1,0 +1,749 @@
+﻿@page "/Master/Customer/CustomerDetail2"
+@page "/Master/Customer/CustomerDetail2/{xpage}"
+@using Robot.Data.DA.Document
+@using Robot.Data.ML
+
+@inject CustomerService customerService
+<style>
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-w85 {
+        width: 90%;
+    }
+</style>
+
+@if (!isLoading) {
+
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row">
+                        @if (!string.IsNullOrEmpty(xpage)) {
+                            <div class="col-md-6">
+                                <Button Color="Color.None" @onclick="@Back">
+                                    <i class="fas fa-reply-all"></i>&nbsp;
+                                    <span>Back</span>
+                                </Button>
+                            </div>
+                        } else {
+                            <div class="col-md-6">
+
+                                <Button Color="Color.None" @onclick="@Back" Class="text-black">
+                                    <i class="fas fa-reply-all"></i>&nbsp;
+                                    <span>@menuCaption</span>
+                                </Button>
+                            </div>
+                        }
+                        <div class="col-md-6 text-end">
+
+                            @if (isShowNew) {
+                                <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                @onclick="@NewDoc" Class=""
+                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                                    <i class="fa-solid fa-circle-plus"></i>&nbsp;  เพิ่ม
+                                </TelerikButton>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>รหัสลูกค้า</span>
+                            <TelerikTextBox PlaceHolder="" @bind-Value="@customerService.DocSet.Info.CustomerID" Enabled="@IsReadOnlyCusID" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>คำนำหน้าชื่อ</span>
+                            <TelerikDropDownList Data="@ListTitleTh"
+                            @bind-Value="@customerService.DocSet.Info.TitleTh"
+                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                        <div class="col-md-6" hidden>
+                            <span>เลขผู้เสียภาษี</span><span style="font-size: large; color: red">*</span>
+                            <div class="flex-row bd-highlight mb-3">
+                                <TelerikTextBox @bind-Value="@customerService.DocSet.Info.TaxID" Class="k-w85" />
+                                <a @onclick="@GetDBDApi"><i class="fa-regular fa-circle-check"></i></a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>ชื่อ 1</span><span style="font-size: large; color: red">*</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.NameTh1" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>ชื่อ 2</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.NameTh2" />
+                        </div>
+                    </div>
+
+
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>ประเภท</span><span style="font-size: large; color: red">*</span>
+                            <TelerikDropDownList @bind-Value="@selectedcus_ventype"
+                                                 Data="@cboCus_VenType"
+                                                 Enabled=false
+                                                 TextField="@nameof(SelectOption.Description)"
+                                                 ValueField="@nameof(SelectOption.Value)"
+                                                 Filterable="true"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                        <div class="col-md-6">
+                            <span>สำนักงานใหญ่ / สาขา</span><span style="font-size: large; color: red">*</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.BrnDesc"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>ที่อยู่ 1</span>
+                            <TelerikTextArea @bind-Value="@customerService.DocSet.Info.BillAddr1"
+                                             AutoSize="true"
+                                             Class="w-100"
+                                             PlaceHolder="">
+                            </TelerikTextArea>
+                        </div>
+                        <div class="col-md-6">
+                            <span>ที่อยู่ 2</span>
+                            <TelerikTextArea @bind-Value="@customerService.DocSet.Info.BillAddr2"
+                                             AutoSize="true"
+                                             Class="w-100"
+                                             PlaceHolder="">
+                            </TelerikTextArea>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>รหัสไปรษณีย์ (Postal Code)</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrPostCode"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>เบอร์โทรศัพท์</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Tel1"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>พื้นที่</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AreaID"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>ยี่ห้อ</span>
+                            <TelerikDropDownList Data="@ListGroupID"
+                            @bind-Value="@customerService.DocSet.Info.GroupID"
+                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>พนักงานขาย</span>
+                            <TelerikDropDownList Data="@ListUser"
+                            @bind-Value="@customerService.DocSet.Info.SalePersonID"
+                                                 ValueField="@(nameof(vw_UserInfo.Username))"
+                                                 TextField="@(nameof(vw_UserInfo.FullName))"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                        <div class="col-md-6">
+                            <span>ส่งโดย</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Fax"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-md-12">
+                            <span>ผู้ติดต่อ</span>
+                            <TelerikTextArea @bind-Value="@customerService.DocSet.Info.ContactPerson"
+                                             AutoSize="true"
+                                             Class="w-100">
+                            </TelerikTextArea>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-12">
+                            <TelerikCheckBox Id="chkIsLockPrice" @bind-Value="@customerService.DocSet.Info.IsLockPrice"></TelerikCheckBox>
+                            <label for="chkIsLockPrice">ไม่ให้เปลี่ยนราคาขาย</label>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-12">
+                            <TelerikCheckBox Id="chkIsActive" @bind-Value="@customerService.DocSet.Info.IsActive"></TelerikCheckBox>
+                            <label for="chkIsActive">ใช้งาน</label>
+                        </div>
+                    </div>
+
+                    <div class="row pt-4">
+                        <div class="col-md-12 text-end">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                            @onclick="@BtnSave" Class=""
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                <i class="fa-solid fa-circle-check"></i>&nbsp; บันทึกข้อมูล
+                            </TelerikButton>
+                        </div>
+                    </div>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row pt-2" hidden>
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Contact info</h5>
+                </div>
+                <div class="card-body">
+
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>ค้นหาที่อยู่</span>
+                            <TelerikComboBox Value="@SelectAddr"
+                                             Data="@ListAddr"
+                                             ScrollMode="@DropDownScrollMode.Virtual"
+                                             ValueField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                             TextField="@(nameof(vw_ThaiPostAddress.FULLADDR))"
+                                             Width="100%" PageSize="10" ItemHeight="35"
+                                             ValueChanged="@( (string city) => ValueChangeAddr(city) )"
+                                             Filterable="true"
+                                             FilterOperator="@StringFilterOperator.Contains">
+                                <ComboBoxSettings>
+                                    <ComboBoxPopupSettings Width="550px" Height="300px"></ComboBoxPopupSettings>
+                                </ComboBoxSettings>
+                                <HeaderTemplate>
+                                    <div class="fw-bold py-2">&nbsp;&nbsp; ที่อยู่</div>
+                                </HeaderTemplate>
+                                <ItemTemplate>
+                                    <span>@($"{context.FULLADDR}")</span>
+                                </ItemTemplate>
+                            </TelerikComboBox>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span>ชื่ออาคาร</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Building"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <span>ห้องที่</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.RoomNo"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>ชั้นที่</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.FloorNo"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>หมู่บ้าน</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Village"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>เลขที่</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrNo"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>หมู่ที่</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrMoo"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>ตรอก/ซอย</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Soi"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>แยก</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Yaek"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>ถนน</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Road"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+
+
+
+
+
+
+
+
+                        <div class="col-md-6">
+                            <span>ตำบล (District)</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrTumbon"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>เขต/อำเภอ (District / Area)</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrAmphoe"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>จังหวัด (Province)</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.AddrProvince"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>เบอร์โทรศัพท์</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Mobile"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                        <div class="col-md-6">
+                            <span>Email</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.Email"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row pt-2" hidden>
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Accountant</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row pt-2">
+                        <div class="col-md-3">
+                            <span>Credit term</span>
+                            <TelerikDropDownList @bind-Value="@customerService.DocSet.Info.PaymentTermID"
+                                                 Data="@cboCreditTerm"
+                                                 TextField="@nameof(CreditTermInfoService.SelectListCreditTerm.TermDesc)"
+                                                 ValueField="@nameof(CreditTermInfoService.SelectListCreditTerm.TermID)"
+                                                 Filterable="true"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                        <div class="col-md-3">
+                            <span>Credit Limit</span>
+                            <TelerikNumericTextBox Decimals="2" Format="N2"
+                                                   Class="text-end pe-2" @bind-Value="CreditLimit"></TelerikNumericTextBox>
+                        </div>
+                        <div class="col-md-3">
+                            <span>ประเภทภาษี</span><span style="font-size: large; color: red">*</span>
+                            <TelerikDropDownList @bind-Value="@customerService.DocSet.Info.TaxTypeID"
+                                                 Data="@cboVatType"
+                                                 TextField="@nameof(TaxInfoService.SelectListTax.TaxName)"
+                                                 ValueField="@nameof(TaxInfoService.SelectListTax.TaxTypeID)"
+                                                 Filterable="true"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+                        <div class="col-md-3">
+                            <span>สกุลเงิน</span>
+                            <TelerikDropDownList @bind-Value="@customerService.DocSet.Info.Currency"
+                                                 Data="@cboCurrency"
+                                                 TextField="@nameof(CurrencyInfo.CurrencyID)"
+                                                 ValueField="@nameof(CurrencyInfo.CurrencyID)"
+                                                 Filterable="true"
+                                                 Width="100%">
+                            </TelerikDropDownList>
+                        </div>
+
+
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <span>ธนาคาร</span>
+                            <TelerikComboBox @bind-Value="@customerService.DocSet.Info.BankCode"
+                                             Data="@cboBankCode"
+                                             TextField="@nameof(BankInfo.Name_TH)"
+                                             ValueField="@nameof(BankInfo.BankCode)"
+                                             Filterable="true"
+                                             Width="100%">
+                            </TelerikComboBox>
+                        </div>
+                        <div class="col-md-6">
+                            <span>เลขที่บัญชี</span>
+                            <TelerikTextBox @bind-Value="@customerService.DocSet.Info.BookIBankID"
+                                            Size="@ThemeConstants.DropDownList.Size.Medium" />
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+} else {
+    <div class="demo-container">
+        <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                                Text="ระบบกำลังประมวลผล ....."
+                                Visible="@isLoading"
+                                LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string doctype { get; set; } = "";
+    [Parameter] public string xpage { get; set; }
+    public string FillMode { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    bool isBack = true;
+    bool isShowBack = true;
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    public bool IsReadOnlyCusID = true;
+
+
+    public string SearchText { get; set; } = "";
+    public string selectedDoctype { get; set; } = "";
+    public string selectedcus_ventype { get; set; } = "";
+
+
+
+    public decimal CreditLimit { get; set; }
+
+    bool ShowFilterRow = false;
+    IEnumerable<vw_ThaiPostAddress> ListAddr;
+    public string SelectAddr { get; set; } = "";
+
+    public List<CreditTermInfoService.SelectListCreditTerm> cboCreditTerm = new List<CreditTermInfoService.SelectListCreditTerm>();
+    public List<TaxInfoService.SelectListTax> cboVatType = new List<TaxInfoService.SelectListTax>();
+    public List<CurrencyInfo> cboCurrency = new List<CurrencyInfo>();
+    public List<BankInfo> cboBankCode = new List<BankInfo>();
+    public List<SelectOption> cboDocType = new List<SelectOption>();
+    public List<SelectOption> cboCus_VenType = new List<SelectOption>();
+    List<MasterTypeLine> ListTitleTh = new List<MasterTypeLine>();
+    List<MasterTypeLine> ListGroupID = new List<MasterTypeLine>();
+    public IEnumerable<vw_UserInfo> ListUser;
+
+
+
+
+
+
+    protected override async Task OnInitializedAsync() {
+        LoadDropDown();
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await LoadThaiAddr();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (customerService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(CustomerService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                customerService.DocSet = customerService.GetDocSet(docid, rcom, com);
+            } else {
+                customerService.DocSet = CustomerService.NewTransaction(rcom, com);
+                customerService.DocSet.Info.CreatedBy = user;
+            }
+        }
+    }
+
+    public void BindData() {
+        var h = customerService.DocSet.Info;
+        if (h.CustomerID != "") {
+            IsReadOnlyCusID = false;
+        }
+        CreditLimit = h.CreditLimit;
+        selectedDoctype = h.OrgType;
+        selectedcus_ventype = h.TypeID;
+    }
+
+
+    async void LoadData() {
+
+        BindData();
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var h = customerService.DocSet.Info;
+
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "141");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+        if (h.CustomerID == "") {
+            isShowDelete = false;
+        }
+
+        if (!login.CanCreate(login.LoginInfo, "141")) { //141 ลูกค้า
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "141")) {
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "141")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+    public async void LoadDropDown() {
+        cboCreditTerm = CreditTermInfoService.MiniSelectList(false, "AR");
+        cboVatType = TaxInfoService.MiniSelectListV2("SALE", GetSelectCurrency(), false);
+        cboCurrency = CurrencyInfoService.ListCurrencyInfo("");
+        cboBankCode = BookBankService.ListBank(false);
+        cboDocType = CustomerService.ListDoctype();
+        cboCus_VenType = CustomerService.ListCus_VenType();
+        ListTitleTh = MasterTypeService.ListType("", "TITLE_TH", true);
+        ListGroupID = MasterTypeService.ListType("", "CUST GROUP", true);
+        ListUser = await Task.Run(() => MyUserService.Listvw_UserInfo());
+    }
+
+    public string GetSelectCurrency() {
+        string result = "THB";
+        //result = customerService.DocSet.Info.Currency;
+        return result;
+    }
+
+    bool ValidData() {
+        var h = customerService.DocSet.Info;
+        bool isvalid = true;
+        string Errmsg = "";
+        //string mobile = h.Mobile.Trim().Replace(".", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+        //h.Mobile = mobile;
+        //if (h.Mobile == "") {
+        //    Errmsg = "ระบุเบอร์";
+        //    isvalid = false;
+        //}
+
+        //if (!(mobile.Count() >= 9 && mobile.Count() <= 10)) {
+        //    Errmsg = "ระบุเบอร์โทร ให้ครบ 10 หลัก";
+        //    isvalid = false;
+        //}
+        //if (h.NameTh2 == "") {
+        //    Errmsg = "ชื่อ 2";
+        //    isvalid = false;
+        //}
+        if (h.NameTh1 == "") {
+            Errmsg = "ชื่อ 1";
+            Swal.FireAsync("Warning", Errmsg, "info");
+            return false;
+        }
+
+        //if (h.TaxID == "") {
+        //    Errmsg = "ระบุเลขผู้เสียภาษี";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (h.TaxID.Length != 13) {
+        //    Errmsg = "ระบุเลขผู้เสียภาษีความยาว 13 หลัก";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (string.IsNullOrEmpty(h.TaxTypeID)) {
+        //    Errmsg = "ระบุประเภทภาษี";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (h.BillAddr1 == "") {
+        //    Errmsg = "ระบุที่อยุ่เปิดบิล1";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (h.BillAddr2 == "") {
+        //    Errmsg = "ระบุที่อยุ่เปิดบิล1";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (h.BillMemo == "") {
+        //    Errmsg = "ระบุหมายเหตุ";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (string.IsNullOrEmpty(h.PaymentTermID)) {
+        //    Errmsg = "ระบุCredit term";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (h.Mobile == "") {
+        //    Errmsg = "ระบุเบอร์โทรศัพท์";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //    if (h.Email == "") {
+        //    Errmsg = "ระบุEmail";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //      }
+        //        if (h.CustomerID == "") {
+        //    Errmsg = "ระบุรหัสลูกค้า";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        //if (string.IsNullOrEmpty(h.Currency)) {
+        //    Errmsg = "ระบุสกุลเงิน";
+        //    Swal.FireAsync("Warning", Errmsg, "info");
+        //    return false;
+        //}
+        return isvalid;
+    }
+
+    private bool PrepairDataSave() {
+        var h = customerService.DocSet.Info;
+        var u = login.LoginInfo;
+        bool isnew = h.CustomerID == "" ? true : false;
+        if (isnew) {
+            h.CustomerID = IDRuunerService.GetNewIDV2("OCUSTOMER", h.RCompanyID, h.CompanyID, Convert.ToDateTime(h.CreatedDate).Date, true, "th")[1];
+            h.RCompanyID = u.CurrentRootCompany.CompanyID;
+            h.CompanyID = u.CurrentCompany.CompanyID;
+        }
+        h.CreditLimit = CreditLimit;
+        h.OrgType = selectedDoctype;
+        h.TypeID = selectedcus_ventype;
+
+        return isnew;
+    }
+
+    public async void BtnSave() {
+        if (!ValidData()) {
+            return;
+        }
+        var u = login.LoginInfo;
+        var h = customerService.DocSet.Info;
+
+        var isnew = PrepairDataSave();
+
+        var rs = CustomerService.Save(customerService.DocSet.Info, u);
+
+        if (rs.Result == "ok") {//save successufull
+            customerService.DocSet = await Task.Run(() => customerService.GetDocSet(h.CustomerID, u.CurrentRootCompany.CompanyID, u.CurrentCompany.CompanyID));
+            if (isnew) {
+                await sessionStorage.SetItemAsync(CustomerService.sessionActiveId, customerService.DocSet.Info.CompanyID);
+            }
+            LoadData();
+            await Swal.FireAsync("success", "บันทึกสำเร็จ", "success");
+        } else {
+            await Swal.FireAsync("error", rs.Message1, "error");
+        }
+    }
+
+    async Task NewDoc() {
+        var u = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(CustomerService.sessionActiveId);
+        customerService.DocSet = CustomerService.NewTransaction(u.CurrentRootCompany.CompanyID, u.CurrentCompany.CompanyID);
+        customerService.DocSet.Info.CreatedBy = u.CurrentUser;
+        @if (!string.IsNullOrEmpty(xpage)) {
+            nav.NavigateTo(customerService.PreviousSubPageUrl);
+        } else {
+            nav.NavigateTo($"Master/Customer/CustomerDetail2", false);
+        }
+
+        nav.NavigateTo($"Master/Customer/CustomerDetail2", false);
+
+    }
+
+
+
+    public void ValueChangeAddr(string value) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        if (!string.IsNullOrEmpty(value)) {
+            var addrid = value.ToString();
+
+            var data = AddressService.GetViewThaiPostAddress(addrid);
+            if (data != null) {
+                customerService.DocSet.Info.AddrProvince = data.PROVINCE_NAME;
+                customerService.DocSet.Info.AddrAmphoe = data.BORDER_NAME;
+                customerService.DocSet.Info.AddrTumbon = data.DISTRICT_NAME;
+                customerService.DocSet.Info.AddrPostCode = data.DISTRICT_POSTAL_CODE;
+            }
+        } else {
+            SelectAddr = "";
+        }
+    }
+
+    //public void ChangeAddr(vw_ThaiPostAddress data) {
+    //    customerService.DocSet.Info.AddrProvince = data.PROVINCE_NAME;
+    //    customerService.DocSet.Info.AddrAmphoe = data.BORDER_NAME;
+    //    customerService.DocSet.Info.AddrTumbon = data.DISTRICT_NAME;
+    //    customerService.DocSet.Info.AddrPostCode = data.DISTRICT_POSTAL_CODE;
+    //}
+
+    async public Task LoadThaiAddr() {
+        ListAddr = await Task.Run(() => AddressService.ListThaiPostAddress());
+    }
+
+
+
+
+    public void Back() {
+        @if (!string.IsNullOrEmpty(xpage)) {
+            nav.NavigateTo(customerService.PreviousPageUrl);
+        } else {
+            nav.NavigateTo($"Master/Customer/CustomerList2");
+        }
+    }
+
+
+    async public Task GetDBDApi() {
+        customerService.DocSet = await Task.Run(() => CustomerService.GetDBDApiJuristicV1(customerService.DocSet));
+        if (customerService.DocSet.OutputAction.Result == "fail") {
+            await Swal.FireAsync("Error", customerService.DocSet.OutputAction.Message1, "error");
+        } else {
+            await UpdateBillAddr();
+            await Swal.FireAsync("Success", "ดึงข้อมูลจาก DBD สำเร็จ", "success");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async public Task UpdateBillAddr() {
+        customerService.DocSet = CustomerService.CreateFullBillAddr(customerService.DocSet);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

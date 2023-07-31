@@ -1,0 +1,245 @@
+﻿@page "/User/UserList/{pagecomefrom}"
+@*
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.ML
+@using Robot.Data.DA.LoginCrossApp
+@using Robot.Data.GADB.TT
+@using Microsoft.JSInterop
+@using System.Threading.Tasks;
+@using Blazored.LocalStorage;
+@using Robot.Data.DA.POSSY
+@using Robot.Tools
+
+@inject LogInService login
+@inject ILocalStorageService localStorage
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject SweetAlertService Swal*@
+@inject MyUserService userService
+@inject PageHistoryState pageHistory
+
+
+
+<style>
+    .seagreen {
+        background-color: seagreen;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="row pt-3">
+            <div class="col-md-12 col-sm-12 col-12">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>
+                                    <a @onclick="Back">
+                                        <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                                    </a>
+                                </h4>
+                            </div>
+
+                            @if (isShowNew) {
+
+                                <div class="col-6" style="text-align:right;">
+                                    <Button style="color:darkslategrey;" @onclick="@btnNew">
+                                        <i class="fas fa-plus-circle"></i>&nbsp;
+                                        สร้างผู้ใช้งานใหม่
+                                    </Button>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 col-12">
+                                <div class="input-group">
+                                    <TextEdit @bind-Text="@SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                                    <div class="input-group-append">
+                                        <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-8 col-12 text-end">
+
+                               
+
+                                    <TelerikCheckBox Id="chkNoUserInRcom" @bind-Value="@SelectNoUserInRcom"></TelerikCheckBox>
+                                    <label for="chkNoUserInRcom">โชว์ที่ไม่ได้อยู่ในสิทธิ์กลุ่มบริษัท</label>
+
+                                
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+         <div class="row pt-3">
+            <div class="col-md-12">
+                                <TelerikGrid Data=@DocList
+                             Sortable="true"
+             Height="460px" RowHeight="60"
+             PageSize="10"
+             Resizable="true"
+             FilterMode="@GridFilterMode.FilterMenu"
+             ScrollMode="@GridScrollMode.Virtual">
+       
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_UserInfo.Username)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_UserInfo; 
+                                            <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                        <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(vw_UserInfo.Username)" Title="ชื่อผู้ใช้งาน" Width="130px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.FullName)" Title="ชื่อ-สกุล" Width="170px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.PositionID)" Title="ตำแหน่ง" Width="180px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.Email)" Title="อีเมล์" Width="130px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.Tel)" Title="เบอร์โทรศัพท์" Width="130px" />
+                        <GridColumn Field=@nameof(vw_UserInfo.CreatedDate) Title="วันทีสร้างเอกสาร" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                    </GridColumns>
+                </TelerikGrid>
+                
+            </div>
+        </div>
+
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    [Parameter]  public string pagecomefrom { get; set; }
+
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+     bool collapse1Visible = true;
+    bool isShowNew = true;
+    bool isLoading = true;
+
+    public string SearchText { get; set; } = "";
+
+    bool SelectNoUserInRcom = false;
+
+    //MyUserService.I_FilterSet Filter = MyUserService.NewFilter();
+    bool ShowFilterRow = false;
+
+
+    IEnumerable<vw_UserInfo>
+        DocList  ;
+
+        protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory( nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        }
+        protected override void OnInitialized() {
+
+        }
+
+        
+
+        async void LoadData() {
+        LoadDropDownList();
+        DocList = MyUserService.ListDoc(SearchText, true, login.LoginInfo,SelectNoUserInRcom);
+        isLoading = false;
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+        }
+        private void SetActiveControl() {
+        CheckPermission();
+        }
+        private void CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9002");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+
+        if (!login.CanOpen(login.LoginInfo, "9002")) {//9002 ผู้ใช้งานและสิทธิ์
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9002")) {
+            isShowNew = false;
+        }
+        }
+        private void LoadDropDownList() {
+
+        }
+
+        async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+        }
+
+        async void Edit(vw_UserInfo select_data) {
+        isLoading = true;
+        userService.DocSet = userService.GetDocSet(select_data.Username, login.LoginInfo.CurrentRootCompany.CompanyID,login.LoginInfo.CurrentUser);
+        userService.PreviousPageUrl = nav.Uri;
+        nav.NavigateTo($"User/UserDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+        }
+
+        async void btnNew() {
+        var xlogin = login.LoginInfo;
+        userService.DocSet = userService.NewTransaction(xlogin.CurrentUser, xlogin.CurrentRootCompany.CompanyID);
+        userService.PreviousPageUrl = nav.Uri;
+        nav.NavigateTo($"User/UserDetail", false);
+        await InvokeAsync(StateHasChanged);
+        }
+
+        async void Back() {
+
+        string forwardurl = "";
+        switch (pagecomefrom) {
+        case "web1":
+        var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+        string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+        nav.NavigateTo(rootappurl);
+        break;
+        case "web2":
+        //nav.NavigateTo("Menu/MainMenu");
+        //await InvokeAsync(StateHasChanged);
+        var url = pageHistory.GetGoBackPage();
+                nav.NavigateTo("Dashboard/StartBoard");
+        await InvokeAsync(StateHasChanged);
+        break;
+
+        }
+        }
+        }

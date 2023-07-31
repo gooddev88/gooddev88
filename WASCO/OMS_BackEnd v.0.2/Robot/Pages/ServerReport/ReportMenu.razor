@@ -1,0 +1,31 @@
+﻿@page "/ServerReport/ReportMenu"
+ <div class="row pt-2">
+<div class="row clo-md-12">
+<div class="col-md-2 py-1 px-1">
+        <a @onclick="@(() => GoDBBackup())">
+        <div class="card card-r">
+            <div class="card-body">
+            
+                <div class="row">
+                    <div class="col-md-12 text-end">
+                        <p class="card-text">
+                                <span style="font-size:1rem"> <strong>ReportDBBackup</strong></span>
+
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </a>
+</div>
+</div>
+</div>
+
+
+@code {
+    void GoDBBackup()
+    {
+        nav.NavigateTo($"ServerReport/ReportDBBackup");
+    }
+}

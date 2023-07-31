@@ -1,0 +1,527 @@
+﻿@page "/DPMBoard/CustomBoard/CustomBoardShow/{boardid}"
+
+@layout MainBoardLayoutToggle
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Client.Pages.DPMBoard.A01;
+
+@using RobotWasm.Client.Pages.DPMBoard.A01.Widgets
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.DPMBaord.CustomBoard
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.DPMBaord.Accident.AccidentParam
+
+@* sample styles for this example *@
+<style>
+    /*notification*/
+    .demo-notification {
+        position: absolute;
+    }
+
+        .demo-notification .k-notification {
+            width: 420px;
+        }
+
+    #demo-runner {
+        height: 400px;
+    }
+
+    .notification-parent {
+        position: relative;
+        height: 250px;
+    }
+
+    .k-badge {
+        margin-left: 5px;
+    }
+
+    .k-notification-container {
+        margin: 6px 0;
+    }
+
+    /*end notification*/
+
+    .small {
+        background-color: green;
+    }
+
+    .medium {
+        background-color: yellow;
+    }
+
+    .large {
+        background-color: red;
+    }
+
+    .k-card-image {
+        width: 285px;
+        height: 189px;
+    }
+
+    .k-card-body {
+        overflow: auto;
+    }
+
+    .image-center {
+        display: block;
+        margin: auto;
+    }
+
+    .myTileLayout.k-tilelayout .k-tilelayout-item-header {
+        background-color: white;
+        color: black;
+    }
+
+    .myTelerikCard {
+        background: white;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .myCardDetail {
+        font-weight: bold;
+        text-align: center;
+        font-size: 2rem;
+    }
+
+    .myAutoSize {
+        width: 100%;
+        height: 100%;
+        background: cyan;
+    }
+
+    .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .k-menu-horizontal {
+        display: inline-block;
+    }
+
+    .d-ct {
+        display: contents;
+    }
+
+    .k-menu-link {
+        padding: 3px 7px;
+    }
+
+    .k-menu:not(.k-context-menu) {
+        border-radius: 4px;
+        background-color: #594ae2;
+    }
+
+        .k-menu:not(.k-context-menu) > .k-item, .k-menu:not(.k-context-menu) > .k-item:hover, .k-menu:not(.k-context-menu) > .k-item.k-hover {
+            color: white !important;
+        }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+
+    .k-tilelayout {
+        background-color: white !important;
+    }
+ 
+
+</style>
+@if (!isLoading) {
+
+    <div class="row">
+        <div class="col-md-12 text-center">
+
+            <h4 Class="text-start font-weight-light">
+                <a @onclick="Back">
+                    <i class="fas fa-angle-double-left"></i>   @BoardCaption
+                </a>
+            </h4>
+        </div>
+    </div>
+
+    <div Class="row">
+        <div class="col-12 text-end">
+         
+                <div class="d-ct">
+                    <TelerikButton @onclick="@(() => SaveWidget(false))" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                        <i class="fas fa-check-circle"></i>&nbsp;บันทึกบอร์ด
+                    </TelerikButton>
+                    <TelerikMenu Data="@MenuItems" OnClick="@((MenuItem item) => OnClick(item))">
+                        <ItemTemplate Context="item">
+                            <i class="@(item.Icon)"></i>
+                            <span class="k-menu-link">@item.Text</span>
+                        </ItemTemplate>
+                    </TelerikMenu>
+                </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+                  <TelerikTileLayout @ref="@TileLayoutInstance"
+                           Columns="6"
+                           ColumnWidth="300px"
+                           RowHeight="120px"
+                           Reorderable="true"
+                           Resizable="true"
+                           OnResize="@ResizeCharts"
+                           Class="myTileLayout">
+                    <TileLayoutItems>
+                        @if (WidgetDisplay != null) {
+                            foreach (var item in WidgetDisplay.OrderBy(o => o.sort)) {
+                                <TileLayoutItem @key="@item" Id="@item.widget_id"
+                                RowSpan="@(Convert.ToInt32( item.rowspan))"
+                                ColSpan="@Convert.ToInt32( item.colspan)">
+                                    <HeaderTemplate>
+                                        <div class="k-hbox" style="justify-content: space-between;">
+                                            <span style="font-size:medium">
+                                                &nbsp;
+                                            </span>
+                                            <span onpointerdown="stopPropagation(event)">
+                                                @if (item.has_param==1) {
+                                       <a class="btn bdr-50 text-muted" @onclick="@( async () => await ShowWidgetParam(item))">
+                                                    <i class="fa-solid fa-gear"></i>
+                                                </a>
+                                }
+                                             
+                                                <a class="btn bdr-50 text-muted" @onclick="@( async () => await RemoveWidget(item))">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </a>
+                                            </span>
+                                        </div>
+                                    </HeaderTemplate>
+                                    <Content>
+                                        <CascadingValue Value="@ResizeContext" IsFixed="true">
+                                            <TileFactory WidgetID="@item.widget_id" BoardID="@item.board_id"></TileFactory>
+                                        </CascadingValue>
+                                    </Content>
+                                </TileLayoutItem>
+                            }
+                        }
+                    </TileLayoutItems>
+                </TelerikTileLayout>
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+<TelerikNotification @ref="@Notification"
+                     Class="demo-notification"
+                     VerticalPosition="@VerticalPosition"
+                     HorizontalPosition="@HorizontalPosition">
+</TelerikNotification>
+
+<TelerikMediaQuery Media="@WindowBreakPoints.ExtraSmall" OnChange="@OnChangeExtraSmall"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Small" OnChange="@OnChangeSmall"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Medium" OnChange="@OnChangeMedium"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Large" OnChange="@OnChangeLarge"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.ExtraLarge" OnChange="@OnChangeExtraLarge"></TelerikMediaQuery>
+
+<TelerikWindow Modal="false"
+               Width="400"
+               Height="600"
+               Centered="true"
+               @bind-Visible="@isPoplParamVisible"
+               CloseOnOverlayClick="true">
+
+    <WindowContent>
+        <ParamFactory WidgetID="@widgetIDOnSetupParam" WidgetName="@widgetNameOnSetupParam" BoardID="@boardid" OnReturnDataToBase="ReturnDataHandler"></ParamFactory>
+    </WindowContent>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+</TelerikWindow>
+@code {
+    [Parameter] public string boardid { get; set; }
+    public bool isPoplParamVisible { get; set; } = false;
+    public List<vw_widget_in_user_display> WidgetDisplay = new List<vw_widget_in_user_display>();
+
+    //public CustomBoardDocSet? Docset = new CustomBoardDocSet();
+
+    public List<MenuItem> MenuItems { get; set; }
+    private bool expandSubNav;
+    protected TelerikTileLayout TileLayoutInstance { get; set; }
+    protected TileLayoutState SavedState { get; set; }
+    //public List<vw_widget_in_user_select> widgets { get; set; }
+    public string BoardCaption = "";
+    private bool isLoading = false;
+
+    public string screenOrien = "";
+    public string widgetIDOnSetupParam { get; set; }
+    public string widgetNameOnSetupParam { get; set; }
+
+    //***********New *******/
+    public ResizeContext ResizeContext { get; set; } = new ResizeContext();
+    protected override void OnInitialized() {
+        MenuItems = new List<MenuItem>()
+                                                                                    {
+            new MenuItem()
+            {
+                Text = "More",
+                Icon = "fa-solid fa-gear",
+                Items = new List<MenuItem>() {
+                    new MenuItem()
+                    {
+                        Text = "เพิ่มวิดเจ็ต",
+                        data = "T"
+                    },
+
+                    new MenuItem()
+                    {
+                        Text = "Save Default Board",
+                        data = "SaveWidget"
+                    },
+                }
+            }
+        };
+        base.OnInitialized();
+    }
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(login.CheckLogin);
+        screenOrien = GetLayHorV();
+        //await Task.Run(() => LoadWidget(false));
+        await Task.Run(() => LoadData());
+        isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+    async void OnClick(MenuItem item) {
+        if (item.data == "T") { 
+            nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardWidget/{boardid}"); 
+        }         if (item.data == "SaveWidget") {
+            await SaveWidget(true);
+        }
+    }
+    async Task SaveWidget(bool isSaveForDefault) {
+        try {
+            var user = login.LogInInfo.CurrentUser;
+            var orien = GetLayHorV();
+            await GetLayoutState();
+
+            List<custom_widget_master_select> savewidg = new List<custom_widget_master_select>();
+            var user_in_board = user;
+            if (isSaveForDefault) {
+                user_in_board = "DEFAULT_LAYOUT";
+            }
+            foreach (var w in _customBoardService.BoardDocset.CustomWidgets) {
+                w.username = _customBoardService.BoardDocset.CustomBoard.username; ;
+                w.board_id = _customBoardService.BoardDocset.CustomBoard.board_id;
+            }
+            var r = await Task.Run(() => _customBoardService.SaveWidget(_customBoardService.BoardDocset.CustomWidgets));
+
+            if (r.Result == "fail") {
+                await Swal.FireAsync("Wanring", r.Message1, SweetAlertIcon.Info);
+            } else {
+                nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardShowRedirect/{boardid}",false);
+                //await Swal.FireAsync("Success", "บันทึกสำเร็จ", SweetAlertIcon.Success);
+            }
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+        }
+    }
+    #region Notification
+    public TelerikNotification Notification { get; set; }
+    public NotificationHorizontalPosition HorizontalPosition { get; set; } = NotificationHorizontalPosition.Right;
+    public NotificationVerticalPosition VerticalPosition { get; set; } = NotificationVerticalPosition.Bottom;
+    public bool NotificationButtonEnabled { get; set; } = true;
+
+    #endregion
+
+    async Task RefreshData() {
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /*   async Task ReSetWidget() {
+           //await Task.Run(() => LoadWidget(true));
+           await InvokeAsync(StateHasChanged);
+       }
+    */
+    //***********New *******/
+    void ResizeCharts() {
+        ResizeContext.NotifyResizeInvoked();
+    }
+    async private Task ShowWidgetParam(vw_widget_in_user_display item) {
+        widgetIDOnSetupParam = item.widget_id;
+        widgetNameOnSetupParam = item.widget_desc;
+        isPoplParamVisible = true;
+    }
+    async private Task RemoveWidget(vw_widget_in_user_display item) {
+        bool isOk = false;
+        await Swal.FireAsync(new SweetAlertOptions {
+                Title = "ยืนยันการลบ",
+                Text = $"คุณต้องการลบวิตเจ็ตนี้ออกจากบอร์ดใช่หรือไม่",
+                Icon = SweetAlertIcon.Question,
+                ShowCancelButton = true,
+                ConfirmButtonText = "ใช่",
+                CancelButtonText = "ยกเลิก"
+            }).ContinueWith(swalTask => {
+            SweetAlertResult result = swalTask.Result;
+            if (!string.IsNullOrEmpty(result.Value)) {
+                isOk = true;
+            }
+        });
+        if (!isOk) {
+            return;
+        }
+        var r = await Task.Run(() => _customBoardService.RemoveWidget(item.board_id, item.widget_id));
+
+        if (r.Result == "fail") {
+            await Swal.FireAsync("แจ้งเตือน", r.Message1, SweetAlertIcon.Info);
+
+        } else {
+            //Notification.Show(new NotificationModel() {
+            //        Text = "ลบวิตเจ็ตเรียบร้อย",
+            //        ThemeColor = ThemeConstants.Notification.ThemeColor.Success
+            //    });
+            // await Swal.FireAsync("Success", "ลบวิตเจ็ตเรียบร้อย", SweetAlertIcon.Success);
+            await LoadData();
+        }
+    }
+
+    protected async Task LoadData() {
+        isLoading = true;
+        _customBoardService.BoardDocset = await Task.Run(() => _customBoardService.GetCustomBoard(boardid));
+        BindData();
+        DisPlayWidgetByOrien();
+        isLoading = false;
+    }
+ 
+    private void BindData() {
+        BoardCaption = _customBoardService.BoardDocset.CustomBoard.board_name;
+    }
+    private void Back() {      
+        nav.NavigateTo("DPMBoard/CustomBoard/CustomBoardList");
+    }
+
+    #region widget management  
+
+    protected async Task GetLayoutState() {
+        var orien = GetLayHorV();
+        var state = TileLayoutInstance.GetState();
+        foreach (var s in state.ItemStates) {
+            var getT = _customBoardService.BoardDocset.CustomWidgets.Where(o => o.widget_id == s.Id).FirstOrDefault();
+            if (getT != null) {
+                if (orien == "V") {
+                    getT.v_colspan = s.ColSpan;
+                    getT.v_rowspan = s.RowSpan;
+                    getT.v_sort = s.Order;
+                } else {
+                    getT.h_colspan = s.ColSpan;
+                    getT.h_rowspan = s.RowSpan;
+                    getT.h_sort = s.Order;
+                }
+            }
+        }
+    }
+    #endregion
+
+    #region  State Control
+    void ReturnDataHandler(string action) {
+        isPoplParamVisible = false;
+        if (action == "cancel") {
+            return;
+        }
+        //LoadData();
+    }
+
+    async private Task OnChangeExtraSmall(bool doesMatch) {
+        isExtraSmall = doesMatch;
+        await CheckOrienChange();
+    }
+    async private Task OnChangeSmall(bool doesMatch) {
+        isSmall = doesMatch;
+        await CheckOrienChange();
+    }
+    async private Task OnChangeMedium(bool doesMatch) {
+        isMedium = doesMatch;
+        await CheckOrienChange();
+    }
+    async private Task OnChangeLarge(bool doesMatch) {
+        isLarge = doesMatch;
+        await CheckOrienChange();
+    }
+    async private Task OnChangeExtraLarge(bool doesMatch) {
+        isExtraLarge = doesMatch;
+        await CheckOrienChange();
+    }
+
+    async private Task CheckOrienChange() {
+        var new_screenorien = GetLayHorV();
+        if (new_screenorien != screenOrien) {
+            screenOrien = new_screenorien;
+            //  await Task.Run(() => LoadWidget(false));
+            DisPlayWidgetByOrien();
+        }
+    }
+
+    private void DisPlayWidgetByOrien() {
+        WidgetDisplay = new List<vw_widget_in_user_display>();
+        screenOrien = GetLayHorV();
+        if (_customBoardService.BoardDocset.CustomWidgets != null) {
+            foreach (var o in _customBoardService.BoardDocset.CustomWidgets) {
+                vw_widget_in_user_display n = new vw_widget_in_user_display();
+                n.board_id = o.board_id;
+                n.widget_id = o.widget_id;
+                n.widget_desc = o.widget_desc;
+                if (screenOrien == "V") {
+                    n.colspan = o.v_colspan;
+                    n.rowspan = o.v_rowspan;
+                    n.sort = o.v_sort;
+                } else {
+                    n.colspan = o.h_colspan;
+                    n.rowspan = o.h_rowspan;
+                    n.sort = o.h_sort;
+                }
+
+                n.has_param = o.has_param;
+                n.group_id = o.group_id;
+                n.group_name = o.group_name;
+                n.is_active = o.is_active;
+                WidgetDisplay.Add(n);
+            }
+        }
+
+        WidgetDisplay = WidgetDisplay.OrderBy(o => o.sort).ToList();
+    }
+
+    #endregion
+
+    #region  Media query
+    // you can move this static class to a common place in your app to reuse across the board
+    // this is a sample list of a few of the most common media queries this example uses to create some sample logic
+    public static class WindowBreakPoints {
+        public static string ExtraSmall => "(max-width: 480px)";
+        public static string Small => "(max-width: 767px)";
+        public static string Medium => "(max-width: 1023px)";
+        public static string Large => "(max-width: 1199px)";
+        public static string ExtraLarge => "(min-width: 1200px)";
+    }
+    bool isExtraSmall { get; set; }
+    bool isSmall { get; set; }
+    bool isMedium { get; set; }
+    bool isLarge { get; set; }
+    bool isExtraLarge { get; set; }
+    string GetClassFromWindowSize() {
+        if (isExtraSmall || isSmall) return "small";
+        if (isMedium) return "medium";
+        if (isLarge || isExtraLarge) return "large";
+        return "";
+    }
+    string GetLayHorV() {
+        if (isExtraSmall || isSmall) return "V";
+        if (isMedium) return "V";
+        if (isLarge || isExtraLarge) return "H";
+        return "";
+    }
+    #endregion
+    }

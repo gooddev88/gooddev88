@@ -1,0 +1,367 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/offline-exporting.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/pattern-fill.js"></script>
+    <script src="th-all.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sarabun">
+    <link rel="stylesheet" href="styleZoom.css" />
+</head>
+
+<body>
+
+    <style>
+        #container {
+            height: 100%;
+            margin: 0 auto;
+        }
+
+        .right-float {
+            position: absolute;
+            bottom: 50;
+            right: 200;
+            font-family: 'sarabun', serif;
+        }
+
+        th,
+        td {
+            font-family: 'sarabun', serif;
+            font-size: medium;
+        }
+
+        .highcharts-tooltip {
+            z-index: 110
+        }
+
+
+        #rcorners2 {
+            border-radius: 8px;
+            border: 1px solid #73AD21;
+            padding: 2px;
+            width: 100%;
+            height: 100%;
+            font-size: xx-small
+        }
+
+        #infolable {
+            position: fixed;
+            width: 82px;
+            height: 148px;
+            top: 74%;
+            left: 60%;
+            margin-top: -100px;
+            margin-left: -100px;
+        }
+
+        html body {
+            text-align: center;
+        }
+
+            html body div.pageHolder {
+                margin: auto;
+            }
+
+            html body a.title {
+                text-indent: -10000px;
+                display: block;
+            }
+
+            html body table {
+                position: relative;
+                z-index: 10;
+                background: url(imgs/dark_bg.png) repeat;
+            }
+
+                html body table table td {
+                    padding-bottom: 5px;
+                }
+    </style>
+
+
+
+
+    <div style="text-align:center">
+        <a href="#">
+            <img src="../assets/img/Logo/Disaster/Logo_header.png" style="height:80px" />
+        </a>
+    </div>
+    <div class="pageHolder" style="margin:auto;">
+
+        <div class="zoom_outer">
+            <div id="zoom">
+
+                <div id="container"></div>
+                <div class="right-float" style="padding-right:240px;padding-bottom:260px">
+                    <table id="tabell"></table>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+
+        var darkBorderColor = '#ccc';
+        var data = [
+            ["th-st", "bb77", "https://upload.wikimedia.org/wikipedia/commons/5/5c/Flag_of_Alabama.svg", "red"],
+            ["th-kr", "bb99", "", "DodgerBlue"],
+            ["th-sa", "bb11", "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Arizona.svg", "blue"],
+            ["th-tg", "bb88", "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Arkansas.svg", "pink"],
+            ["th-tg", "bb88", "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Arkansas.svg", "pink"],
+            ["th-si", "bb88", "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Arkansas.svg", "gold"],
+            ["th-kr", "bb88", "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Arkansas.svg", "pink"],
+            ["th-kn", , , "blue"],
+            ["th-br", "", "", "Gold"],
+        ]
+
+
+
+
+        async function getapi() {
+
+            const response = await fetch("https://dalert.disaster.go.th/api/Alert/ListAlertActiveForMap");
+            return await response.json();
+        }
+
+        function convertarray(data) {
+            var i;
+            //var string = "A,2,5# B,4,4# C,4,4";
+
+            var arr1 = data.split("#");
+            var arr2 = [];
+            for (i = 0; i < arr1.length; i++) {
+                arr2[i] = arr1[i].split(",");
+            }
+
+            return arr2;
+        }
+
+        (async () => {
+            var query = await getapi();
+            var arr = convertarray(query.message2);
+            //console.log(arr)
+            mapinfo(arr);
+            render(arr);
+        })();
+
+
+        function mapinfo(data) {
+
+            // var row = "<tr><th>จังหวัดเกิดเหตุภัย</th>";
+
+            var row = "<div id='infolable'> ";
+            row += "<p id='rcorners2'>";
+            row += "1.กรุงเทพมหานคร" + "<br>";
+            row += "2.สมุทรปราการ" + "<br>";
+            row += "3.สมุทรสาคร" + "<br>";
+            row += "4.สมุทรสงคราม" + "<br>";
+            row += "5.นครปฐม" + "<br>";
+            row += "6.นนทบุรี" + "<br>";
+            row += "7.ปทุมธานี" + "<br>";
+            row += "8.พระนครศรีอยุธยา" + "<br>";
+            row += "9.สุพรรณบุรี" + "<br>";
+            row += "10.อ่างทอง" + "<br>";
+            row += "11.สิงห์บุรี" + "<br>";
+
+            row += "</p>";
+            row += "</div>";
+            //for (var i = 0; i < data.length; i++) {
+            // row += "</tr>";
+            // row += "<td >" +  "1.กรุงเทพมหานคร"+ "<td>";
+            //     row += "</tr >";
+            //     row += "<td>" +   "2.สมุทรปราการ" + "<td>";
+            //         row += "</tr>";
+            //         row += "<td>" +   "3.สมุทรสาคร" + "<td>";
+            //             row += "</tr>";
+            //             row += "<td>" +  "4.สมุทรสงคราม" + "<td>";
+            //                 row += "</tr>";
+            //                 row += "<td>" +  "5.นครปฐม" + "<td>";
+            //                     row += "</tr>";
+            //                     row += "<td>" +  "6.นนทบุรี"  + "<td>";
+            //                         row += "</tr>";
+            //                         row += "<td>" +  "7.ปทุมธานี" + "<td>";
+            //                             row += "</tr>";
+            //                             row += "<td>" +  "8.พระนครศรีอยุธยา" + "<td>";
+            //                                 row += "</tr>";
+            //                                 row += "<td>" +   "9.สุพรรณบุรี" + "<td>";
+            //                                     row += "</tr>";
+            //                                     row += "<td>" +  "10.อ่างทอง" + "<td>";
+            //                                         row += "</tr>";
+            //                                         row += "<td>" +   "11.สิงห์บุรี" + "<td>";
+
+            // if (data[i][6]!='X'){
+            //  row += "</tr>";
+            //  row += "<td>" + data[i][6] + "<td>";
+
+            //}
+            //}
+            var tabellget = document.querySelector("#tabell");
+            tabellget.innerHTML = row;
+        }
+
+        function render(x) {
+            Highcharts.mapChart('container', {
+                chart: {
+                    map: 'countries/th/th-all'
+                },
+
+                title: {
+
+
+                    text: ''
+                },
+
+                // subtitle: {
+                //     text: 'Source: <a href="https://dalert.disaster.go.th">D Alert</a>'
+                // },
+
+                // Add zoom/pan
+                mapNavigation: {
+                    enabled: false,
+                    enableDoubleClickZoomTo: false,
+                    buttonOptions: {
+                        verticalAlign: 'top'
+                    }
+                },
+
+                // data: {
+                //     // enablepolling: true,
+                //     csvurl: window.location.origin + '/alertinfo.csv'
+                // },
+
+                plotOptions: {
+                    series: {
+                        cursor: 'pointer',
+
+                        point: {
+                            events: {
+                                click: function () {
+                                    //  var xurl = 'https://en.wikipedia.org/wiki/' + this.options.value;
+                                    var xurl = this.options.value
+                                    if (xurl != '') {
+                                        window.open(xurl, "_self")
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                },
+                // Limit zoom
+                xAxis: {
+                    minRange: 0
+                },
+
+                // We do not want a legend
+                legend: {
+                    enabled: false
+                },
+
+                tooltip: {
+
+                    useHTML: true,
+                    enabled: false,
+                    backgroundColor: 'white',
+                    borderRadius: 40,
+                    borderColor: '#aaa',
+                    headerFormat: '<strong style="font-size: 0.9rem;font-family: Sarabun,serif;color: black">จังหวัด {point.point.custom.province}</strong><br>',
+                    pointFormat: '<span style="font-size: 0.9rem;font-family: Sarabun,serif;color: black">{point.options.custom.memo}</span>'
+
+
+                },
+
+
+                // Define the series
+                series: [{
+                    name: 'ระบบแจ้งเตือนสาธารณภัย',
+                    keys: [
+                        'hc-key', 'value', 'color.pattern.image', 'color.pattern.color', 'custom.memo', 'custom.province'
+                    ],
+                    joinBy: 'hc-key',
+                    data: x,
+                    borderColor: '#fff',
+                    color: {
+                        pattern: {
+                            // This is inherited by the individual pattern definitions for
+                            // each point. As long as a width/height for the pattern is not
+                            // defined, Highcharts will automatically fill the bounding box
+                            // while preserving the aspect ratio defined here. Without an
+                            // aspect ratio defined, Highcharts will simply fill the
+                            // bounding box with the image, stretching it to fit.
+                            aspectRatio: 1
+                        }
+                    },
+                    states: {
+                        hover: {
+                            borderColor: '#b44',
+                            borderWidth: 2
+                        }
+                    },
+                    dataLabels: {
+                        useHTML: false,
+                        enabled: true,
+                        //  format:  '{point.name}'
+                        //format: '<span style="font-size: 0.7rem;font-family: Sarabun,serif;color: black">{point.name}</span>'
+                        format: '<span style="font-size: 0.5rem;font-family: Sarabun,serif">{point.name}</span>'
+                    }
+                }, {
+                    /* Separator lines */
+                    type: 'mapline',
+                    nullColor: '#aaa'
+                }]
+            });
+
+        }
+    </script>
+    <script>
+        var scale = 1,
+            panning = false,
+            pointX = 0,
+            pointY = 0,
+            start = { x: 0, y: 0 },
+            zoom = document.getElementById("zoom");
+
+        function setTransform() {
+            zoom.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")";
+        }
+
+        zoom.onmousedown = function (e) {
+            e.preventDefault();
+            start = { x: e.clientX - pointX, y: e.clientY - pointY };
+            panning = true;
+        }
+
+        zoom.onmouseup = function (e) {
+            panning = false;
+        }
+
+        zoom.onmousemove = function (e) {
+            e.preventDefault();
+            if (!panning) {
+                return;
+            }
+            pointX = (e.clientX - start.x);
+            pointY = (e.clientY - start.y);
+            setTransform();
+        }
+
+        zoom.onwheel = function (e) {
+            e.preventDefault();
+            var xs = (e.clientX - pointX) / scale,
+                ys = (e.clientY - pointY) / scale,
+                delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+            (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
+            pointX = e.clientX - xs * scale;
+            pointY = e.clientY - ys * scale;
+
+            setTransform();
+        }
+    </script>
+</body>
+
+
+</html>

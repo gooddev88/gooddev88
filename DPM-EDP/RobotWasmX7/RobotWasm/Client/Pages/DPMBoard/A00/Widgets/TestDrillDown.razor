@@ -1,0 +1,33 @@
+﻿@using Telerik.Blazor
+@using Telerik.Blazor.Components
+<h3>Test Drilldown</h3>
+
+
+
+
+<style>
+
+    .loader-container {
+        text-align: center;
+        display: inline-table;
+        padding-top: 10px;
+        position: absolute;
+        left: 50%;
+    }
+    </style>
+@if (Cond!=null)
+{
+    @if (Cond=="a")
+    {
+        <h1><strong>Show A</strong></h1>
+    } else {
+        <h1><strong>Show B</strong></h1>
+    }
+} else {
+     <div class="loader-container">
+                <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+            </div>
+}
+@code {
+    [Parameter] public string Cond { get; set; }
+}

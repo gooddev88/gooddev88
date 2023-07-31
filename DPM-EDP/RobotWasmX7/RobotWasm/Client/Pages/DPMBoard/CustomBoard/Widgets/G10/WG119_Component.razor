@@ -1,0 +1,229 @@
+﻿@using RobotWasm.Client.Data.ML.HighChart
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.BoardParam
+@using System.Globalization
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@inject IJSRuntime jSRuntime;
+
+
+
+<style>
+    .highcharts-figure,
+.highcharts-data-table table {
+    min-width: 310px;
+    max-width: 800px;
+    margin: 1em auto;
+}
+
+#container {
+    height: 400px;
+}
+
+.highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    border: 1px solid #ebebeb;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+}
+
+.highcharts-data-table td,
+.highcharts-data-table th,
+.highcharts-data-table caption {
+    padding: 0.5em;
+}
+
+.highcharts-data-table thead tr,
+.highcharts-data-table tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+.highcharts-data-table tr:hover {
+    background: #f1f7ff;
+}
+
+
+</style>
+
+@*<a onclick="@CreateChart" >Create chart</a>*@
+<h6>@widgetDesc</h6>
+
+ 
+    <div id="div_wg119"></div>
+
+<div class="row text-end">
+    <div class="col-12">
+        <small style="color:gray">wg119</small>
+    </div>
+</div>
+@code {
+
+    [Parameter] public string BoardID { get; set; }
+
+    public custom_widget_master this_widget = new custom_widget_master();
+    public string widgetDesc { get; set; }
+    List<WG119Data> xData = new List<WG119Data>();
+    private IJSObjectReference _jsModule;
+
+    protected override async Task OnInitializedAsync() {
+        //this_widget = _customBoardService.BoardDocset.CustomWidgets.Where(o => o.widget_id == "wg101").FirstOrDefault(); ;
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg119"));
+        widgetDesc =/*this_widget.widget_id+" "+ */this_widget.widget_desc;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+        
+                 try {
+                         _jsModule = await jSRuntime.InvokeAsync<IJSObjectReference>("import", "./chart/g10/wg119.js");
+            if (BoardID != null) { 
+                await CreateChart();
+            }
+            } catch (Exception) {
+
+            }
+        }
+    }
+
+
+
+    private async Task CreateChart() {
+        xData= await Task.Run(() => _g10Service.GetWG119Data(BoardID));
+        if (xData.Count==0  ) {
+            return;
+        }    
+
+        #region สร้าง แกน X
+        var x = new XAxis();
+        x.categories = new List<object>();
+        foreach (var c in xData) {
+            x.categories.Add(c.a_cause);
+            x.crosshair = true;
+        }
+        #endregion
+
+        var Series = new List<SeriesElement>();
+
+        #region สร้าง column chart
+        var bar = new SeriesElement();
+        bar.Color = SeriesElement.RandomColor();
+        bar.Data = new List<object>();
+        bar.Name = "จำนวนอุบัติเหตุ";
+        bar.type = "column";
+        bar.yAxis = 1;
+        bar.ColorByPoint = true;
+        foreach (var d in xData) { 
+            bar.Data.Add(d.count_result);
+        } 
+        Series.Add(bar); 
+        #endregion  
+
+          #region สร้าง column chart
+          bar = new SeriesElement();
+        bar.Color = SeriesElement.RandomColor();
+        bar.Data = new List<object>();
+        bar.Name = "ความเสียหาย";
+        bar.type = "spline";
+        foreach (var d in xData) { 
+            bar.Data.Add(d.damage_value);
+        } 
+        Series.Add(bar); 
+        #endregion  
+
+
+        //var x = new XAxis(AxisType.Category); 
+        var txt = new Title { text = "" };
+        var chart = new ChartData();
+        chart.title = txt; 
+        chart.series = Series;
+        chart.xaxis = x;
+        await _jsModule.InvokeVoidAsync("wg119", chart);
+    }
+  
+
+
+
+
+
+
+
+
+
+    
+
+    //private async Task CreateChart() {
+    //    var Series = new List<SeriesElement>();
+    //    if (xData.series.Count == 0) {
+    //        return;
+    //    }
+    //    foreach (var serie in xData.series) {
+    //        var bar = new SeriesElement();
+    //        bar.Name = serie.name;
+    //        bar.Color = SeriesElement.RandomColor();
+    //        bar.Data = new List<object>();
+    //        foreach (var d in serie.datas) {
+    //            bar.Data.Add(d);
+    //        }
+    //        Series.Add(bar);
+    //    }
+    //    var x = new XAxis();
+    //    x.categories = new List<object>();
+    //    foreach (var c in xData.cates) {
+    //        x.categories.Add(c);
+    //        x.crosshair = true;
+    //    }
+
+    //    var txt = new Title { text = "" };
+    //    var chart = new ChartData();
+    //    chart.title = txt;
+    //    chart.xaxis = x;
+    //    chart.series = Series;
+
+
+    //    await _jsModule.InvokeVoidAsync("wg103", chart);
+
+
+    //}
+    //public class SerieSet {
+    //    public List<string> cates { get; set; }
+    //    public List<InSeries> series { get; set; }
+    //}
+
+    //public class InSeries {
+    //    public string name { get; set; }
+    //    public List<int> datas { get; set; }
+    //}
+
+    //async public Task CreateSerieSet() {
+    //    var query_data = await Task.Run(() => _g10Service.GetWG103Data(BoardID));
+    //    xData = new SerieSet();
+    //    // SerieSet series_set = new SerieSet();
+    //    xData.cates = new List<string>();
+    //    xData.series = new List<InSeries>();
+
+    //    xData.cates = query_data.OrderBy(o => o.TimeRange).Select(o => o.TimeRange).ToList().Distinct().ToList();//distinct for create cate axes
+    //    var series = xData.cates;
+    //    //series นี้มี series เดียว
+    //    InSeries serie = new InSeries();
+    //    serie.name = "ช่วงเวลาเกิดเหตุ";
+    //    serie.datas = query_data.OrderBy(o => o.TimeRange).Select(o => o.Count_Result).ToList();
+    //    xData.series.Add(serie);
+       
+
+    //}
+
+ }
+
+

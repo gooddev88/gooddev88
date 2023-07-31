@@ -1,0 +1,228 @@
+﻿@page "/POSD/POSSaleTax"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Client.PrintOut
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<div class="row pt-2">
+    <div class="col-xl-8 col-md-10 col-sm-12 col-12 mx-auto rounded" style="padding: 8px 10px 8px 10px;background-color: #ffd32a;">
+        <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+            <div class="text-center">
+                <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+                <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ใบกำกับภาษี</span></div>
+            </div>
+        </a>
+        </div>
+</div>
+
+<div class="row pt-2">
+    <div class="ccol-xl-8 col-md-10 col-sm-12 col-12 mx-auto px-0">
+        <div class="card">
+            <div class="card-body">
+
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ชื่อลูกค้า</label>
+                                <TelerikTextBox @bind-Value="@_posService.DocSet.Head.CustomerName"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" />
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>สาขา</label>
+                                <TelerikTextBox @bind-Value="@_posService.DocSet.Head.CustBranchName"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" />
+
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 1</label>
+                                <TelerikTextBox @bind-Value="@_posService.DocSet.Head.CustAddr1"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" />
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 2</label>
+                                <TelerikTextBox @bind-Value="@_posService.DocSet.Head.CustAddr1"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" />
+
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>เลขผู้เสียภาษี</label>
+                                <TelerikTextBox @bind-Value="@_posService.DocSet.Head.CustTaxID"
+                                                Size="@ThemeConstants.DropDownList.Size.Medium" />
+                            </div>
+                        </div>
+
+                        <div class="row pt-3">
+                            <div class="col-12">
+                                <TelerikButton Class="w-100 rounded-pill" ThemeColor="@(ThemeConstants.Button.ThemeColor.Secondary)" @onclick="@OnSaveAndPrintTax"
+                                               Size="@(ThemeConstants.Button.Size.Large)">
+                                    พิมพ์ใบกำกับ
+                                </TelerikButton>
+                            </div>
+                        </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<TelerikWindow Class="telerik-pop col-lg-10 col-md-10 col-sm-8 col-11 mx-auto" Height="700px" Centered="true"
+               @bind-Visible=@isPopupPrint Modal="true" Draggable="false">
+    <WindowTitle>
+        <strong>Preview Printer</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+    <WindowContent>
+         <PrintPreview printid="@printid"></PrintPreview>
+    </WindowContent>
+</TelerikWindow>
+
+<TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                        Text="ระบบกำลังประมวลผล ....."
+                        Visible="@isLoading"
+                        LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+
+@code {
+    bool isLoading = false;
+    bool isPopupPrint { get; set; } = false;
+    public string printid { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+            string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POS/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (_posService.Menu.Count() == 0) {
+                _posService.Menu = await Task.Run(() => _posService.ListMenuItem(_posService.DocSet.Head.RComID, _posService.DocSet.Head.ComID, _posService.DocSet.Head.ShipToUsePrice));
+            } else {
+                foreach (var l in _posService.DocSet.Line) {
+                    if (_posService.Menu != null) {
+                        var iInfo = _posService.Menu.Where(o => o.ItemID == l.ItemID).FirstOrDefault();
+                        if (iInfo != null) {
+                            l.ImageUrl = iInfo.ImageUrl;
+                            l.ImageSource = iInfo.ImageUrl;
+                        }
+                    }
+                }
+            }
+
+            if (_posService.ItemCate.Count() == 0) {
+                _posService.ItemCate = await Task.Run(() => _posService.ListItemCate(_posService.DocSet.Head.RComID));
+            }
+
+            if (_posService.Tenders.Count() == 0) {
+                _posService.Tenders = ListTenderType();
+            }
+        }
+    }
+
+    async void LoadData() {
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidData() {
+        var h = _posService.DocSet.Head;
+        var line = _posService.DocSet.Line;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        if (line.Count() == 0) {
+            Errmsg = "ไม่พบรายการสินค้า";
+            isvalid = false;
+        }
+
+        if (h.CustomerName != "" && h.CustomerName.Length > 45) {
+            Errmsg = "!! ไม่ได้กรอกข้อมูล หรือ ชื่อลูกหค้าห้ามเกิน 45 ตัวอักษร";
+            isvalid = false;
+        }
+
+        if (h.CustBranchName != "" && h.CustBranchName.Length > 45) {
+            Errmsg = "!! ไม่ได้กรอกข้อมูล หรือ สาขาห้ามเกิน 45 ตัวอักษร";
+            isvalid = false;
+        }
+
+        if (h.CustAddr1 != "" && h.CustAddr1.Length > 45) {
+            Errmsg = "!! ไม่ได้กรอกข้อมูล หรือ ที่อยู่ 1 ห้ามเกิน 45 ตัวอักษร";
+            isvalid = false;
+        }
+
+        if (h.CustAddr2 != "" && h.CustAddr2.Length > 45) {
+            Errmsg = "!! ไม่ได้กรอกข้อมูล หรือ ที่อยู่ 2 ห้ามเกิน 45 ตัวอักษร";
+            isvalid = false;
+        }
+
+        if (h.CustTaxID != "" && h.CustTaxID.Length > 13) {
+            Errmsg = "!! ไม่ได้กรอกข้อมูล หรือ เลขผู้เสียภาษี ห้ามเกิน 13 ตัวอักษร";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("Warning", Errmsg, "info");
+        }
+        return isvalid;
+    }
+
+    async Task OnSaveAndPrintTax() {
+        if (!ValidData()) {
+            return;
+        }
+
+        isLoading = true;
+
+        _posService.DocSet.Head.ModifiedBy = login.LogInInfo.CurrentUser;
+        var rr = await Task.Run(() => _posService.SaveTaxSlip(_posService.DocSet));
+        if (rr.Result == "fail") {
+            await Swal.FireAsync("", rr.Message1, "error");
+            isLoading = false;
+            return;
+        } else {
+            _posService.DocSet.Head.FINVID = rr.Message2;
+            string printform_id = "R421";
+
+            var r = await Task.Run(() => _printService.RunReport(_posService.DocSet, printform_id));
+            if (r.Result == "ok") {
+                printid = r.Message2;
+                isPopupPrint = true;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                await Swal.FireAsync("Error", r.Message1, "error");
+                return;
+            }
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POSD/POSSaleDetail");
+    }
+}

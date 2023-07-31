@@ -1,0 +1,363 @@
+﻿@page "/DPMBoard/CustomBoard/CustomBoardList"
+
+@layout MainBoardLayoutToggle
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+<style>
+    .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+    /*notification*/
+    .demo-notification {
+        position: absolute;
+    }
+
+        .demo-notification .k-notification {
+            width: 420px;
+        }
+
+    #demo-runner {
+        height: 400px;
+    }
+
+    .notification-parent {
+        position: relative;
+        height: 250px;
+    }
+
+    .k-badge {
+        margin-left: 5px;
+    }
+
+    .k-notification-container {
+        margin: 6px 0;
+    }
+
+</style>
+
+@if (!isLoading) {
+    <div class="row">
+        <div class="col-md-12 text-center">
+
+            <h4 Class="text-start font-weight-light">
+                <a @onclick="@GoHome">
+              @*  <i class="fa-solid fa-chart-column"></i>*@
+                <i class="fa-solid fa-house"></i>
+                Customs board
+                </a>
+            </h4>
+        </div>
+    </div>
+    @if (!isShowEditBoard) {
+        <div class="row pb-2">
+            <div class="col-md-12 text-end">
+                <TelerikButton Icon="plus" OnClick="@(() => AddNewBoard())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">เพิ่มบอร์ด</TelerikButton>
+            </div>
+        </div>
+    }
+    @if (isShowEditBoard) {
+        <div class="card card-r">
+            <div class="card-body">
+                <div class="row pt-4">
+                    <div class="col-md-12">
+                        <span>ชื่อบอร์ด</span>
+                        <TelerikTextBox @bind-Value="@my_board.board_name" />
+                    </div>
+                </div>
+                <div class="row pt-4">
+                    <div class="col-md-12">
+                        <span>รายละเอียด</span>
+                        <TelerikTextBox @bind-Value="@my_board.board_desc" />
+                    </div>
+                </div>
+                <div class="row pb-3 pt-3">
+                    <div class="col-md-12 text-end">
+
+
+                        <TelerikButton @onclick="@(()=>{isShowEditBoard=!isShowEditBoard;})" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                            <i class="fa-solid fa-chart-column"></i>&nbsp;กลับหน้ารายการบอร์ด
+                        </TelerikButton>
+                        <TelerikButton @onclick="@(() => SaveBoard())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                            <i class="fas fa-check-circle"></i>&nbsp;บันทึก
+                        </TelerikButton>
+                    </div>
+                </div>
+
+
+
+
+
+            </div>
+        </div>
+    } else {
+        @if (boards != null) {
+            foreach (var item in boards) {
+                <div class="col-md-12 pb-3">
+                    <div class="card card-r">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <a @onclick="@(() => GoToBoardUrl(item.board_id))" class="text-decoration-none" style="color:black">
+                                        <div class="row">
+                                            <div class="col-1 text-center">
+                                                <i class="fa-solid fa-chart-column fa-2x"></i>
+                                            </div>
+                                            <div class="col-11">
+
+                                                <span style="font-size:medium;">@item.board_name</span>
+
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <a class="btn text-decoration-none" @onclick="@(() => EditBoard(item))">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a class="btn text-decoration-none" @onclick="@(() => RemoveBoard(item))">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <img src="@GetImage(item.board_id)" class="img-fluid" height="200" hidden="hidden" />
+
+                </div>
+                @*       <div class="k-card-list" style="background-color: #D3D3D3; border-left: 2px solid #BCBCBC; padding:10px;">
+                    <TelerikCard ThemeColor="@( "light")">
+                        <CardHeader>
+                            <span style="font-size:medium;">@item.board_desc &nbsp;</span>
+                            <span style="font-size:small;">@item.board_id</span>
+                        </CardHeader>
+                        <CardBody>
+                            <div class="row">
+                                <div class="col-12">
+                                    <img src="@GetImage(item.board_id)" height="200" />
+                                </div>
+                            </div>
+                        </CardBody>
+                        <CardActions Layout="@CardActionsLayout.Stretched">
+                            <TelerikButton Icon="plus" Class="k-flat Kanit" OnClick="@(() => EditBoard(item))">แก้ไข</TelerikButton>
+                        </CardActions>
+                    </TelerikCard>
+                </div>*@
+            }
+        }
+    }
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+<TelerikNotification @ref="@Notification"
+                     Class="demo-notification"
+                     VerticalPosition="@VerticalPosition"
+                     HorizontalPosition="@HorizontalPosition">
+</TelerikNotification>
+
+@code {
+    private bool isLoading = false;
+    public List<vw_custom_board_in_user>? boards;
+    private bool isShowEditBoard = false;
+    custom_board_in_user my_board = new custom_board_in_user();
+    private bool isUpdateMode = false;
+
+    #region Notification
+    public TelerikNotification Notification { get; set; }
+    public NotificationHorizontalPosition HorizontalPosition { get; set; } = NotificationHorizontalPosition.Right;
+    public NotificationVerticalPosition VerticalPosition { get; set; } = NotificationVerticalPosition.Bottom;
+    public bool NotificationButtonEnabled { get; set; } = true;
+
+    #endregion
+
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+
+        await Task.Run(() => LoadData());
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public string GetImage(string boardId) {
+        return $"img/A01.svg";
+    }
+    public async Task GoToBoardUrl(string boardId) {
+        _customBoardService.BoardDocset = await Task.Run(() => _customBoardService.GetCustomBoard(boardId));
+        if (_customBoardService.BoardDocset.CustomWidgets.Count == 0)
+        {
+             nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardWidget/{boardId}",false);
+        }else {
+            nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardShow/{boardId}",false);
+        } 
+    }
+
+    protected async Task LoadData() {
+        isLoading = true;
+        try {
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            boards = await Task.Run(() => _customBoardService.ListCustomBoardInUser(user));
+            isLoading = false;
+        } catch (Exception ex) {
+            var x = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+
+
+
+    }
+
+    void GoHome(){
+        nav.NavigateTo($"/Dashboard/StartBoard");
+    }
+    async Task AddNewBoard() {
+        isUpdateMode = false;
+        isShowEditBoard = true;
+        my_board = new custom_board_in_user();
+        my_board.board_id = Guid.NewGuid().ToString();
+        my_board.board_type = "CUSTOM";
+        my_board.username = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        my_board.created_by = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        my_board.created_date = DateTime.Now;
+        my_board.modified_by = "";
+        my_board.is_active = 1;
+    }
+    async Task SaveBoard() {
+        await Task.Run(() => CreateUpdateBoard(my_board));
+    }
+
+
+    async Task EditBoard(vw_custom_board_in_user item) {
+        isUpdateMode = true;
+        isShowEditBoard = true;
+        my_board = new custom_board_in_user();
+        my_board.board_id = item.board_id;
+        my_board.board_type = "CUSTOM";
+        my_board.username = item.username;
+        my_board.board_desc = item.board_desc;
+        my_board.board_name = item.board_name;
+        my_board.is_active = item.is_active;
+        my_board.modified_by = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        my_board.modified_date = DateTime.Now;
+
+    }
+    private bool ValidNewBoardData() {
+
+        if (string.IsNullOrEmpty(my_board.board_name)) {
+            Swal.FireAsync("Warning", "กรุณาระบุชื่อบอร์ด", SweetAlertIcon.Info);
+            return false;
+        }
+        if (string.IsNullOrEmpty(my_board.board_desc)) {
+            Swal.FireAsync("Warning", "กรุณาระบุรายละเอียด", SweetAlertIcon.Info);
+            return false;
+        }
+        return true;
+    }
+    async public Task CreateUpdateBoard(custom_board_in_user data) {
+        try {
+            if (!ValidNewBoardData()) {
+                return;
+            }
+            var r = await Task.Run(() => _customBoardService.CreateUpdateBoard(data));
+            if (r.Result == "fail") {
+                //Notification.Show(new NotificationModel() {
+                //        Text = r.Message1,
+                //        ThemeColor = ThemeConstants.Notification.ThemeColor.Info
+                //    });
+                await Swal.FireAsync("Warning", r.Message1, SweetAlertIcon.Info);
+            } else {
+                //Notification.Show(new NotificationModel() {
+                //        Text = "บันทึกสำเร็จ",
+                //        ThemeColor = ThemeConstants.Notification.ThemeColor.Success
+                //    });
+                if (!isUpdateMode) {
+                    await Swal.FireAsync("Success", "บันทึกสำเร็จ", SweetAlertIcon.Success);
+                    nav.NavigateTo($"DPMBoard/CustomBoard/CustomBoardWidget/{data.board_id}", false);
+                } else {
+                    await Swal.FireAsync("Success", "สร้างบอร์ดสำเร็จ กรุณาเลือกวิดเจ็ต", SweetAlertIcon.Success);
+                    string url = $"DPMBoard/CustomBoard/CustomBoardShow/{data.board_id}";
+                    nav.NavigateTo(url);
+                }
+
+                isShowEditBoard = false;
+                await LoadData();
+            }
+        } catch (Exception ex) {
+            //Notification.Show(new NotificationModel() {
+            //        Text = ex.Message,
+            //        ThemeColor = ThemeConstants.Notification.ThemeColor.Info
+            //    });
+            await Swal.FireAsync("Warning", ex.Message, SweetAlertIcon.Info);
+        }
+    }
+    async Task RemoveBoard(vw_custom_board_in_user item) {
+        bool isOk = false;
+        try {
+            await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "ยืนยันการลบ",
+                    Text = $"คุณต้องการลบวิตเจ็ตนี้ออกจากบอร์ดใช่หรือไม่",
+                    Icon = SweetAlertIcon.Question,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "ใช่",
+                    CancelButtonText = "ยกเลิก"
+                }).ContinueWith(swalTask => {
+                SweetAlertResult result = swalTask.Result;
+                if (!string.IsNullOrEmpty(result.Value)) {
+                    isOk = true;
+                }
+
+            });
+            if (!isOk) {
+                return;
+            }
+
+            var r = await Task.Run(() => _customBoardService.DeleteCustomBoard(item.board_id));
+            if (r.Result == "fail") {
+                //Notification.Show(new NotificationModel() {
+                //        Text = r.Message1,
+                //        ThemeColor = ThemeConstants.Notification.ThemeColor.Info
+                //    });
+                await Swal.FireAsync("Warning", r.Message1, SweetAlertIcon.Info);
+            } else {
+                //Notification.Show(new NotificationModel() {
+                //        Text = "ลบบอร์ดเรียบร้อยแล้ว",
+                //        ThemeColor = ThemeConstants.Notification.ThemeColor.Success
+                //    });
+                //  await Swal.FireAsync("Success", "บันทึกสำเร็จ" ,SweetAlertIcon.Success);
+                await LoadData();
+            }
+        } catch (Exception ex) {
+            //Notification.Show(new NotificationModel() {
+            //        Text = ex.Message,
+            //        ThemeColor = ThemeConstants.Notification.ThemeColor.Info
+            //    });
+            await Swal.FireAsync("Warning", ex.Message, SweetAlertIcon.Info);
+        }
+        //var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        //var res = await Http.GetAsync($"api/CustomBoard/RemoveUserInBoard?user={user}&board={item.board_id}");
+        //var r = JsonSerializer.Deserialize<I_BasicResult>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+        //        PropertyNameCaseInsensitive = true,
+        //        ReferenceHandler = ReferenceHandler.Preserve
+        //    });
+
+    }
+
+}

@@ -1,0 +1,124 @@
+﻿@page "/POSV3/POSDeleteBill"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject SweetAlertService Swal
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<div class="row pt-2 px-2">
+    <div class="col-12">
+        <div class="card" style="border-radius: 10px;">
+            <div class="card-body p-3">
+                <div class="row">
+                    <div class="col-md-3 col-sm-3 col-3 text-left">
+                        <a ID="btnback" class="" @onclick="@Back">
+                            <img src="/SALE/assets/img/back.png" style="max-width:3rem;" />
+                        </a>&nbsp;
+                    </div>
+                    <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-left">
+                        <strong style="font-size:2rem; color:crimson;">ลบบิล</strong>
+                    </div>
+                    <div class="col-md-3 col-sm-3 col-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <span>เหตุผลการลบบิล</span>
+            <DxMemo @bind-Text="txtRemark"
+                    BindValueMode="BindValueMode.OnInput"
+                    ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto"
+                    CssClass="w-100"
+                    Rows="2"
+                    SizeMode="SizeMode.Small">
+            </DxMemo>
+        </div>
+    </div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <a class="btn btn-danger w-100 p-2 text-white"
+               @onclick="@(async () => await OnDelete())">ยืนยันการลบ</a>
+        </div>
+    </div>
+
+
+
+@code
+{ bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+    public string txtRemark { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(LoadData);
+        isLoading = false;
+    }
+    void LoadData()
+    {
+
+    }
+
+    async Task OnDelete()
+    {
+        var h = posService.DocSet.Head;
+        bool isConfirm = false;
+        await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "แจ้งเตือน",
+            Text = $"ยืนยันการลบออเดอร์ {h.BillID} ใช่หรือไม่?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            ConfirmButtonText = "ใช่",
+            CancelButtonText = "ยกเลิก"
+        }).ContinueWith(swalTask =>
+        {
+            SweetAlertResult result = swalTask.Result;
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+
+                var h = posService.DocSet.Head;
+                var r = posService.DeleteDoc(h.BillID, txtRemark,login.LoginInfo);
+                if (r.Result == "fail")
+                {
+                    Swal.FireAsync("", r.Message1.ToString(), "error");
+                }
+                else
+                {
+
+                    posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+                    posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+
+                    nav.NavigateTo($"POSV3/POSSaleDetail", false);
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel) { }
+        });
+        if (isConfirm) {
+            posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo,"webv3", ""));
+        }
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    } }

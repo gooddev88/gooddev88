@@ -1,0 +1,98 @@
+﻿@page "/DPMBoard/A01/DashBoard/Map"
+
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+<h3>EventLocationMap</h3>
+
+
+@* This code snippet showcases an example of how to handle the OnShapeClick event. *@
+<TelerikRootComponent>
+<TelerikMap Center="@Center"
+            Zoom="3"
+            OnShapeClick="@OnShapeClick">
+    <MapLayers>
+        <MapLayer Type="@MapLayersType.Tile"
+                  Attribution="@Attribution"
+                  Subdomains="@Subdomains"
+                  UrlTemplate="@UrlTemplate">
+        </MapLayer>
+
+        <MapLayer Type="@MapLayersType.Bubble"
+                  Data="@BubbleData"
+                  LocationField="@nameof(BubbleModel.LatLng)"
+                  ValueField="@nameof(BubbleModel.Revenue)">
+            <MapLayerBubbleSettings>
+                <MapLayerBubbleSettingsStyle>
+                    <MapLayerBubbleSettingsStyleFill Color="#0000ff"></MapLayerBubbleSettingsStyleFill>
+                    <MapLayerBubbleSettingsStyleStroke Color="#000000"></MapLayerBubbleSettingsStyleStroke>
+                </MapLayerBubbleSettingsStyle>
+            </MapLayerBubbleSettings>
+        </MapLayer>
+
+        <MapLayer Type="@MapLayersType.Marker"
+                  Data="@MarkerData1"
+                  LocationField="@nameof(MarkerModel.LatLng)"
+                  TitleField="@nameof(MarkerModel.Title)">
+        </MapLayer>
+    </MapLayers>
+</TelerikMap>
+</TelerikRootComponent>
+<strong>@EventResult</strong>
+
+@code {
+      public string[] Subdomains { get; set; } = new string[] { "a", "b", "c" };
+    public string UrlTemplate { get; set; } = "https://#= subdomain #.tile.openstreetmap.org/#= zoom #/#= x #/#= y #.png";
+    public string Attribution { get; set; } = "&copy; <a href='https://osm.org/copyright'>OpenStreetMap contributors</a>";
+    public double[] Center { get; set; } = new double[] { 30.268107, -97.744821 };
+    public string EventResult { get; set; }
+
+    public List<MarkerModel> MarkerData1 { get; set; } = new List<MarkerModel>()
+    {
+        new MarkerModel()
+        {
+            LatLng = new double[] { 30.268107, -97.744821 },
+            Title = "Austin, TX"
+        }
+    };
+
+    public List<BubbleModel> BubbleData { get; set; } = new List<BubbleModel>()
+    {
+        new BubbleModel()
+        {
+            LatLng = new double[] { 37.7749, -122.4194 },
+            Revenue = 1000
+        },
+        new BubbleModel()
+        {
+            LatLng = new double[] { 41.8781, -87.6298 },
+            Revenue = 200
+        }
+    };
+
+    public void OnShapeClick(MapShapeClickEventArgs args)
+    {
+        var dataItem = args.DataItem as BubbleModel;
+        var eventArgs = args.EventArgs as MouseEventArgs;
+
+        LogToConsole(
+            $"shape click: revenue = {dataItem.Revenue}, location = [{string.Join(",", dataItem.LatLng)}]," +
+            $"clientX = {eventArgs.ClientX}, clientY = {eventArgs.ClientY}");
+    }
+
+    public void LogToConsole(string text)
+    {
+        EventResult = text;
+    }
+
+    public class MarkerModel
+    {
+        public double[] LatLng { get; set; }
+        public string Title { get; set; }
+    }
+
+    public class BubbleModel
+    {
+        public double[] LatLng { get; set; }
+        public int Revenue { get; set; }
+    }
+}

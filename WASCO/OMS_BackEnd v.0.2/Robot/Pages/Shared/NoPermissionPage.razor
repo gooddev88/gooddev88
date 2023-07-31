@@ -1,0 +1,18 @@
+﻿@page "/NoPermissionPage"
+ 
+@layout MainBoardLayout
+
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-7 col-md-8 col-sm-9 pt-150 col-11 mx-auto my-auto pb-600">
+            <h1>@ErrorMsg</h1>
+        </div>
+    </div>
+
+
+@code {
+
+
+    public string ErrorMsg { get; set; } = "you are not allowed.";
+
+}

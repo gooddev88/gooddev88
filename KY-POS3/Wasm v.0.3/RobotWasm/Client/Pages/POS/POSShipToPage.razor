@@ -1,0 +1,106 @@
+﻿@page "/POS/POSShipToPage"
+
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ช่องทางจำหน่าย</span></div>
+        </div>
+    </a>
+</div>
+
+
+<div class="row pt-1">
+    <div class="col-12 px-0">
+
+        <div class="card">
+            <div class="card-body">
+                <TelerikListView Data=@Listshipto
+                                 Pageable="true"
+                                 PageSize="100">
+                    <HeaderTemplate>
+                    </HeaderTemplate>
+                    <Template>
+                        <a class="p-0 text-decoration-none text-dark" @onclick="@(() => GoToPOSSale(context.ShipToID))">
+                            <div class="row">
+                                <div class="col-3 pt-1 text-start">
+                                    <img class="m-auto" src="@context.ImageUrl" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                         style="width: 100%;object-fit: cover;height:auto; aspect-ratio: 14 / 14;" />
+                                </div>
+                                <div class="col-9 text-end pt-3">
+                                    <span style="font-size: 1.5rem;">@context.ShipToName &nbsp;</span>
+                                </div>
+                            </div>
+                        </a>
+                        <hr class="mb-2" />
+                    </Template>
+                </TelerikListView>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    List<ShipTo> Listshipto = new List<ShipTo>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POS/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+        }
+    }
+
+    async void LoadData() {
+        Listshipto = ListShipTo();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToPOSSale(string shipTo) {
+        isLoading = true;
+        _posService.DocSet = await Task.Run(() => POSFuncService.NewTransaction(login.LogInInfo, "webv3", shipTo));
+        isLoading = false;
+        nav.NavigateTo($"POS/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POS/POSSaleDetail");
+    }
+}

@@ -1,0 +1,185 @@
+﻿@page "/Master/Company/CompanyList"
+@inject CompanyService companyService
+
+<style>
+
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+      
+       <div class="card">
+    <div class="card-header">
+       
+
+           <div class="row">
+                <div class="col-md-6">
+                    <h4>
+                        <a @onclick="@Back">
+                            <i class="fas fa-reply-all"></i>&nbsp;
+                            @menuCaption
+                        </a>
+                    </h4>
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (isShowNew) {
+                        <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                            <i class="fas fa-plus-circle"></i>&nbsp;
+                            เพิ่มใหม่
+                        </Button>
+                    }
+                </div>
+            </div>
+    </div>
+    <div class="card-body"> 
+     
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+
+                <TelerikGrid Data=@DocList
+                             ScrollMode="@GridScrollMode.Virtual"
+                             Height="600px" RowHeight="40" PageSize="30"
+                             Resizable=true
+                             Reorderable=true
+                             Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+                    <GridToolBarTemplate>
+                        <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBarTemplate>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_CompanyInfo.CompanyID)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_CompanyInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))">   <i class="fa-solid fa-folder-open" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(vw_CustomerInfo.CompanyID)" Title="รหัส" Width="130px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.Name1)" Title="ชื่อบริษัท" Width="200px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.TaxID)" Title="เลขประชาชน" Width="150px" />
+                        @*<GridColumn Field="@nameof(vw_CompanyInfo.TypeName)" Title="ประเภท" Width="150px" />*@
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrNo)" Title="เลขที่" Width="220px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrTanon)" Title="ถนน/ซอย" Width="180px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrTumbon)" Title="ตำบล" Width="120px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrAmphoe)" Title="อำเภอ" Width="120px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrProvince)" Title="จังหวัด" Width="120px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.AddrPostCode)" Title="รหัสไปร์ษณี" Width="120px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.Email)" Title="Email" Width="120px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.Mobile)" Title="เบอร์โทร" Width="120px" />
+                        <GridColumn Field=@nameof(vw_CompanyInfo.CreatedDate) Title="วันทีสร้างเอกสาร" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                        <GridColumn Field=@nameof(vw_CompanyInfo.CreatedBy) Title="สร้างโดย" Width="150px" DisplayFormat="{0:dd/MM/yyyy}" />
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+
+ 
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+
+    bool ExportAllPages { get; set; } = true; 
+            public TelerikGrid<vw_CompanyInfo> dxDataGrid { get; set; } 
+    IEnumerable<vw_CompanyInfo> DocList;
+
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() {
+
+    }
+
+    async void LoadData() {
+
+        DocList = CompanyService.ListCom(SearchText, login.LoginInfo.CurrentRootCompany.CompanyID, true);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "121");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "121")) {//121 บริษัทและสาขา
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "121")) {//121 บริษัทและสาขา
+            isShowNew = false;
+        }
+    }
+    async void Edit(vw_CompanyInfo select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(CompanyService.sessionActiveId, select_data.CompanyID);
+        companyService.DocSet = companyService.GetDocSet(select_data.CompanyID, login.LoginInfo.CurrentRootCompany.CompanyID);
+        nav.NavigateTo($"Master/Company/CompanyDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void NewDoc() {
+        var u = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(CompanyService.sessionActiveId);
+        companyService.DocSet = companyService.NewTransaction(u.CurrentRootCompany.CompanyID);
+        companyService.DocSet.ComInfo.CreatedBy = u.CurrentUser;
+        //CompanyDetail.txtcompany_id = "";
+        nav.NavigateTo($"Master/Company/CompanyDetail", false);
+    }
+
+
+    public void Back() {
+       // nav.NavigateTo("Menu/MenuMaster/MASTER");
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+
+}

@@ -1,0 +1,844 @@
+﻿@page "/ApiMaster/ApiMasterDetail"
+
+@using Robot.Data.CIMSDB;
+@using Robot.Data.DA.Cims
+@inject ApiMasterService apimasterService
+@using Robot.Data.ML
+
+
+<style>
+    /*เปลี่ยนสี TelerikNumericTextBox Enabled*/
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    /*ซ่อน tool texteditor*/
+    .k-editor-toolbar, .k-editor > .k-toolbar {
+        display: none;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-3">
+            <div class="col-md-12 col-sm-11 col-12 mx-auto">
+                <h4>Api Infomation</h4>
+            </div>
+        </div>
+
+        <div class="row pt-1">
+            <div class="col-md-12 col-sm-11 col-12 mx-auto">
+                <Accordion>
+                    <Collapse Visible="@collapseVisible">
+                        <CollapseHeader>
+                            <Heading Size="HeadingSize.Is5">
+                                <Button Clicked="@(()=>collapseVisible = !collapseVisible)">Api Infomation</Button>
+                            </Heading>
+                        </CollapseHeader>
+                        <CollapseBody>
+
+
+                            <div class="row">
+                                <div class="col-md-6 col-12">
+                                    <span>Api Code</span>
+                                    <TelerikTextBox PlaceHolder="Api Code" @bind-Value="@apimasterService.DocSet.Head.api_id" Enabled="@IsReadOnlyApiid" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>Owner Code</span>
+                                    <TelerikTextBox PlaceHolder="owner code" @bind-Value="@apimasterService.DocSet.Head.owner_code" />
+                                </div>
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-md-12 col-12">
+                                    <span>Api name</span>
+                                    <TelerikTextBox PlaceHolder="Api name" @bind-Value="@apimasterService.DocSet.Head.api_name" />
+                                </div>
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-md-12 col-12">
+                                    <span>Api description</span>
+
+                                    <TelerikTextArea @bind-Value="@apimasterService.DocSet.Head.api_desc"
+                                                     AutoSize="true"
+                                                     Class="w-150"
+                                                     PlaceHolder="Api description">
+                                    </TelerikTextArea>
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>Source category</span>
+
+                                    <TelerikDropDownList Data="@cboSourceCate"
+                                                         @bind-Value="apimasterService.DocSet.Head.source_cate"
+                                                         TextField="@nameof(Robot.Data.ML.SelectOption.Description)"
+                                                         ValueField="@nameof(Robot.Data.ML.SelectOption.Value)"
+                                                         DefaultText=""
+                                                         Width="100%">
+                                        <DropDownListSettings>
+                                            <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                        </DropDownListSettings>
+                                    </TelerikDropDownList>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>Category</span>
+
+                                    <TelerikDropDownList Data="@cboCate"
+                                                         @bind-Value="apimasterService.DocSet.Head.cate"
+                                                         TextField="@nameof(Robot.Data.ML.SelectOption.Description)"
+                                                         ValueField="@nameof(Robot.Data.ML.SelectOption.Value)"
+                                                         DefaultText=""
+                                                         Width="100%">
+                                        <DropDownListSettings>
+                                            <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                        </DropDownListSettings>
+                                    </TelerikDropDownList>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <h4><b>Source api connection</b></h4>
+                                </div>
+                            </div>
+                            <hr />
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>Source connection code</span>
+                                    <TelerikTextBox PlaceHolder="Source connection code" @bind-Value="@apimasterService.DocSet.Head.source_connection_code" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>source-url</span>
+                                    <TelerikTextBox PlaceHolder="source-url" @bind-Value="@apimasterService.DocSet.Head.source_api_url" />
+                                </div>
+                            </div>
+
+                            <br />
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <h4><b>Api connection</b></h4>
+                                </div>
+                            </div>
+                            <hr />
+
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>base-url (internal)</span>
+                                    <TelerikTextBox PlaceHolder="base-url (internal)" @bind-Value="@apimasterService.DocSet.Head.base_url" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>api-url (internal)</span>
+                                    <TelerikTextBox PlaceHolder="api-url (internal)" @bind-Value="@apimasterService.DocSet.Head.api_url" />
+                                </div>
+                            </div>
+                            <div class="row pt-2">
+                                <div class="col-md-12 col-12">
+                                    <span>api-url (external)</span>
+                                    <TelerikTextBox PlaceHolder="api-url (external)" @bind-Value="@apimasterService.DocSet.Head.api_url_external" />
+                                </div>
+                            </div>
+
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>Api Type</span>
+                                    <TelerikTextBox PlaceHolder="Api Type" @bind-Value="@apimasterService.DocSet.Head.api_type" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>Method</span>
+                                    <TelerikDropDownList Data="@cboMethod"
+                                                         Value="@apimasterService.DocSet.Head.method"
+                                                         TextField="@nameof(Robot.Data.ML.SelectOption.Description)"
+                                                         ValueField="@nameof(Robot.Data.ML.SelectOption.Value)"
+                                                         ValueChanged="@( (string m) => ValueChangeDiscMethod(m))"
+                                                         DefaultText=""
+                                                         Width="100%">
+                                        <DropDownListSettings>
+                                            <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                        </DropDownListSettings>
+                                    </TelerikDropDownList>
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>api version</span>
+                                    <TelerikTextBox PlaceHolder="api version" @bind-Value="@apimasterService.DocSet.Head.version" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>Authen type</span>
+                                    <TelerikTextBox PlaceHolder="Authen type" @bind-Value="@apimasterService.DocSet.Head.authen" />
+                                </div>
+                            </div>
+
+                            <br />
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <h4><b>Maintenance</b></h4>
+                                </div>
+                            </div>
+                            <hr />
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>Data source reference</span>
+                                    <TelerikTextBox PlaceHolder="Data source reference" @bind-Value="@apimasterService.DocSet.Head.data_source" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>Update frequency</span>
+                                    <TelerikTextBox PlaceHolder="ช่วงระยะเวลาการอัพเดทข้อมูล -วัน - สัปดาห์ - เดือน" @bind-Value="@apimasterService.DocSet.Head.update_frequency" />
+                                </div>
+                            </div>
+
+
+                            <div class="row pt-2">
+                                <div class="col-md-6 col-12">
+                                    <span>ติดต่อผู้ดูแล</span>
+                                    <TelerikTextBox PlaceHolder="ติดต่อผู้ดูแล" @bind-Value="@apimasterService.DocSet.Head.contact" />
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>url page</span>
+                                    <TelerikTextBox PlaceHolder="url page" @bind-Value="@apimasterService.DocSet.Head.url_page" />
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <span>หมายเหตุ</span>
+                                    <TelerikTextArea @bind-Value="@apimasterService.DocSet.Head.remark"
+                                                     AutoSize="true"
+                                                     Class="w-150"
+                                                     PlaceHolder="หมายเหตุ">
+                                    </TelerikTextArea>
+                                </div>
+                            </div>
+
+                            <br />
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <h4><b>Sample</b></h4>
+                                </div>
+                            </div>
+                            <hr />
+                            <div class="row pt-2">
+                                @if (ShowdivGet) {
+                                    <div class="col-12">
+                                        <str>json parameter</str>
+
+                                        <TelerikEditor @bind-Value="@apimasterService.DocSet.Head.parameter_sample"
+                                                   Tools="@Tools"
+                                                   Height="250px">
+                                        </TelerikEditor>
+                                    </div>
+                                }
+                                @if (ShowdivPost) {
+                                    <div class="col-12">
+                                        <span>json request (sample)</span>
+                                        <TelerikEditor @bind-Value="@parameter_sample"
+                                                   Tools="@Tools"
+                                                   Height="250px">
+                                        </TelerikEditor>
+                                    </div>
+                                }
+
+                                <div class="col-12">
+                                    <span>json responds (sample)</span>
+                                    <TelerikEditor @bind-Value="@apimasterService.DocSet.Head.output_sample"
+                                                   Tools="@Tools2"
+                                                   Height="250px">
+                                    </TelerikEditor>
+                                </div>
+                            </div>
+
+                            <div class="row pt-3">
+                                <div class="col-12 text-end">
+                                    <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                   @onclick="@OnSave" Class="px-5 py-2"
+                                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">บันทึกข้อมูล</TelerikButton>
+                                </div>
+                            </div>
+
+                        </CollapseBody>
+                    </Collapse>
+                </Accordion>
+            </div>
+        </div>
+
+        @if (apimasterService.DocSet.Head.api_id != "") {
+            <div class="row pt-3">
+                <div class="col-md-12 col-sm-11 col-12 mx-auto">
+                    <h4>Api Field description</h4>
+                </div>
+            </div>
+
+            <div class="row pt-1">
+                <div class="col-md-12 col-sm-11 col-12 mx-auto">
+                    <Accordion>
+                        <Collapse Visible="@collapseParameter">
+                            <CollapseHeader>
+                                <Heading Size="HeadingSize.Is5">
+                                    <Button Clicked="@(()=>collapseParameter = !collapseParameter)">Api Field description</Button>
+                                </Heading>
+                            </CollapseHeader>
+                            <CollapseBody>
+                                <div class="row pt-2">
+                                    <div class="col-md-6 col-12">
+                                        <span>ชนิดข้อมูล INPUT / OUTPUT</span>
+                                        <TelerikDropDownList Data="@cboParamType" 
+                                                          @bind-Value="Parameter_Type"
+                                                         TextField="@nameof(Robot.Data.ML.SelectOption.Description)"
+                                                         ValueField="@nameof(Robot.Data.ML.SelectOption.Value)"
+                                                         Width="100%">
+                                            <DropDownListSettings>
+                                                <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                            </DropDownListSettings>
+                                        </TelerikDropDownList>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <span>ประเภทข้อมูล</span>
+                                        <TelerikDropDownList Data="@cboDataType"
+                                                         @bind-Value="data_type"
+                                                         TextField="@nameof(Robot.Data.ML.SelectOption.Description)"
+                                                         ValueField="@nameof(Robot.Data.ML.SelectOption.Value)"
+                                                         Width="100%">
+                                            <DropDownListSettings>
+                                                <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                                            </DropDownListSettings>
+                                        </TelerikDropDownList>
+                                    
+                                    </div>
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 col-12">
+                                        <span>ชื่อ Field</span>
+                                        <TelerikTextBox PlaceHolder="ชื่อ Field" @bind-Value="@field_id" />
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <span>คำบรรยาย Field</span>
+                                        <TelerikTextBox PlaceHolder="คำบรรยาย Field" @bind-Value="@desc" />
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row pt-3">
+                                    <div class="col-12 text-end">
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                                   @onclick="@btnAddParam" Class="px-5 py-2"
+                                                   ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">เพิ่มข้อมูล</TelerikButton>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-3">
+                                    <div class="col-12">
+                                        <TelerikGrid @ref="@grd"
+                                                 Data=@apimasterService.DocSet.paramLine
+                                                 Width="100%"
+                                                 Resizable="true"
+                                                 Pageable="false"
+                                                 PageSize=100
+                                                 RowDraggable="true"
+                                                 OnRowClick="@OnRowClickHandler"
+                                                 OnRowDrop="@((GridRowDropEventArgs<api_param_res> args) => ReOrder(args))">
+                                            <GridColumns>
+                                                <GridColumn Field=@nameof(api_param_res.param_type) Width="120px" Title="Type" />
+                                                <GridColumn Field=@nameof(api_param_res.field_id) Width="170px" Title="Field name" />
+                                                <GridColumn Field=@nameof(api_param_res.description) Width="250px" Title="Field description" />
+                                                <GridColumn Field=@nameof(api_param_res.data_type) Width="150px" Title="Data type" />
+
+
+
+                                                <GridColumn Title="" Editable="false" Width="75px">
+                                                    <Template>
+                                                        @{
+                                                            var data = context as api_param_res;
+                                                        <button class="btn btn-sm" @onclick="@(() => DeleteParam(data))"><i class="fas fa-trash" style="font-size:17px"></i>  </button>
+                                                    }
+                                                </Template>
+                                            </GridColumn>
+                                        </GridColumns>
+                                    </TelerikGrid>
+                                </div>
+                            </div>
+
+                        </CollapseBody>
+                    </Collapse>
+                </Accordion>
+            </div>
+        </div>
+        }
+
+        @if (apimasterService.DocSet.Head.api_id != "") {
+            <div class="row pt-4">
+                <div class="col-md-12 col-sm-11 col-12 mx-auto">
+                    <h4>
+                        <span>เพิ่ม Tag คำสําหรับค้นหา</span>
+                    </h4>
+                </div>
+            </div>
+
+            <div class="row pt-2">
+                <div class="col-md-12 col-sm-11 col-12 mx-auto">
+
+                    <div class="row pt-1">
+                        <div class="col-8">
+                            <TelerikTextArea @bind-Value="@Tag"
+                                         AutoSize="true"
+                                         Class="w-100"
+                                         PlaceHolder="เพิ่ม tag">
+                            </TelerikTextArea>
+                        </div>
+                        <div class="col-2">
+                            <label>&nbsp;</label>
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                       @onclick="@btnAdd" Class="px-4"
+                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">เพิ่ม</TelerikButton>
+                        </div>
+                    </div>
+
+                    <div class="row pt-2">
+                        <div class="col-12">
+
+                            <TelerikGrid Data=@apimasterService.DocSet.TagLine
+                                     Pageable="false"
+                                     Groupable="false"
+                                     Sortable="true"
+                                     Resizable="true"
+                                     Reorderable="true"
+                                     PageSize="20"
+                                     Navigable="true">
+                                <GridColumns>
+                                    <GridColumn Field=@nameof(api_tag.tag) Title="Tag" Width="100%" />
+                                    <GridColumn Title="" Editable="false" Width="75px">
+                                        <Template>
+                                            @{
+                                                var data = context as api_tag;
+                                            <button class="btn btn-sm" @onclick="@(() => DeleteTag(data))"><i class="fas fa-trash" style="font-size:17px"></i>  </button>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                            </GridColumns>
+                        </TelerikGrid>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool collapseVisible = true;
+    bool collapseParameter = true;
+
+    public string field_id = "";
+    public string desc = "";
+    public string data_type = "";
+    public string Parameter_Type = "";
+
+    public string Tag { get; set; }
+    public string parameter_sample { get; set; }
+
+    public bool ShowdivGet { get; set; } = true;
+    public bool ShowdivPost { get; set; } = false;
+
+    public bool IsReadOnlyApiid = true;
+
+    public TelerikGrid<api_param_res> grd { get; set; }
+
+    public List<SelectOption> cboMethod = new List<SelectOption>();
+    public List<SelectOption> cboDataType = new List<SelectOption>();
+    public List<SelectOption> cboParamType = new List<SelectOption>();
+    public List<SelectOption> cboSourceCate = new List<SelectOption>();
+    public List<SelectOption> cboCate = new List<SelectOption>();
+
+    public List<IEditorTool> Tools { get; set; } =
+        new List<IEditorTool>()
+                            {
+            new EditorButtonGroup(new Bold(), new Italic(), new Underline()),
+            new EditorButtonGroup(new AlignLeft(), new AlignCenter(), new AlignRight()),
+            //new UnorderedList(),
+            new EditorButtonGroup(new CreateLink(), new Unlink(), new InsertImage()),
+            new InsertTable(),
+            new EditorButtonGroup(new AddRowBefore(), new AddRowAfter(), new MergeCells(), new SplitCell()),
+            new Format(),
+            new FontSize(),
+            new FontFamily()
+                            };
+
+    public List<IEditorTool> Tools2 { get; set; } =
+        new List<IEditorTool>() {
+        };
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        LoadDropDown();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (apimasterService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(ApiMasterService.sessionActiveId);
+            if (!string.IsNullOrEmpty(docid)) {
+                apimasterService.DocSet = apimasterService.GetDocSet(docid);
+            } else {
+                apimasterService.DocSet = ApiMasterService.NewTransaction();
+            }
+        }
+    }
+
+    void LoadDropDown() {
+        var uirc = login.LoginInfo.UserInRCompany;
+        var uic = login.LoginInfo.UserInCompany;
+
+        cboMethod = ApiMasterService.ListMethod();
+        cboParamType = ApiMasterService.ListParamType();
+        cboDataType = ApiMasterService.ListDataType();
+        cboSourceCate = ApiMasterService.ListSourceCate();
+        cboCate = ApiMasterService.ListCate();
+    }
+
+    async void LoadData() {
+        LoadDropDown();
+        BindData();
+        await SetActiveControl();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void BindData() {
+        var h = apimasterService.DocSet.Head;
+        if (h.api_id != "") {
+            IsReadOnlyApiid = false;
+        }
+
+        if (h.method == "POST") {
+            parameter_sample = h.parameter_sample;
+        }
+
+        if (h.method == "GET") {
+            ShowdivGet = true;
+            ShowdivPost = false;
+        }
+        if (h.method == "POST") {
+            ShowdivGet = false;
+            ShowdivPost = true;
+        }
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "1001");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "1001")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "1001")) {
+            isShowNew = false;
+        }
+    }
+
+    bool ValidData() {
+        var h = apimasterService.DocSet.Head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.api_id == "") {
+            Errmsg = "ระบุ api id";
+            isvalid = false;
+        }
+
+
+        //var checkdup = ApiMasterService.GetApiMaster(h.api_id);
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    //    private bool PrepairDataSave() {
+    //    var h = customerService.DocSet.Info;
+    //    var u = login.LoginInfo;
+    //    bool isnew = h.CustomerID == "" ? true : false;
+    //    if (isnew) {
+    //        h.CustomerID = IDRuunerService.GetNewIDV2("OCUSTOMER", h.RCompanyID, h.CompanyID, Convert.ToDateTime(h.CreatedDate).Date, true, "th")[1];
+    //        h.RCompanyID = u.CurrentRootCompany.CompanyID;
+    //        h.CompanyID = u.CurrentCompany.CompanyID;
+    //    }
+    //    decimal xCreditLimit = 0;
+    //    decimal.TryParse(CreditLimit, out xCreditLimit);
+    //    h.CreditLimit = xCreditLimit;
+
+    //    h.TypeID = selectedDoctype;
+
+    //    return isnew;
+    //}
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = apimasterService.DocSet.Head;
+        //var isnew = PrepairDataSave();
+        if (h.method == "POST") {
+            h.parameter_sample = parameter_sample;
+        }
+
+        var rs = ApiMasterService.Save(apimasterService.DocSet.Head);
+
+        if (rs.Result == "ok") {//save successufull
+            apimasterService.DocSet = await Task.Run(() => apimasterService.GetDocSet(h.api_id));
+            await sessionStorage.SetItemAsync(ApiMasterService.sessionActiveId, apimasterService.DocSet.Head.api_id);
+            LoadData();
+            await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+
+    }
+
+    public async void ValueChangeDiscMethod(string data) {
+        if (!string.IsNullOrEmpty(data)) {
+            apimasterService.DocSet.Head.method = data;
+            if (data == "GET") {
+                ShowdivGet = true;
+                ShowdivPost = false;
+            }
+            if (data == "POST") {
+                ShowdivGet = false;
+                ShowdivPost = true;
+            }
+        }
+    }
+
+    #region Param Api
+    bool ValidLineParamData() {
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (string.IsNullOrEmpty(field_id)) {
+            Errmsg = "ระบุ field_id";
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(desc)) {
+            Errmsg = "ระบุ คำบรรยาย Field";
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(data_type)) {
+            Errmsg = "ระบุ ประเภทข้อมูล";
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(Parameter_Type)) {
+            Errmsg = "ระบุ ชนิดข้อมูล INPUT / OUTPUT";
+            isvalid = false;
+        }
+
+        //string checktype = TypeApi.ToUpper();
+        //List<string> inout = new List<string> { "INPUT", "OUTPUT" };
+        //if (!inout.Contains(checktype)) {
+        //    Errmsg = "ระบุ คำเป็นชนิดข้อมูล INPUT / OUTPUT เท่านั้น";
+        //    isvalid = false;
+        //}
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void btnAddParam() {
+        if (!ValidLineParamData()) {
+            return;
+        }
+
+        var h = apimasterService.DocSet.Head;
+        api_param_res paramapi = ApiMasterService.NewParam();
+
+        paramapi.api_id = h.api_id;
+        paramapi.field_id = field_id;
+        paramapi.description = desc;
+        paramapi.data_type = data_type;
+        paramapi.param_type = Parameter_Type;
+
+        var rs = ApiMasterService.AddApiiParam(paramapi);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("Error", rs.Message1, "error");
+            return;
+        } else {
+            apimasterService.DocSet = apimasterService.GetDocSet(apimasterService.DocSet.Head.api_id);
+            ResetControlParam();
+            LoadData();
+            Swal.FireAsync("", "เพิ่มสำเร็จสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetControlParam() {
+        field_id = "";
+        desc = "";
+        //data_type = "";
+        //Parameter_Type = "";
+    }
+
+    void DeleteParam(api_param_res data) {
+        var rs = ApiMasterService.DeleteApiParam(data.id);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("Error", rs.Message1, "error");
+            return;
+        } else {
+            apimasterService.DocSet = apimasterService.GetDocSet(apimasterService.DocSet.Head.api_id);
+            LoadData();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ReOrder(GridRowDropEventArgs<api_param_res> args) {
+        var new_id = args.Item.field_id;
+        var new_sort = args.Item.sort;
+        var old_id = args.DestinationItem.field_id;
+        var old_sort = args.DestinationItem.sort;
+
+        if (old_sort > new_sort) {
+            var reNumber_item = apimasterService.DocSet.paramLine.Where(o => o.sort <= old_sort && o.sort > new_sort && o.field_id != new_id).ToList();
+            foreach (var i in reNumber_item) {
+                i.sort = i.sort - 1;
+            }
+            var get_new = apimasterService.DocSet.paramLine.Where(o => o.field_id == new_id).FirstOrDefault();
+            get_new.sort = old_sort;
+            //var get_old = ListNewsCateHead.Where(o => o.CateID == old.CateID).FirstOrDefault();
+            //get_old.Sort = get_old.Sort - 1;
+
+        } else {
+            var reNumber_item = apimasterService.DocSet.paramLine.Where(o => o.sort >= old_sort && o.sort < new_sort && o.field_id != new_id).ToList();
+            foreach (var i in reNumber_item) {
+                i.sort = i.sort + 1;
+            }
+
+            var get_new = apimasterService.DocSet.paramLine.Where(o => o.field_id == new_id).FirstOrDefault();
+            get_new.sort = old_sort;
+        }
+
+        apimasterService.DocSet.paramLine = apimasterService.DocSet.paramLine.OrderBy(o => o.param_type).ThenBy(o => o.sort).ToList();
+        LoadData();
+        InvokeAsync(StateHasChanged);
+
+        try {
+            isLoading = true;
+            ApiMasterService.ReOrder(apimasterService.DocSet.paramLine.ToList());
+        } catch (Exception ex) {
+
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async Task OnRowClickHandler(GridRowClickEventArgs args) {
+        var data = args.Item as api_param_res;
+        apimasterService.DocSet = apimasterService.GetDocSet(apimasterService.DocSet.Head.api_id);
+        ResetControlParam();
+        LoadData();
+        await InvokeAsync(StateHasChanged);
+    }
+    #endregion
+
+
+    #region Tag Api
+    bool ValidLineData() {
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+
+        if (string.IsNullOrEmpty(Tag)) {
+            Errmsg = "ระบุ Tag";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void btnAdd() {
+        if (!ValidLineData()) {
+            return;
+        }
+
+        var h = apimasterService.DocSet.Head;
+        api_tag tagapi = ApiMasterService.NewTag();
+
+        tagapi.api_id = h.api_id;
+        tagapi.tag = Tag;
+
+        var rs = ApiMasterService.AddApiTag(tagapi);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("Error", rs.Message1, "error");
+            return;
+        } else {
+            apimasterService.DocSet = apimasterService.GetDocSet(apimasterService.DocSet.Head.api_id);
+            ResetControl();
+            LoadData();
+            Swal.FireAsync("", "เพิ่มสำเร็จสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetControl() {
+        Tag = "";
+    }
+
+    void DeleteTag(api_tag data) {
+        var rs = ApiMasterService.DeleteApiTag(data.id);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("Error", rs.Message1, "error");
+            return;
+        } else {
+            apimasterService.DocSet = apimasterService.GetDocSet(apimasterService.DocSet.Head.api_id);
+            LoadData();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    #endregion
+
+}

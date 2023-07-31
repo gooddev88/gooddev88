@@ -1,0 +1,143 @@
+﻿@page "/Q/Q/{group_id}"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .top-menu {
+        position: initial;
+        top: 70px;
+        width: 100%;
+        height: auto;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 1;
+    }
+
+    @@media only screen and (min-width: 290px) {
+        div.top-menu {
+            justify-content: flex-start !important;
+        }
+    }
+
+    @@media only screen and (min-width: 700px) {
+        div.top-menu {
+            justify-content: center !important;
+        }
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+</style>
+
+<div class="text-center pb-3 pt-2">
+    <h4>แบบสอบถาม</h4>
+</div>
+
+@if (!isLoading) {
+
+
+    @if (_qService.DocSet != null) {
+        <div class="row">
+            <div class="col-12">
+                @foreach (var q in _qService.DocSet.Questions) {
+                    <div class="row">
+                        <div class="col-12">
+                            <span>@q.q_description </span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            @if (q.control_type.ToLower() == "check_box") {
+
+                            }
+                            @if (q.control_type.ToLower() == "radio_button") {
+         @*                       <InputRadioGroup @bind-Value="@SelectedCommunicationType">
+                                    @foreach (var a in _qService.DocSet.Answers.Where(o => o.q_id == q.q_id).OrderBy(o => o.sort)) {
+<InputRadio Value="@a."></InputRadio>
+                                    }
+                                                    </InputRadioGroup>*@
+
+                                @*   <TelerikRadioGroup Data="@_qService.DocSet.Answers.Where(o=>o.q_id==q.q_id).Select(o=>o.choice_description).ToList()"
+                OnChange="@OnChangeHandler" @bind-Value="@SelectedCommunicationType"></TelerikRadioGroup>*@
+
+                            }
+                            @if (q.control_type.ToLower() == "text_box") {
+
+                            }
+                            @if (q.control_type.ToLower() == "dropdown") {
+
+                            }
+                        </div>
+                    </div>
+
+
+
+                }
+            </div>
+        </div>
+    } else {
+        <div class="row pt-5">
+            <div class="col-12 text-center" style="color:darkgray;">
+                <i class="fa-solid fa-note-sticky fa-3x"></i> <br />
+                <h5>  ไม่พบข้อมูล ...</h5>
+            </div>
+        </div>
+    }
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string group_id { get; set; }
+    string SelectedCommunicationType;
+    private bool isLoading = false;
+
+
+
+
+
+    protected override void OnInitialized() {
+
+    }
+    async Task OnChangeHandler(object newValue) {
+        // the handler receives an object that you may need to cast to the type of the component
+        // if you do not provide a Value, you must provide the Type parameter to the component
+        Console.WriteLine($"ValueChanged fired with value: {newValue as string}");
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+
+        await Task.Run(() => LoadData());
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    async Task LoadData() {
+        var user = login.LogInInfo.CurrentUser;
+        _qService.DocSet = await Task.Run(() => _qService.GetDocSet(user, group_id));
+
+    }
+
+
+
+
+
+}

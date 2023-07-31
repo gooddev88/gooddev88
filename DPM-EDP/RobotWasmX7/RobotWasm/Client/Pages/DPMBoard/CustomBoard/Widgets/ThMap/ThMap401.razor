@@ -1,0 +1,174 @@
+﻿@using RobotWasm.Client.Data
+@using System.Reflection
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@inject IJSRuntime jSRuntime
+
+<h3>@province_select</h3>
+<style>
+    #container {
+        height: 800px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .loading {
+        margin-top: 10em;
+        text-align: center;
+        color: gray;
+    }
+
+ 
+    .myfloat {
+        position: absolute;
+        top: 70%;
+        left: 20%;
+        transform: translate(-50%, -50%);
+        text-align: left;
+        z-index: 1;
+    }
+
+    .infolable {
+        position: fixed;
+        top: 50%;
+        left: 45%;
+    }
+</style>
+<div style="position: relative;">
+ 
+
+<div class="row myfloat">
+        <div class="col-md-12">
+            <table style="border: 1px solid green;">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span style="font-size:smaller">1.กรุงเทพมหานคร</span><br>
+                            <span style="font-size:smaller">2.สมุทรปราการ</span><br>
+                            <span style="font-size:smaller">3.สมุทรสาคร</span><br>
+                            <span style="font-size:smaller">4.สมุทรสงคราม</span><br>
+                            <span style="font-size:smaller">5.นครปฐม</span><br>
+                            <span style="font-size:smaller">6.นนทบุรี</span><br>
+                            <span style="font-size:smaller">7.ปทุมธานี</span><br>
+                            <span style="font-size:smaller">8.พระนครศรีอยุธยา</span><br>
+                            <span style="font-size:smaller">9.สุพรรณบุรี</span><br>
+                            <span style="font-size:smaller">10.อ่างทอง</span><br>
+                        <span style="font-size:smaller">11.สิงห์บุรี</span><br>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+ 
+
+<div id="map_401"  >
+
+</div>
+ 
+</div>
+@code {
+   [Parameter] public EventCallback<string> OnClick { get; set; }
+    List<Object> data_array = new List<object>();
+    List<DAreaProvinceMaster>? provinces;
+    //private IJSObjectReference _jsModule;
+    string province_select = "";
+
+
+
+    protected override async Task OnInitializedAsync() {
+        // provinces=     await Task.Run(()=> GetProvince());
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            //    _jsModule = await jSRuntime.InvokeAsync<IJSObjectReference>("import", "./chart/thmap/createmap.js");
+
+            await CreateChart();
+
+        }
+    }
+
+
+    protected override void OnAfterRender(bool firstRender) {
+        base.OnAfterRender(firstRender);
+        if (firstRender) {
+            var dotNetReference = DotNetObjectReference.Create(this);
+            jSRuntime.InvokeVoidAsync("SetDotNetHelper401", dotNetReference);
+
+        }
+    }
+    private async Task CreateChart() {
+        if (provinces == null) {
+            provinces = await Task.Run(() => GetProvince());
+        }
+        data_array = await Task.Run(() => CreateArray());
+        await jSRuntime.InvokeVoidAsync("create_401", data_array);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    async public Task BlazorProvinceClick401(string txt) {
+        province_select = txt;
+     
+        foreach (var pp in provinces) {
+            if (pp.Province == province_select) {
+                pp.MapColor = "red";
+            } else {
+                pp.MapColor = "gray";
+            }
+        }
+        await CreateChart();
+        await OnClick.InvokeAsync(txt);
+    }
+
+
+
+    async public Task<List<Object>> CreateArray() {
+        List<Object> data = new List<Object>();
+
+        int i = 0;
+        foreach (var q in provinces) {
+            List<object> o = new List<object>();
+            o.Add(q.MapHKey);
+            o.Add(q.MapColor);
+            o.Add(q.Province);
+            o.Add(i.ToString());
+
+            data.Add(o);
+            i++;
+
+        }
+        return data;
+    }
+
+    public class XData {
+
+        public string MapHKey { get; set; }
+        public string MapColor { get; set; }
+        public string Province { get; set; }
+    }
+
+
+
+    async public Task<List<DAreaProvinceMaster>> GetProvince() {
+        List<DAreaProvinceMaster> output = new List<DAreaProvinceMaster>();
+        HttpClient _httpClient = new HttpClient();
+        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        var response = await _httpClient.GetAsync(@"https://dalert.disaster.go.th/api/alertshare/ListProvinceHightChart");
+        response.EnsureSuccessStatusCode();
+        output = await response.Content.ReadFromJsonAsync<List<DAreaProvinceMaster>>();
+        province_select = "กรุงเทพมหานคร";
+        foreach (var p in output) {
+            if (p.Province == province_select) {
+                p.MapColor = "red";
+            } else {
+                p.MapColor = "gray";
+            }
+
+        }
+        return output;
+
+    }
+
+}

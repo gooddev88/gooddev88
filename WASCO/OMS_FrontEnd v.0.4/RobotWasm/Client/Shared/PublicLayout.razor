@@ -1,0 +1,28 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+<style>
+    body{
+         background-color: #E4ECF4;
+        overflow: hidden;
+    }
+</style>
+<div Class="container-fluid">
+    <TelerikRootComponent>
+    @Body
+    </TelerikRootComponent>
+</div>
+
+
+
+
+@code {
+    bool _drawerOpen = true;
+    void DrawerToggle() {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+}

@@ -1,0 +1,80 @@
+﻿@page "/"
+@layout MainBoardLayout
+@*@layout MainBoardLayout
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+*@
+@*<style>
+    .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+</style>
+
+<div class="text-center pb-3">
+    <h4>Executive Data Framework Portal</h4>
+    <h5>กรมป้องกันและบรรเทาสาธารณภัย</h5>
+</div>
+
+<ScrollMenu type="standard"></ScrollMenu> 
+   <RobotWasm.Client.Pages.DPMBoard.A00.DashBoard></RobotWasm.Client.Pages.DPMBoard.A00.DashBoard>
+ *@
+
+@code {
+    //public bool isLoading { get; set; } = false;
+    //public List<vw_board_in_user_select>? boards;
+    //private bool isShowEditBoard = false;
+
+    //public List<board_master>? menu;
+
+    protected override async Task OnInitializedAsync() {
+        var user=    await _localStorage.GetItemAsync<string>(Globals.AuthUsername) ;
+
+        if (user=="X") {
+            nav.NavigateTo("Dashboard/StartBoard");
+        }else {
+             GoFirstBoard();
+             await InvokeAsync(StateHasChanged);
+        } 
+    }
+
+        private  void GoFirstBoard() {
+     string   first_board_url = login.GetFirstBoardUrl();
+         nav.NavigateTo(first_board_url);
+         
+    }
+    //public string GetImage(string boardId) {
+    //    return $"img/{boardId}.svg";
+    //}
+    //public string GetBoardLink(string boardId) {
+    //    return $"DPMBoard/{boardId}/DashBoard";
+    //}
+
+   
+
+    //async Task AddBoard(vw_board_in_user_select item) {
+    //    item.IsSelect = true;
+    //    var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+    //    var res = await Http.GetAsync($"api/Board/AddUserInBoard?user={user}&board={item.board_id}");
+    //    var r = JsonSerializer.Deserialize<I_BasicResult>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+    //            PropertyNameCaseInsensitive = true,
+    //            ReferenceHandler = ReferenceHandler.Preserve
+    //        });
+    //}
+
+    //async Task RemoveBoard(vw_board_in_user_select item) {
+    //    item.IsSelect = false;
+    //    var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+    //    var res = await Http.GetAsync($"api/Board/RemoveUserInBoard?user={user}&board={item.board_id}");
+    //    var r = JsonSerializer.Deserialize<I_BasicResult>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+    //            PropertyNameCaseInsensitive = true,
+    //            ReferenceHandler = ReferenceHandler.Preserve
+    //        });
+
+    //}
+}

@@ -1,0 +1,71 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+
+@using Blazored.LocalStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop 
+@using RobotWasm
+@using System.Text.Json
+@using System.Text.Json.Serialization  
+@using RobotWasm.Client.Data.DA.GenDoc 
+@using RobotWasm.Client.Data.DA.Login  
+@using RobotWasm.Client.Data.DA.Order.SO;
+@using RobotWasm.Client.Data.DA.Promotion;
+@using RobotWasm.Client.Data.DA.Stock;
+@using RobotWasm.Client.Data.DA.UserGroup 
+@using RobotWasm.Client.Data.DA.Master
+@using RobotWasm.Client.Data.DA.Xfiles 
+@using RobotWasm.Client.Service.Api
+@using RobotWasm.Client.Shared
+@using RobotWasm.Shared.Data
+@using RobotWasm.Shared 
+@using static RobotWasm.Shared.Data.ML.Shared.I_Result
+@using Blazored.SessionStorage
+@using RobotWasm.Shared.Data.GaDB
+
+@*@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Blazorise.Bootstrap5;*@
+
+@using Blazorise.Icons.FontAwesome;
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Telerik.Blazor.Components.Editor
+@using Telerik.FontIcons
+@using Telerik.SvgIcons
+
+
+@inject SweetAlertService Swal
+
+@inject NavigationManager nav
+@inject ISessionStorageService sessionStorage
+@inject ILocalStorageService _localStorage
+@inject LoginService login  
+@inject ClientService _clientService
+@inject IJSRuntime jsRuntime
+@inject HttpClient Http
+@inject FileGoService _filego
+ 
+@inject UserGroupService _userGroupService
+@inject UserService _userService
+ 
+@inject MasterTypeService _masterTypeService 
+ 
+@inject IDRuunerService _iDRuunerService
+
+@inject CompanyService _companyService
+@*@inject POSService _posService
+@inject TableInfoService _tableInfoService*@
+@inject PromotionService _promotionService
+@inject SOService _soService
+@inject StockBalanceService _stockBalanceService
+@inject CustomerService _customerService
+
+
+
+ 

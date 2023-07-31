@@ -1,0 +1,40 @@
+﻿@using RobotWasm.Shared.Data.ML.DPMBaord.Accident 
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+
+<TelerikRootComponent>
+   <TelerikChart Width="100%" Height="100%" >
+            <ChartSeriesItems>
+                <ChartSeries Type="@ChartSeriesType.Line"
+                         Data="@Data"
+                         Field="@( nameof(AccindentPatiesAgeRange.Count_Result) )"
+                         CategoryField="@( nameof(AccindentPatiesAgeRange.paties_agerange) )"
+                         Aggregate="@ChartSeriesAggregate.Sum">
+                    <ChartSeriesLabels Visible="true" Format="{0:N0}"></ChartSeriesLabels>
+                </ChartSeries>
+            </ChartSeriesItems>
+            <ChartCategoryAxes>
+                <ChartCategoryAxis Type="@ChartCategoryAxisType.Category" BaseUnit="@ChartCategoryAxisBaseUnit.Fit">
+                    <ChartCategoryAxisLabels>
+                        <ChartCategoryAxisLabelsRotation Angle="@LabelsRotation" />
+                    </ChartCategoryAxisLabels>
+                    <ChartCategoryAxisMajorGridLines Visible="false" />
+                    <ChartCategoryAxisMajorTicks Visible="true" />
+                </ChartCategoryAxis>
+            </ChartCategoryAxes>
+            <ChartValueAxes>
+                <ChartValueAxis>
+                    <ChartValueAxisLabels Format="{0:N0}"></ChartValueAxisLabels>
+                </ChartValueAxis>
+            </ChartValueAxes>
+            <ChartLegend Position="ChartLegendPosition.Right">
+            </ChartLegend>
+        </TelerikChart>
+        </TelerikRootComponent>
+
+@code {
+      [Parameter] public List<AccindentPatiesAgeRange> Data { get; set; }
+   string LabelsRotation = "-30";
+
+}

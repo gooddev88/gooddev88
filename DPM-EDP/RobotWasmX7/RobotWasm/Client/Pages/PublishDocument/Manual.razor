@@ -1,0 +1,220 @@
+﻿@page "/PublishDocument/Manual"
+@using RobotWasm.Client.Pages.PublishDocument
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.PublishDoc;
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+
+<style>
+    .k-window {
+        left: 0pxx !important;
+        width: 0pxx !important;
+        height: 600pxx !important;
+        min-width: 120pxx !important;
+        min-height: 100pxx !important;
+    }
+</style>
+
+<TopMenu></TopMenu>
+
+<TelerikWindow Class="telerik-pop col-md-6 col-sm-8 col-11 mx-auto" Centered="true"
+               Modal="true" @bind-Visible="@isPopupMain">
+    <WindowTitle>
+        <strong>INFO</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" OnClick="@(() => isPopupMain = false)" />
+    </WindowActions>
+    <WindowContent>
+        <PopupEditPublishDocument source="Manual"></PopupEditPublishDocument>
+    </WindowContent>
+</TelerikWindow>
+
+<div class="row pt-3">
+    <div class="col-12 text-center">
+        <h3>Manual</h3>
+    </div>
+</div>
+
+@if (!isLoading) {
+    @if (_publishDocService.ListDocSet != null)
+    {
+        <div class="row pt-3">
+        <div class="col-lg-8 col-md-10 col-sm-11 col-12 mx-auto">
+
+            @foreach (var l in _publishDocService.ListDocSet.ListHead.Where(o => o.data_key == "data_manual"))
+            {
+                <div class="row pt-2">
+                    <div class="col-2 text-end pe-0">
+                        <img src="img/dpmlogo_circle.png" class="rounded-circle" alt="" style="width:40px;height:auto;">
+                    </div>
+                    <div class="col-10">
+                        <div class="row pb-3 pt-2">
+                            <div class="col-8">
+                                <a @onclick="@(() => { l.IsVisible = !l.IsVisible; })">
+                                    <b>@l.title</b>
+                                </a>
+                            </div>
+                            @if (isEdit) {
+                                <div class="col-4 text-end">
+                                    <a @onclick="@(() => OnEdit(l))">
+                                        <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        @if (l.IsVisible) {
+                            <div class="row">
+                                <div class="col-12">
+                                    <p>@l.message</p>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!l.IsVisible) {
+                            <div class="row">
+                                <div class="col-12">
+                                    <hr />
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+
+                @if (l.IsVisible) {
+                    <div class="row pt-2 pb-3">
+                        <div class="col-2 text-end pe-0">
+                            <img src="img/documents.png" class="rounded-circle" alt="" style="width:40px;height:auto;">
+                        </div>
+                        <div class="col-10 pt-2">
+                            <b>เอกสารดาวน์โหลด</b>
+                        </div>
+
+                        <div class="row pt-3">
+                                @foreach (var a in _publishDocService.ListDocSet.ListLine.Where(o => o.data_key == "data_manual").OrderBy(o => o.sort)) {
+                                    <div class="col-2 text-end pe-0">
+                                        <span class="text-danger"><i class="fa-solid fa-file-arrow-down fa-lg"></i></span>
+                                    </div>
+
+                                    <div class="col-10">
+                                        <div class="row pb-3">
+                                            <div class="col-12">
+                                                <a @onclick="@(() => DownloadFIle(a.file_id))" class="text-decoration-underline">
+                                                    <span class="text-dark">@a.filename</span>
+                                                </a>&nbsp;
+                                                @if (!string.IsNullOrEmpty(a.file_description))
+                                                {
+                                                    <span>: @a.file_description</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                        </div>
+                    </div>
+                }
+            }
+                    </div>
+    </div>
+        }
+        } else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@*<div class="row pt-2">
+                    <div class="col-2 text-end pe-0">
+                        <img src="img/documents.png" class="rounded-circle" alt="" style="width:40px;height:auto;">
+                    </div>
+                    <div class="col-10 pt-2">
+                        <b>คู่มือการใช้งาน</b>
+                    </div>
+
+                    <div class="row pt-3">
+                        <div class="col-2 text-end pe-0">
+                            <span class="text-danger"><i class="fa-solid fa-file-pdf fa-lg"></i></span>
+                        </div>
+
+                        <div class="col-10">
+                            <div class="row pb-3">
+                                <div class="col-12">
+                                    <a href="/Document/pdf-test.pdf" download>
+                                        <span class="text-dark">pdf-test.pdf</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-2 text-end pe-0">
+                            <span class="text-danger"><i class="fa-solid fa-file-pdf fa-lg"></i></span>
+                        </div>
+
+                        <div class="col-10">
+                            <div class="row pb-3">
+                                <div class="col-12">
+                                    <a href="/Document/pdf-test.pdf" download>
+                                        <span class="text-dark">pdf-test2.pdf</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>*@
+@code {
+
+    private bool isLoading = false;
+    string menuCaption = "";
+    private bool isEdit = true;
+    public bool isPopupMain { get; set; } = false;
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async Task LoadData() {
+        await SetActiveControl();
+        _publishDocService.ListDocSet = await Task.Run(() => _publishDocService.GetListPublishDoc());
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "436").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsOpen)) {
+            isEdit = false;
+        }
+    }
+
+    async void OnEdit(xpublish_doc_head data) {
+        isPopupMain = true;
+        await sessionStorage.SetItemAsync(Globals.ActiveID_DataKey, data.data_key);
+        _publishDocService.DocSet = await _publishDocService.GetDocSet(data.data_key);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void DownloadFIle(string file_id) {
+        try {
+            string file_url = await _filego.GetFileUrlPostgres(file_id);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+}

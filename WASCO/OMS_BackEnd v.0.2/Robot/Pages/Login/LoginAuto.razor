@@ -1,0 +1,94 @@
+﻿@page "/LoginAuto"
+@using System.IO
+
+
+<SpinLoader IsLoading="isLoading">
+
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code { 
+    public string userName { get; set; }
+    public string password { get; set; }
+    bool isLoading = false;
+   
+
+
+
+
+    protected override async Task OnInitializedAsync() {
+
+        await GetStorage();
+
+    }
+
+
+    async void LoginAction() {
+
+        isLoading = true;
+        login.LoginInfo = LogInService.Login(userName, password, "", "");
+        if (login.LoginInfo.LoginResult == "ok") {
+            await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+            ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(userName);
+
+            isLoading = false;
+            if (login.LoginInfo.UserInRCompany.Count > 1) {
+                await SetStorage(userName, password);
+                nav.NavigateTo("Login/ChangeRCom");
+
+            } else {
+                if (login.LoginInfo?.UserInBoard.Count == 0) {
+                    await SetStorage(userName, password);
+                    nav.NavigateTo("Dashboard/StartBoard", false);
+                } else {
+                    var get_first_board = login.LoginInfo?.UserInBoard.FirstOrDefault();
+                    await SetStorage(userName, password);
+                    nav.NavigateTo(get_first_board.BoardUrl, false);
+                }
+            } 
+        } else {
+            isLoading = false;
+            nav.NavigateTo("Login");
+        }
+
+    }
+
+    async private Task SetStorage(string username, string password) {
+        if (rememberMe) {
+            await protectedLocalStore.SetAsync(Globals.RememberUserLogin, username);
+            await protectedLocalStore.SetAsync(Globals.RememberPasswordLogin, password);
+        } else {
+            await protectedLocalStore.SetAsync(Globals.RememberUserLogin, "");
+            await protectedLocalStore.SetAsync(Globals.RememberPasswordLogin, "");
+        }
+
+    }
+    async public Task GetStorage() {
+        var u = await protectedLocalStore.GetAsync<string>(Globals.RememberUserLogin);
+        userName = u.Success ? u.Value : "";
+        var p = await protectedLocalStore.GetAsync<string>(Globals.RememberPasswordLogin);
+        password = p.Success ? p.Value : "";
+
+        if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) {
+            LoginAction();
+        } else {
+            nav.NavigateTo("Login");
+        }
+
+    }
+}

@@ -1,0 +1,253 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.DpmPortal
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+
+<style>
+    .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay {
+        position: fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom: 0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h3>DPM0018</h3>
+        <h5>ข้อมูลศูนย์ป้องกันและบรรเทาสาธารณภัยเขต สานักงานป้องกันและบรรเทาสาธารณภัยจังหวัด</h5>
+    </div>
+</div>
+<hr />
+@if (!isLoading)
+{
+
+
+    <div class="row pt-2">
+        <div class="col-10">
+            <TelerikTextBox Name="search" OnChange="@OnSearch" @bind-Value="search"
+                        PlaceHolder="ค้นหา" TabIndex="1" Id="search"></TelerikTextBox>
+        </div>
+        <div class="col-2 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            @if (!isShowErrorAPI)
+            {
+                <TelerikGrid Data="@ndata"
+                     Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                    <GridToolBar>
+                        <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                        <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                        <GridSearchBox />
+                    </GridToolBar>
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.M_TYPE_CODE) Title="M_TYPE_CODE" Width="150px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.M_TYPE_NAME_TH) Title="M_TYPE_NAME_TH" Width="180px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.TOTAL_SUM) Title="TOTAL_SUM" DisplayFormat="{0:0}" Width="120px" />
+
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV01_SUM) Title="GOV01_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV02_SUM) Title="GOV02_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV03_SUM) Title="GOV03_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV04_SUM) Title="GOV04_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV05_SUM) Title="GOV05_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV06_SUM) Title="GOV06_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV07_SUM) Title="GOV07_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV08_SUM) Title="GOV08_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV09_SUM) Title="GOV09_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV10_SUM) Title="GOV10_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV11_SUM) Title="GOV11_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV12_SUM) Title="GOV12_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV13_SUM) Title="GOV13_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV14_SUM) Title="GOV14_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV15_SUM) Title="GOV15_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV16_SUM) Title="GOV16_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV17_SUM) Title="GOV17_SUM" DisplayFormat="{0:0}" Width="120px" />
+                        <GridColumn Field=@nameof(DPM018DataSet.DataRow.GOV18_SUM) Title="GOV18_SUM" DisplayFormat="{0:0}" Width="120px" />
+                    </GridColumns>
+                </TelerikGrid>
+            }
+            else
+            {
+                <div class="text-center" style="color:slategray">
+                    <i class="fa-solid fa-circle-exclamation fa-4x"></i>
+                    <br />
+                    <h3>No data or api error.</h3>
+                </div>
+            }
+        </div>
+    </div>
+
+}
+else
+{
+
+    <TelerikLoaderContainer>
+        <Template>
+            <div class="lds-dual-ring"></div>
+        </Template>
+    </TelerikLoaderContainer>
+}
+
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool isShowErrorAPI = false;
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public DPM018DataSet.DocSet data_set { get; set; }
+    public List<DPM018DataSet.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //  await LoadData();
+    }
+
+
+
+    private async void OnSearch(object input)
+    {
+        if (ndata == null)
+        {
+            await Task.Run(() => LoadData());
+        }
+        ndata = data_set.rows.Where(o =>
+                                    (
+                                        o.M_TYPE_NAME_TH.Contains(search)
+                                        || o.M_TYPE_CODE.Contains(search)
+                                        || search == ""
+                                    )
+
+                            ).ToList();
+    }
+
+    async private Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=dpm018");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<DPM018DataSet.DocSet>(url));
+            if (query.StatusCode != "OK")
+            {
+                isShowErrorAPI = true;
+                isLoading = false;
+                return;
+            }
+            data_set = (DPM018DataSet.DocSet)query.Result;
+            ndata = data_set.rows;
+            #region show unshow api
+            isShowErrorAPI = false;
+            if (ndata == null)
+            {
+                isShowErrorAPI = true;
+            }
+            else
+            {
+                if (ndata.Count == 0)
+                {
+                    isShowErrorAPI = true;
+                }
+            }
+            #endregion
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            var rr = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args)
+    {
+        if (ExportColumns.Any())
+        {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+    async void BtnLoad()
+    {
+        await LoadData();
+    }
+}

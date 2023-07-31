@@ -1,0 +1,87 @@
+ตัวอย่างหน้าจอ Register
+https://data.tmd.go.th/nwpapi/register
+
+
+api พยากรณ์อากาศของ กรมอุตุ
+https://data.tmd.go.th/nwpapi/doc/apidoc/location/forecast_daily.html
+
+Openweather map
+https://stackpython.co/tutorial/django-app-open-weather-map-api
+
+Blazor Weather App
+https://trystanwilcock.com/2022/07/09/weather-application-tutorial-in-c-sharp-and-blazor-using-openweather-api/
+https://www.telerik.com/blogs/blazor-components-definitive-guide
+
+Render Html from text
+https://www.meziantou.net/rendering-raw-unescaped-html-in-blazor.htm
+
+
+dpm web portal
+http://portal.disaster.go.th/portal/public/queryClient.do
+
+
+api ระบบงบประมาณ
+http://me.disaster.go.th:8000/swagger/ui/index#/Target
+ 
+ออกแบบระบบหหลังบ้าน cims (กวาง)
+https://www.figma.com/file/KeTlOeopqp1kzUesM7glyE/UI-temp?node-id=16%3A44
+ออกแบบระบบหหลังบ้าน cims (ตาล)
+https://rk6wxh.axshare.com/#id=zyv0k2&p=data_set_1&g=1b
+
+งานท๊อปเจ
+https://docs.google.com/spreadsheets/u/1/d/1a_2L8dehcLkut331DWvB7p91GjFIyRmA9L3ogdRyGZw/edit?usp=sharing
+
+
+
+server dpm
+Server DPM@Bangna
+==============
+anydesk
+addr: 165846192
+pass: @min#ddpm
+External IP : 122.154.29.20
+Internale IP : 172.17.104.250
+==============
+windows login
+RDP : 122.154.29.20:6006
+user: administrator
+pass: @min#DSS
+user: dalert
+pass: @min#DSS
+==============
+Sql login
+user: dalert
+pass: @min#DSS
+==============
+
+DDPM Vertica DB
+
+Host: 122.154.29.17
+Internal IP : 172.17.103.3
+Port: 5433
+DB Schema: cms
+User: cms
+Pass: dpm@cmspass
+
+
+
+===============
+CMS Server test
+=====================
+Anydesk ID: 952042599
+Pass: @min#DDPM
+=====================
+Remote Desktop
+IP: 122.154.29.20:13389
+User: administrator
+Pass: Ddpm@m1n
+=====================
+Postgresql
+IP: 122.154.29.20
+Port: 5432
+Database name: postgres
+User: postgres
+Pass: @min#CMS
+=====================
+Firewall
+HTTP(80): 122.154.29.20:9000

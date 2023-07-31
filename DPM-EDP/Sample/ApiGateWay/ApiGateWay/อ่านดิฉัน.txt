@@ -1,0 +1,1 @@
+https://medium.com/@lucas.rafael.araujo/net-5-api-with-ocelot-multiple-auth-schemes-jwt-7e9cb8f61ca8

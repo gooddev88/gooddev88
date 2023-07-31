@@ -1,0 +1,370 @@
+﻿@using Robot.Data.ML.Login;
+@using Robot.Pages
+@using Robot.Pages.Login
+@using Blazorise.Localization
+ 
+@inherits LayoutComponentBase
+ 
+
+
+<style>
+    .container-lg {
+        max-width: 1460px;
+    }
+
+    .bg-dark {
+        background-color: darkslategrey !important;
+    }
+
+    .darkslategrey-white {
+        background-color: darkslategrey !important;
+        color: white !important;
+    }
+</style>
+        <ReconnectDialog> </ReconnectDialog> 
+<AuthorizeView>
+    <Authorized>
+
+        @*<NavMenu/>*@
+
+        <Layout Sider Class="b-docs">
+
+            <LayoutSider>
+                <LayoutSiderContent>
+                    <Bar @ref="@sideBar" Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark"
+                         Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Hide">
+                        <BarBrand>
+                            <BarItem>
+                                @*<BarLink To="Menu/MainMenu">
+                                <BarIcon IconName="customIcon" Display="Display.InlineBlock" />
+                                APP OMS
+                                </BarLink>*@
+                                <BarLink To=@first_board_url>
+                                    <BarIcon IconName="customIcon" Display="Display.InlineBlock" />
+                                </BarLink>
+                            </BarItem>
+                        </BarBrand>
+                        <BarMenu>
+                            <BarStart>
+                            @*    <BarItem>
+                                    <BarLink @onclick="@GoFirstBoard">
+                                        <BarIcon IconName="IconName.User" />
+                                        ข้อมูลส่วนตัว
+                                    </BarLink>
+                                </BarItem>*@
+                                @foreach (var menu in UserInMenu.Where(o => o.TypeID == "MENUGROUP")) {
+                                    @if (menu.IsOpen == true) {
+                                        <BarItem>
+                                            <BarDropdown @bind-Visible="@menu.IsToggleGroupmenu" Class="darkslategrey-white">
+                                                <BarDropdownToggle>
+                                                    <i class="@menu.Icon"></i>&nbsp;
+                                                    @menu.MenuDesc1
+                                                </BarDropdownToggle>
+                                                @foreach (var lm in UserInMenu.Where(o => o.GroupID == menu.GroupID && o.TypeID != "MENUGROUP")) {
+                                                    @if (lm.IsOpen == true) {
+                                                        <BarDropdownMenu Class="darkslategrey-white">
+                                                            <BarDropdownItem @onclick="@(() => ChangeURL(lm.Url,lm.MenuID))">
+                                                                @lm.MenuDesc1
+                                                            </BarDropdownItem>
+                                                        </BarDropdownMenu>
+                                                    }
+                                                }
+                                            </BarDropdown>
+                                        </BarItem>
+                                    }
+                                }
+                                <BarItem>
+                                    <BarDropdown Class="darkslategrey-white">
+                                        <BarDropdownToggle>
+                                            <BarIcon IconName="IconName.Unlock" />
+                                            ออกจากระบบ
+                                        </BarDropdownToggle>
+                                        <BarDropdownMenu Class="darkslategrey-white">
+                                            <BarDropdownItem @onclick="@ChangeRcom">เปลี่ยนหน่วยงาน</BarDropdownItem>
+                                            <BarDropdownItem @onclick="@LogOut">ออกจากระบบ</BarDropdownItem>
+                                        </BarDropdownMenu>
+                                    </BarDropdown>
+                                </BarItem>
+
+                                @*          <BarItem>
+                                <BarDropdown   Class="darkslategrey-white">
+                                <BarDropdownToggle @onclick="@LogOut">
+                                <i class="fas fa-portal-exit"></i>&nbsp;
+                                Log out
+                                </BarDropdownToggle>
+                                <BarDropdownMenu Class="darkslategrey-white">
+                                <BarDropdownItem  @onclick="@LogOut" >
+                                <i class="fas fa-portal-exit"></i> &nbsp;  Log out
+                                </BarDropdownItem>
+                                <BarDropdownItem @onclick="@ChangeRcom">
+                                <i class="far fa-random"></i>&nbsp; Switch Company
+                                </BarDropdownItem>
+                                </BarDropdownMenu>
+                                </BarDropdown>
+                                </BarItem>*@
+                            </BarStart>
+                        </BarMenu>
+                    </Bar>
+                </LayoutSiderContent>
+            </LayoutSider>
+
+            <Layout>
+                <LayoutHeader ElementId="docs-layout-header">
+                    <Bar Class="b-top-bar" @ref="@topBar" @bind-Visible="@topBarVisible"
+                         Breakpoint="Breakpoint.Desktop" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark">
+                        <BarToggler Bar="@sideBar" Border="Border.Is0" />
+                        <BarBrand Display="Display.None.InlineBlock.OnDesktop">
+                            <BarItem>
+                                <BarLink To="Login/ChangeCompany">
+                                    <span style="color: white;">@CompanyName</span>
+                                </BarLink>
+                                @*<span style="color: white;">กรมป้องกันและบรรเทาสาธารณภัย</span>*@
+                            </BarItem>
+                        </BarBrand>
+                        @*  <BarItem Class="text-center">
+                        555555555555555555555
+                        </BarItem>*@
+                        <BarMenu>
+                            <BarEnd>
+                                <Dropdown>
+                                    <DropdownToggle Color="Color.None" Class="text-white">
+                                        <i class="fas fa-user-circle fa-2x"></i>&nbsp;
+                                        @Username
+                                    </DropdownToggle>
+                                    <DropdownMenu>
+                                        <DropdownItem @onclick="@ChangeRcom">เปลี่ยนหน่วยงาน</DropdownItem>
+                                        <DropdownItem @onclick="@LogOut">ออกจากระบบ</DropdownItem>
+                                    </DropdownMenu>
+                                </Dropdown>
+                                @*<TopMenuEnd />*@
+                            </BarEnd>
+                        </BarMenu>
+                    </Bar>
+                </LayoutHeader>
+                <LayoutContent Padding="Blazorise.Padding.Is0.OnX.Is4.OnY.Is2.OnDesktop" Class="mt-1">
+                 @*   <Container Breakpoint="Breakpoint.Desktop">*@
+                        <TelerikRootComponent>
+                        @Body
+                        </TelerikRootComponent>
+                 @*   </Container>*@
+                </LayoutContent>
+            </Layout>
+        </Layout>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    public string Username { get; set; }
+    public string CompanyName { get; set; }
+
+    public string color { get; set; } = "darkslategrey";
+
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+
+    private Bar sideBar;
+
+    private Bar topBar;
+
+    private bool topBarVisible;
+
+    private bool sideBarFormMenuVisible;
+
+    private bool disposed;
+
+    
+    //RenderFragment customIcon = @<Image Source="/assets/img/logo_top.png" Style="width:120px" />;
+    RenderFragment customIcon = @<Image Source="/assets/img/wasco_logo.png" Style="width:55px" />;
+
+    protected override async Task OnInitializedAsync() {
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        }
+        if (login.LoginInfo != null) {
+            UserInMenu = login.LoginInfo.UserInMenuDisplay.ToList();
+        }
+        //await Task.Run(()=>login.CheckLogin());
+        first_board_url=  login.GetFirstBoardUrl();
+        await Task.Run(LoadData);
+
+        nav.LocationChanged += OnLocationChanged;
+        await SelectCulture("en-US");
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        BindData();
+    }
+
+    void BindData() {
+        if (login.LoginInfo != null) {
+            Username = login.LoginInfo.CurrentUser;
+            CompanyName = login.LoginInfo.CurrentCompany?.Name1;
+        }
+    }
+    private void GoFirstBoard(){
+        first_board_url=  login.GetFirstBoardUrl();
+        nav.NavigateTo(first_board_url);
+    }
+    private Task SelectCulture(string name) {
+        LocalizationService.ChangeLanguage(name);
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeEnabledChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.Enabled = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeGradientChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsGradient = value;
+
+        //if ( Theme.GradientOptions == null )
+        //    Theme.GradientOptions = new GradientOptions();
+
+        //Theme.GradientOptions.BlendPercentage = 80;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeRoundedChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsRounded = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeColorChanged(string value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.ColorOptions ??= new();
+
+        Theme.BackgroundOptions ??= new();
+
+        Theme.TextColorOptions ??= new();
+
+        Theme.ColorOptions.Primary = value;
+        Theme.BackgroundOptions.Primary = value;
+        Theme.TextColorOptions.Primary = value;
+
+        Theme.InputOptions ??= new();
+
+        //Theme.InputOptions.Color = value;
+        Theme.InputOptions.CheckColor = value;
+        Theme.InputOptions.SliderColor = value;
+
+        Theme.SpinKitOptions ??= new();
+
+        Theme.SpinKitOptions.Color = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    [Inject] protected ITextLocalizerService LocalizationService { get; set; }
+
+    [CascadingParameter] protected Theme Theme { get; set; }
+    void LogOut(string id) {
+        nav.NavigateTo("Logout", false);
+    }
+    public string first_board_url = "Dashboard/StartBoard";
+
+
+
+
+    #region Methods Theme
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e) {
+        //await JSRuntime.InvokeVoidAsync( "blazoriseDocs.navigation.scrollToTop" );
+    }
+
+    protected virtual void Dispose(bool disposing) {
+        if (!disposed) {
+            if (disposing) {
+                nav.LocationChanged -= OnLocationChanged;
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose() {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    #endregion
+
+    async private Task LogOut() {
+        var authenticationState = await AuthenticationStateTask;
+        ((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        ((AuthStateProvider)authStateProvider).ClearRememberLogin();
+        nav.NavigateTo("Login", true);
+    }
+
+
+    async private Task ChangeRcom() {
+
+        nav.NavigateTo("Login/ChangeRCom", true);
+    }
+
+    async private Task ChangeURL(string url,string menu) {
+        if (menu == "621") {//621 ออเดอร์
+            var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID;
+            var user = login.LoginInfo.CurrentUser;
+            LoginCrossRequest req = new LoginCrossRequest { RComID = rcom, AppID = "OMS", Username = Username, BackPage = "", ToPage = menu };
+            var xlogin = await Task.Run(() => login.CreateCrossAppReq(req)); 
+            nav.NavigateTo(xlogin.GoToUrl);
+        }else { 
+            nav.NavigateTo(url, false);
+            await InvokeAsync(StateHasChanged);
+        } 
+    }
+
+    //async Task GetFirstBoardUrl() {
+    //    if (login.LoginInfo == null) {
+    //          first_board_url = "Dashboard/StartBoard";
+    //    }else {
+    //           if (login.LoginInfo?.UserInBoard.Count == 0) {
+    //        first_board_url = "Dashboard/StartBoard";
+    //    } else {
+    //        var get_first_board = login.LoginInfo?.UserInBoard.OrderBy(o => o.BoardSort).FirstOrDefault();
+    //        first_board_url = get_first_board.BoardUrl;
+    //    }
+    //    }
+    //}
+
+    //private  string GoFirstBoard() {
+    //    string url = "";
+    //    if (login.LoginInfo?.UserInBoard.Count == 0) {
+    //            nav.NavigateTo("Dashboard/StartBoard", false);
+    //        } else {
+    //            var get_first_board = login.LoginInfo?.UserInBoard.OrderBy(o=>o.BoardSort).FirstOrDefault();
+    //            nav.NavigateTo(get_first_board.BoardUrl, false);
+    //        }
+
+    //}
+}

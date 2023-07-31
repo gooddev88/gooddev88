@@ -1,0 +1,69 @@
+﻿  <!-- Navbar -->
+         <LayoutSider>
+                <LayoutSiderContent>
+                    <Bar @ref="@sideBar" Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark"
+                         Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Hide">
+                        <BarBrand>
+                            <BarItem>
+                                @*<BarLink To="Menu/MainMenu">
+                                    <BarIcon IconName="customIcon" Display="Display.InlineBlock" />
+                                    APP OMS
+                                    </BarLink>*@
+                                <BarLink To="Dashboard/PersonBoard">
+                                    <BarIcon IconName="customIcon" Display="Display.InlineBlock" /> 
+                                </BarLink>
+                            </BarItem>
+                        </BarBrand>
+                        <BarMenu>
+                            <BarStart>
+                                @foreach (var menu in UserInMenu.Where(o => o.TypeID == "MENUGROUP")) {
+                                    @if (menu.IsOpen==true) { 
+                                    <BarItem>
+                                        <BarDropdown @bind-Visible="@menu.IsToggleGroupmenu" Class="darkslategrey-white">
+                                            <BarDropdownToggle>
+                                                <i class="@menu.Icon"></i>&nbsp;
+                                                @menu.MenuDesc1
+                                            </BarDropdownToggle>
+                                            @foreach (var lm in UserInMenu.Where(o => o.GroupID == menu.GroupID && o.TypeID != "MENUGROUP")) {
+                                                          @if (lm.IsOpen==true) { 
+                                                <BarDropdownMenu Class="darkslategrey-white">
+                                                    <BarDropdownItem To="@lm.Url">
+                                                        @lm.MenuDesc1
+                                                    </BarDropdownItem>
+                                                </BarDropdownMenu>
+                                                   }
+                                            }
+                                        </BarDropdown>
+                                    </BarItem>
+                                       }
+                                }
+                            </BarStart>
+                        </BarMenu>
+                    </Bar>
+                </LayoutSiderContent>
+            </LayoutSider>
+
+@code { 
+
+    
+    private Bar sideBar;
+    private bool sideBarFormMenuVisible;
+    RenderFragment customIcon = @<Image Source="/assets/img/logo_top.png" Style="width:120px" />
+    ;
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+
+
+    protected override async Task OnInitializedAsync() {
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        }
+        if (login.LoginInfo != null) {
+            UserInMenu = login.LoginInfo.UserInMenuDisplay.ToList();
+        }
+      
+
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+  
+}

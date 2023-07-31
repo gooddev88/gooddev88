@@ -1,0 +1,252 @@
+﻿@page "/POSV3/POSSaleHome"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pt-2 pb-2">
+            <div class="col-12">
+                <div class="card" style="border-radius: 10px;">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-7 text-left">
+                                <img src="/SALE/assets/img/applogo.png" alt="" style="max-width:5rem;" />&nbsp;
+                                <strong style="font-size:x-large; color:crimson;">KY POS</strong>
+                            </div>
+                            <div class="col-5 text-right">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <i class="fas fa-sign-out-alt fa-2x"></i>&nbsp;<br />
+                                    <div>
+                                        <strong style="font-size:medium; color:crimson;">ออกจากระบบ</strong>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <div class="card border border-secondary">
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-12 text-left">
+                                <label>@CompanyName <strong>(@CompanyID)</strong></label><br />
+                                <label>ผู้ขาย @UserName</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-4 pr-0">
+                <div class="card border border-secondary">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <i class="fas fa-coins fa-3x"></i><br />
+                                <label>เงินสด</label><br />
+                                <label>@lblCash ฿</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4 px-2">
+                <div class="card border border-secondary">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <i class="fas fa-credit-card fa-3x"></i><br />
+                                <label>ชำระอื่นๆ</label><br />
+                                <label>@lblTransfer ฿</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4 pl-0">
+                <div class="card border border-secondary">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <i class="far fa-grin fa-3x"></i><br />
+                                <label>ยอดรวม</label><br />
+                                <label>@lblSumNetTotalAfterRound ฿</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <a ID="btnback" class="w-100" @onclick="@GoToBillSale">
+                    <div class="card border-secondary" style="border-radius: 10px;">
+                        <div class="card-body p-3">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <img src="/SALE/assets/img/payment_pos.png" style="max-width:5rem;" />
+                                </div>
+                                <div class="col-8 pt-4 text-left">
+                                    <strong style="font-size: 2rem; color: black;">ขายสินค้า</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <a ID="btnback" class="w-100" @onclick="@GoToBillHistory">
+                    <div class="card border-secondary" style="border-radius: 10px;">
+                        <div class="card-body p-3">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <img src="/SALE/assets/img/salehistory.png" style="max-width:5rem;" />
+                                </div>
+                                <div class="col-8 pt-4 text-left">
+                                    <strong style="font-size: 2rem; color: black;">ประวัติการขาย</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <a ID="btnback" class="w-100" @onclick="@GoToSummaryBillToday">
+                    <div class="card border-secondary" style="border-radius: 10px;">
+                        <div class="card-body p-3">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <img src="/SALE/assets/img/dailyreport.png" style="max-width:5rem;" />
+                                </div>
+                                <div class="col-8 pt-4 text-left">
+                                    <strong style="font-size: 2rem; color: black;">สรุปประจำวัน</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string CompanyName { get; set; } = "";
+    public string CompanyID { get; set; } = "";
+    public string UserName { get; set; } = "";
+
+    public string lblCash { get; set; } = "0.00";
+    public string lblTransfer { get; set; } = "0.00";
+    public string lblSumNetTotalAfterRound { get; set; } = "0.00";
+
+    List<POS_SaleHead> Summary = new List<POS_SaleHead>();
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        CompanyName = login.LoginInfo.CurrentCompany.Name1 + " " + login.LoginInfo.CurrentCompany.Name2;
+        CompanyID = login.LoginInfo.CurrentCompany.CompanyID;
+        UserName = login.LoginInfo.CurrentUserInfo.FullName;
+
+        Summary = POSService.GetSummaryDashBoard(login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentCompany.CompanyID);
+
+        lblSumNetTotalAfterRound = Summary.Sum(o => o.NetTotalAfterRound).ToString("n2");
+        lblCash = Summary.Sum(o => o.PayByCash).ToString("n2");
+        lblTransfer = Summary.Sum(o => o.PayByOther).ToString("n2");
+
+        isLoading = false;
+    }
+
+    async void GoToBillSale()
+    {
+
+        posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo,"webv3", ""));
+        posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+        posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+    }
+
+    async void GoToBillHistory()
+    {
+        if (login.LoginInfo== null)
+        {
+            await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        }
+        nav.NavigateTo($"POSV3/POSBillHistoryList", false);
+    }
+
+    async void GoToSummaryBillToday()
+    {
+
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleNewDoc", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,184 @@
+﻿@page "/POSV3/POSCheckBillList"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+@inject POSSaleConverterService POSSaleConverterService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<style>
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+                  <div class="row pt-2">
+                      <div class="col-10 mx-auto">
+                          <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                          <CircleFade Color="orange" Size="100px" Center="true" />
+                          @*<Circle Color="orange" Size="165px" />*@
+                      </div>
+                  </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        @if (ListCheckBill.Count() != 0)
+        {
+        <div class="row pt-2 pb-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+            <div class="col-md-3 col-sm-3 col-3 text-left">
+                <a ID="btnback" class="" @onclick="@Back">
+                    <img src="/SALE/assets/img/back.png" style="max-width:3rem;" />
+                </a>&nbsp;
+            </div>
+            <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-left">
+                <strong style="font-size:2rem; color:crimson;">เลือกออเดอร์สำหรับเช็คบิล</strong>
+            </div>
+            <div class="col-md-3 col-sm-3 col-3">
+            </div>
+        </div>
+
+
+            <div class="row px-3 pt-2">
+                <div class="col-12">
+
+                    @foreach (var l in ListCheckBill)
+                    {
+                        <div class="card my-1 rounded">
+                            <div class="card-body p-1">
+                                <div class="row pb-0">
+
+                                    <div class="col-12">
+                                        <a class="btn" style="height: auto; width:100%;" @onclick="@(() => GoToPOSSale(l))">
+                                            <div class="row text-center">
+                                                <div class="col-6 text-left">
+                                                    <strong style="font-size:large; color:crimson;">@l.TableName</strong>
+                                                    &nbsp;
+                                                    <span style="font-size:medium; color:lightseagreen;">@l.BillID</span>
+                                                    <br />
+                                                    ยอดเงิน   <strong style="font-size:medium">@l.NetTotalAmtIncVat.ToString("n2") ฿</strong>
+                                                </div>
+                                                <div class="col-6 text-right">
+                                                    <span style="font-size:small">@l.CreatedDate.ToString("dd/MM/yyyy H:mm")</span>
+                                                    @switch (l.ShipToLocID) {
+                                                        case "":
+                                                    <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "GRAB":
+                                                    <img src="/SALE/assets/img/grab.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "SHOPEE":
+                                                    <img src="/SALE/assets/img/shopee_logo.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "LINEMAN":
+                                                    <img src="/SALE/assets/img/lineman.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "PANDA":
+                                                    <img src="/SALE/assets/img/padda.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "ROBINHOOD":
+                                                    <img src="/SALE/assets/img/robinhood.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                        case "ONLINE":
+                                                    <img src="/SALE/assets/img/online.png" alt="" style="width: 5rem;" />
+                                                            break;
+
+                                                        default:
+                                                    <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 5rem;" />
+                                                            break;
+                                                    }
+
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row pt-2 pb-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+                <div class="col-2 text-left pr-0">
+                    <a ID="btnShipTo" class="" @onclick="@Back">
+                        <img src="/SALE/assets/img/kylogo.png"  style="width: 70px;" />
+                    </a>
+                </div>
+                <div class="col-10 pl-0 pt-4 text-left">
+                    <strong style="font-size:xx-large; color:crimson;">ออเดอร์รอเช็คบิล</strong>
+                </div>
+            </div>
+
+            <div class="jumbotron text-center">
+                <h2 style="color: darkorange;">... ไม่พบออเดอร์รอเช็คบิล ...</h2>
+            </div>
+
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+
+@code {
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+    List<POSSaleConverterService.POS_SaleHeadModel> ListCheckBill = new List<POSSaleConverterService.POS_SaleHeadModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+    void LoadData()
+    {
+        ListCheckBill = POSService.ListDocCheckBIll(login.LoginInfo.CurrentRootCompany.RCompanyID, login.LoginInfo.CurrentCompany.CompanyID);
+        isLoading = false;
+    }
+    async void GoToPOSSale(POSSaleConverterService.POS_SaleHeadModel data)
+    {
+        //posService.DocSet = posService.NewTransaction(login.LoginInfo, data.ShipToID);
+        //await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        posService.DocSet = await Task.Run(() => posService.GetDocSet(data.BillID, data.RComID));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

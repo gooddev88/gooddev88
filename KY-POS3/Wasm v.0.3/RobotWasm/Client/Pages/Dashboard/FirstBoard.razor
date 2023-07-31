@@ -1,0 +1,261 @@
+﻿@page "/Dashboard/FirstBoard"
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using RobotWasm.Client.Helper.DeviceHelper;
+@inject IJSRuntime JSRuntime
+@layout BankLayout
+
+<style>
+    .card-top-menu {
+        background-color: black;
+        border-radius: 0.7rem;
+    }
+
+    .fixtop-textspan-logo {
+        position: absolute;
+        top: 29px;
+        left: 77px;
+    }
+
+    .font-SL-yellow {
+        font-size: large;
+        color: #FFD600
+    }
+
+
+    .card-info-menu {
+        border-radius: 0.7rem;
+/*        border-color: gray;
+        box-shadow: 0px 0px;
+        border: solid !important;
+        border-width: 1.5px !important;*/
+    }
+</style>
+
+
+      <div class="row pb-2 pt-2">
+        <div class="col-12">
+        <div class="card" style="background-color:#ffd32a;">
+                <div class="card-body py-2">
+                    <div class="row">
+                        <div class="col-6 py-0 px-0">
+                        <img src="img/kylogo.png" alt="" style="max-width:3.2rem;" />&nbsp;
+                            @*<div class="fixtop-textspan-logo"><strong class="font-SL-yellow">KY POS</strong></div>*@
+                        </div>
+                        <div class="col-6 py-0 px-2 text-end text-dark pt-3">
+                            <a @onclick="@LogOut">
+                            <i class="fa-solid fa-right-from-bracket" style="font-size:1.3rem;"></i>&nbsp;
+                            <strong style="font-size:small;">LOGOUT</strong>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pb-2">
+        <div class="col-12">
+            <div class="card card-info-menu">
+                <div class="card-body py-3">
+                    <div class="row pb-2">
+                        <div class="col-12">
+                            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                           @onclick="@ChangeCompany" Class="w-100"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                <i class="fa-solid fa-house-circle-check fa-lg"></i>&nbsp; เปลี่ยนสาขา
+                            </TelerikButton>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                        <p class="mb-0">@Cominfo.Name1 @Cominfo.Name2</p>
+                            <p class="mb-0">@MacNo</p>
+                            <p class="mb-0">@FullName</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+<div class="row pb-2">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-4 pb-3 pe-2">
+                <a class="w-100 text-decoration-none text-dark" @onclick="@(async () => await GoSale())">
+                    <div class="card card-info-menu text-center">
+                        <div class="card-body px-0">
+                            <img src="/img/coffeelogo.png" style="width: 4rem;height: 4rem;" />
+                            <br />
+                            <div>
+                                <strong style="font-size: calc(0.65em + 1.5vmin);">ขายสินค้า</strong>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-4 pb-3 px-2">
+                <a class="w-100 text-decoration-none text-dark" @onclick="@GoToCheckBill">
+                    <div class="card card-info-menu text-center">
+                        <div class="card-body px-0">
+                            <img src="/img/checkbill_logo.png" style="width: 4rem;height: 4rem;" />
+                            <br />
+                            <div>
+                                <strong style="font-size: calc(0.65em + 1.5vmin);">เช็คบิล</strong>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-4 pb-3 ps-2">
+                <a class="w-100 text-decoration-none text-dark" @onclick="@GoToPOSOrderForKithen">
+                    <div class="card card-info-menu text-center">
+                        <div class="card-body px-0">
+                            <img src="/img/kitchen.png" style="width: 4rem;height: 4rem;" />
+                            <br />
+                            <div>
+                                <strong style="font-size: calc(0.65em + 1.5vmin);">ครัว</strong>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-4 pb-3 pe-2">
+                <a class="w-100 text-decoration-none text-dark" @onclick="@GoToBillHistory">
+                    <div class="card card-info-menu text-center">
+                        <div class="card-body px-0">
+                            <img src="/img/salehistory.png" style="width: 4rem;height: 4rem;" />
+                            <br />
+                            <div>
+                                <strong style="font-size: calc(0.65em + 1.5vmin);">ประวัติขาย</strong>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-4 pb-3 px-2">
+                <a class="w-100 text-decoration-none text-dark">
+                    <div class="card card-info-menu text-center">
+                        <div class="card-body px-0">
+                            <img src="/img/dailyreport.png" style="width: 4rem;height: 4rem;" />
+                            <br />
+                            <div>
+                                <strong style="font-size: calc(0.65em + 1.5vmin);">สรุปประจำวัน</strong>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+@code {
+    bool isLoading = true;
+
+    string CompanyName { get; set; } = "";
+    string FullName { get; set; } = "";
+    string MacNo { get; set; } = "";
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+
+    public BrowserInfo browserInfo { get; set; }
+    protected BrowserDetectJsInterop deviceModule { get; private set; }
+    KitchenStatusParam Filter = POSFuncService.NewFilterKitchen();
+    public CompanyInfo Cominfo = new CompanyInfo();
+
+    protected override async Task OnInitializedAsync() {
+        Filter = await Task.Run(() => _posService.GetLocalStorageFiterKitchen());
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            deviceModule = new BrowserDetectJsInterop(JSRuntime);
+            browserInfo = await deviceModule.BrowserInfo();
+            firstRender = false;
+        }
+    }
+
+    async void LoadData() {
+        string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+        string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+        Cominfo = await Task.Run(() => _companyService.GetComInfoByComID(rcom, com));
+        FullName = "ผู้ขาย " + login.LogInInfo.CurrentUserInfo.FullName;
+        MacNo = "รหัสเครื่อง " + login.LogInInfo.CurrentMacNo;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task GoSale() {
+        isLoading = true;
+
+        if (string.IsNullOrEmpty(Cominfo.ShortCode)) {
+            await Swal.FireAsync("", "ตั้งชื่อย่อ สาขาก่อนเปิดบิลขาย", "error");
+            await InvokeAsync(StateHasChanged);
+            isLoading = false;
+            return;
+        }
+
+        await sessionStorage.RemoveItemAsync(Globals.SessionActive_PosID);
+        //_posService.DocSet = await Task.Run(() => POSFuncService.NewTransaction(login.LogInInfo, "webv3", ""));
+        //_posService.DocSet.Head.BillDate = login.LogInInfo.CurrentTransactionDate;
+        _posService.DocSet = null;
+        isLoading = false;
+        nav.NavigateTo($"POS/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToCheckBill() {
+        isLoading = true;
+        nav.NavigateTo($"POS/POSCheckBillList/1", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToBillHistory() {
+        isLoading = true;
+        nav.NavigateTo($"POS/POSBillHistory/1", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }  
+
+    async void GoToPOSOrderForKithen() {
+        if (Filter.cates.Count == 0) {
+            nav.NavigateTo($"Kitchen/POSSelectCateInKithen", false);
+        } else {
+            nav.NavigateTo($"Kitchen/POSOrderForKithenList", false);
+        }
+        await InvokeAsync(StateHasChanged);
+    }    
+
+    async private Task LogOut() {
+        await login.Logout();
+    }
+
+    void ChangeCompany() {
+       nav.NavigateTo($"POS/SelectCompany");
+    }
+    
+}

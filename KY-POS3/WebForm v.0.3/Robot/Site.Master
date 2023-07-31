@@ -1,0 +1,258 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="Robot.SiteMaster" %>
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%: Page.Title %> - KMG Draco</title>
+
+    <asp:PlaceHolder runat="server">
+        <%: Scripts.Render("~/bundles/modernizr") %>
+    </asp:PlaceHolder>
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous" />
+    <%--<link href="~/Styles/sweetalert.css" rel="stylesheet" />--%>
+    <%--<link href="~/Styles/colorbox.css" rel="stylesheet" />--%>
+    <link href="~/Asset/css/ga1.css" rel="stylesheet" />
+    <link href='https://fonts.googleapis.com/css?family=Kanit' rel='stylesheet' />
+    <%--<link href='https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet' />--%>
+    <link href="~/Asset/Font/css/all.css" rel="stylesheet" />
+    <%--<link rel="stylesheet" href="/Asset/jquery.Thailand.js/dist/jquery.Thailand.min.css" />--%>
+    <%--<link href="~/Asset/css/ga2.css" rel="stylesheet" />--%>
+    <style>
+     
+    </style>
+</head>
+<body class="<%=hddbackgroupid.Value %>">
+    <form runat="server">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="../Scripts/sweetalert.min.js"></script>
+        <script src="../Scripts/colorbox/jquery.colorbox-min.js"></script>
+        <script src="../Asset/js/ga1.js"></script>
+
+
+        <script type="text/javascript">
+
+            ////begin maintain table selected
+            $(function () {
+                // for bootstrap 3 use 'shown.bs.tab', for bootstrap 2 use 'shown' in the next line
+                $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                    // save the latest tab; use cookies if you like 'em better:
+                    sessionStorage.setItem('lastTab', $(this).attr('href'));
+                });
+
+                // go to the latest tab, if it exists:
+                var lastTab = sessionStorage.getItem('lastTab');
+                if (lastTab) {
+                    $('[href="' + lastTab + '"]').tab('show');
+                }
+            });
+        //end maintain table selected
+        </script>
+
+
+        <asp:ScriptManager runat="server">
+            <Scripts>
+                <%--To learn more about bundling scripts in ScriptManager see https://go.microsoft.com/fwlink/?LinkID=301884 --%>
+                <%--Framework Scripts--%>
+                <asp:ScriptReference Name="MsAjaxBundle" />
+                <%--    <asp:ScriptReference Name="jquery" />
+                <asp:ScriptReference Name="bootstrap" />--%>
+                <asp:ScriptReference Name="WebForms.js" Assembly="System.Web" Path="~/Scripts/WebForms/WebForms.js" />
+                <asp:ScriptReference Name="WebUIValidation.js" Assembly="System.Web" Path="~/Scripts/WebForms/WebUIValidation.js" />
+                <asp:ScriptReference Name="MenuStandards.js" Assembly="System.Web" Path="~/Scripts/WebForms/MenuStandards.js" />
+                <asp:ScriptReference Name="GridView.js" Assembly="System.Web" Path="~/Scripts/WebForms/GridView.js" />
+                <asp:ScriptReference Name="DetailsView.js" Assembly="System.Web" Path="~/Scripts/WebForms/DetailsView.js" />
+                <asp:ScriptReference Name="TreeView.js" Assembly="System.Web" Path="~/Scripts/WebForms/TreeView.js" />
+                <asp:ScriptReference Name="WebParts.js" Assembly="System.Web" Path="~/Scripts/WebForms/WebParts.js" />
+                <asp:ScriptReference Name="Focus.js" Assembly="System.Web" Path="~/Scripts/WebForms/Focus.js" />
+                <asp:ScriptReference Name="WebFormsBundle" />
+                <%--Site Scripts--%>
+            </Scripts>
+        </asp:ScriptManager>
+        <asp:HiddenField ID="hddCompany" runat="server" />
+        <asp:HiddenField ID="hddbackgroupid" runat="server" />
+        <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-light" style="background-color: darkcyan !important;">
+            <div class="container">
+                <%--    <a class="navbar-brand" href="/DashBoard/DashBoard1001.aspx">
+                    <span style="color: orangered"><b>Draco</b></span>
+                </a>--%>
+                <a class="navbar-brand" href="../Default.aspx">
+                    <%--<asp:Image runat="server" Width="90px" Height="40px" ImageUrl="Account/MyLogin/images/logo-r1.png"/>--%>
+                    <span><b style="color: orangered;">KMG</b>&nbsp<b>Draco</b></span>
+                </a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <ul class="navbar-nav w-100">
+
+
+
+                        <li class="nav-item active">
+                            <a class="btn btn-info btn-sm kanit-m" href="#">Task</a>
+                            <a class="btn btn-dark btn-sm kanit-m" <%= (SetMenu("1000")=="0")?"style='display: none;'":"" %> href="../DashBoard/DashBoard1011.aspx"><span><%= SetCaption("1000") %></span></a>
+                            <a class="btn btn-success btn-sm kanit-m" <%= (SetMenu("3000")=="0")?"style='display: none;'":"" %> href="../DashBoard/DashBoard1005.aspx"><span><%= SetCaption("3000") %></span></a>
+
+                        </li>
+
+
+
+
+
+
+
+                        <li class="nav-item dropdown kanit-m" hidden="hidden">
+                            <a class="nav-link dropdown-toggle" href="#" id="menu3000" role="button" <%= (SetMenu("3000")=="0")?"style='display: none;'":"" %> data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">เอกสารควบคุม
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" <%= (SetMenu("3021")=="0")?"style='display: none;'":"" %> href="../../Order/PackingList.aspx?menu=3021&id=">3021 ใบคุมสาขา</a>
+                                <%--<a class="dropdown-item" <%= (SetMenu("3022")=="0")?"style='display: none;'":"" %> href="../../Order/PackingListB.aspx?menu=3022&id=">3022 จัดการงานคนขับ(DP)</a>--%>
+
+                                <a class="dropdown-item" <%= (SetMenu("3031")=="0")?"style='display: none;'":"" %> href="../../Order/PackingList.aspx?menu=3031&id=">3031 ใบคุมคลัง</a>
+                                <a class="dropdown-item" <%= (SetMenu("3131")=="0")?"style='display: none;'":"" %> href="../../Task/TaskList.aspx?menu=3131&id=">3131 ยืนยันวันรับสินค้า</a>
+
+                                <a class="dropdown-item" <%= (SetMenu("3041")=="0")?"style='display: none;'":"" %> href="../../Order/PackingList.aspx?menu=3041&id=">3041 ใบคุมส่งปลายทาง</a>
+
+
+
+                            </div>
+                        </li>
+
+                        <li class="nav-item dropdown kanit-m" hidden="hidden">
+                            <a class="nav-link dropdown-toggle" <%= (SetMenu("2000")=="0")?"style='display: none;'":"" %> href="#" id="menu2000" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">การขนส่ง
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" <%= (SetMenu("3111")=="0")?"style='display: none;'":"" %> href="../../Task/TaskList.aspx?menu=3111&id=">3111 งานขนส่ง</a>
+                                <a class="dropdown-item" <%= (SetMenu("3112")=="0")?"style='display: none;'":"" %> href="../../Task/TaskBList.aspx?menu=3112&id=">3112 งานขนส่ง(คนขับ)</a>
+                                <a class="dropdown-item" <%= (SetMenu("3211")=="0")?"style='display: none;'":"" %> href="../../Task/TaskList.aspx?menu=3211&id=">3211 เอกสารนำกลับ</a>
+                            </div>
+                        </li>
+
+
+
+                        <li class="nav-item dropdown kanit-m" hidden="hidden">
+                            <a class="nav-link dropdown-toggle" href="#" id="menu8000" <%= (SetMenu("8000")=="0")?"style='display: none;'":"" %> role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">รายงาน
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" <%= (SetMenu("8101")=="0")?"style='display: none;'":"" %> href="../../Order/Report/Rcommission001.aspx?menu=8101&id=">8101 รายงานคอมมิชชั่น (ภาพรวม)</a>
+                                <a class="dropdown-item" <%= (SetMenu("8102")=="0")?"style='display: none;'":"" %> href="../../Order/Report/Rcommission001.aspx?menu=8102&id=">8102 รายงานคอมมิชชั่น (สาขา)</a>
+                                <a class="dropdown-item" <%= (SetMenu("8103")=="0")?"style='display: none;'":"" %> href="../../Order/Report/RRevenue.aspx?menu=8103&id=">8103 รายงานรายได้</a>
+                                <a class="dropdown-item" <%= (SetMenu("8104")=="0")?"style='display: none;'":"" %> href="../../Order/Report/RDestBilling.aspx?menu=8104&id=">8104 รายงานเก็บเงินปลายทาง</a>
+                                <a class="dropdown-item" <%= (SetMenu("8104")=="0")?"style='display: none;'":"" %> href="../../Order/Report/RCOD.aspx?menu=8104&id=">8105 รายงานโอนเงิน COD </a>
+                                <a class="dropdown-item" <%= (SetMenu("8201")=="0")?"style='display: none;'":"" %> href="../../Order/Report/RKPIOrder.aspx?menu=8201&id=">8201 รายงาน KPI Order</a>
+
+                                <a class="dropdown-item" hidden="hidden" href="../../Order/Report/RDailyincome.aspx?menu=8111&id=">8111 รายงานรายได้รายวัน</a>
+                                <a class="dropdown-item" hidden="hidden" href="../../Order/Report/RCODStatus.aspx?menu=8112&id=">8112 รายงานสถานะ COD</a>
+                                <a class="dropdown-item" hidden="hidden" href="../../Order/Report/RBounceproduct.aspx?menu=8113&id=">8113 รายงานสินค้าตีกลับ (ส่งไม่สำเร็จ)</a>
+                                <a class="dropdown-item" hidden="hidden" href="../../Order/Report/RHiretransport.aspx?menu=8114&id=">8114 รายงานจ้างขนส่ง</a>
+                                <a class="dropdown-item" hidden="hidden" href="../../DashBoard/Menu1001.aspx?menu=&id=">8888 รายงานรวม</a>
+                                <asp:LinkButton CssClass="dropdown-item" ID="btnhiddenmenu" runat="server" Visible="false" OnClick="btnhiddenmenu_Click"> 6666 Dev menu </asp:LinkButton>
+                            </div>
+                        </li>
+
+                        <li class="nav-item dropdown kanit-m" hidden="hidden">
+                            <a class="nav-link dropdown-toggle" <%= (SetMenu("2201")=="0")?"style='display: none;'":"" %> href="#" id="menu2201" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">ตามพัสดุ
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="../../Tracking/CustTrackingV2.aspx?menu=v&id=">8902 Track & Trace</a>
+                                <%--<a class="dropdown-item" href="../../Tracking/CustCFDelivery.aspx?id=">8902 Confirm Delivery</a>--%>
+                            </div>
+                        </li>
+
+
+                        <li class="nav-item dropdown kanit-m" hidden="hidden">
+                            <a class="nav-link dropdown-toggle" href="#" id="menu6000" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Hidden Menu
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" <%= (SetMenu("4011")=="0")?"style='display: none;'":"" %> href="../../AR/ARInvList.aspx?menu=4011&id=">4011 อินวอยซ์</a>
+                                <a class="dropdown-item" <%= (SetMenu("4021")=="0")?"style='display: none;'":"" %> href="../../AR/ARBillingList.aspx?menu=4021&id=">4021 วางบิล</a>
+                                <a class="dropdown-item" <%= (SetMenu("4111")=="0")?"style='display: none;'":"" %> href="../../ACC/ARInvoice.aspx?menu=4111&id=">4111 อินวอยซ์</a>
+                                <a class="dropdown-item" <%= (SetMenu("4121")=="0")?"style='display: none;'":"" %> href="../../ACC/ARBilling.aspx?menu=4121&id=">4121 วางบิล</a>
+                                <a class="dropdown-item" <%= (SetMenu("4131")=="0")?"style='display: none;'":"" %> href="../../ACC/ARReceipt.aspx?menu=4131&id=">4131 รับชำระ</a>
+                                <a class="dropdown-item" href="../../AR/ARInv.aspx?menu=4050&id=">4050 อินวอยซ์</a>
+
+                                <%--เอกสารควบคุม--%>
+                                <a class="dropdown-item" <%= (SetMenu("3101")=="0")?"style='display: none;'":"" %> href="../../Task/TaskList.aspx?menu=3101&id=">3301 ลิสงานค้าง</a>
+                                <%--AP--%>
+
+                                <a class="dropdown-item" <%= (SetMenu("1411")=="0")?"style='display: none;'":"" %> href="../../Purchase/VendorList.aspx?menu=1411&id=.">1411 ผู้ขาย ผู้ให้บริการ</a>
+                                <a class="dropdown-item" href="../../MData/CustomerRequestList.aspx?menu=&id=">รายชื่อข้อมูลลูกค้า</a>
+                            </div>
+                        </li>
+
+
+                        <li class="nav-item dropdown kanit-m">
+                            <a class="nav-link dropdown-toggle" href="#" id="menu9000" <%= (SetMenu("9000")=="0")?"style='display: none;'":"" %> role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">ตั้งค่า
+                            </a>
+                            <ul class="dropdown-menu" style="margin: 6px;" aria-labelledby="navbarDropdownMenuLink">
+
+                                <li><a class="dropdown-item" hidden="hidden" <%= (SetMenu("9001")=="0")?"style='display: none;'":"" %> href="../../MData/MyUserList.aspx?menu=9001&id=&doctype=">9001 ผู้ใช้งานและพนักงาน</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("9002")=="0")?"style='display: none;'":"" %> href="../../MData/MyUserList.aspx?menu=9002&id=&doctype=">9002 ผู้ใช้งานและสิทธิ์</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("9003")=="0")?"style='display: none;'":"" %> href="../../MData/MyUserGroupList.aspx?menu=9003&id=&doctype=">9003 กลุ่มผู้ใช้งาน</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("9201")=="0")?"style='display: none;'":"" %> href="../../MData/CompanyList.aspx?menu=9201&id=">9201 Branch & DC Setup</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("9201")=="0")?"style='display: none;'":"" %> href="../../MData/LocationList.aspx?menu=3900&id=">3900 Location </a></li>
+                                
+                                <%--<li><a class="dropdown-item" <%= (SetMenu("9911")=="0")?"style='display: none;'":"" %> href="../../MData/MasterTypeList.aspx?menu=9911&id=">9911 ข้อมูลตัวเลือก</a></li>--%>
+                                <li><a class="dropdown-item" <%= (SetMenu("9911")=="0")?"style='display: none;'":"" %> href="../../MData/MasterTypeDetail2.aspx?menu=9911&id=">9911 เพิ่มข้อมูลตัวเลือก</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("9921")=="0")?"style='display: none;'":"" %> href="../../MData/DocTypeList.aspx?menu=9921&id=">9921 ประเภทเอกสาร</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("2411")=="0")?"style='display: none;'":"" %> href="../../Order/CustomerList.aspx?menu=2411&id=">2411 ลูกค้า</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("2415")=="0")?"style='display: none;'":"" %> href="../../Order/CustomerAddrList.aspx?menu=2415&id=">2415 ที่อยู่ลูกค้า</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("2211")=="0")?"style='display: none;'":"" %> href="../../Order/ItemList.aspx?menu=2211&id=">2211 สินค้าและบริการ</a></li>
+                                <li><a class="dropdown-item" <%= (SetMenu("2201")=="0")?"style='display: none;'":"" %> href="../../Order/QuotationList.aspx?menu=2201&id=">2201 ใบเสนอราคา</a></li>
+                                <%--<li><a class="dropdown-item" <%= (SetMenu("9931")=="0")?"style='display: none;'":"" %> href="../../MData/TaskTypeList.aspx?menu=9931&id=">9931 ประเภทงาน</a></li>   --%>
+                                <%--ตั้งค่าอื่นๆ--%>
+
+
+                                <%--        <li class="dropdown-submenu" style="padding-top:0px;"><a class="dropdown-item dropdown-toggle" data-toggle="dropdown" href="#">ตั้งค่าสำหรับลูกค้า</a>
+                                    <ul class="dropdown-menu">
+            
+                                        <li><a class="dropdown-item" <%= (SetMenu("2301")=="0")?"style='display: none;'":"" %> href="../../Order/ShipServicePriceList.aspx?menu=2301&id=">2301 ราคาบริการส่ง</a></li>
+                                        <li><a class="dropdown-item" <%= (SetMenu("2311")=="0")?"style='display: none;'":"" %> href="../../Order/ShipServiceList.aspx?menu=2311&id=">2311 ประเภทบริการส่งสินค้า</a></li>
+                                        <li><a class="dropdown-item" <%= (SetMenu("2321")=="0")?"style='display: none;'":"" %> href="../../MData/AreaGroupList.aspx?menu=2321&id=">2321 กลุ่มพื้นที่จัดส่ง</a></li>
+                                        <li><a class="dropdown-item" <%= (SetMenu("2331")=="0")?"style='display: none;'":"" %> href="../../MData/TruckList.aspx?menu=2331&id=">2331 พื้นที่การขับของคนขับรถ</a></li>                                                                                                                                                                                                                                                                                       
+                                    </ul>
+                                </li>--%>
+                            </ul>
+                        </li>
+
+
+
+                        <li class="nav-item dropdown ml-auto  kanit-m">
+
+                            <a class="nav-link dropdown-toggle" href="#" id="menuUser" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span><%= LoginService.LoginInfo.CurrentUser %></span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="/Account/MyLogin/MyLogIn.aspx">LogOut</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid" style="padding-top: 40px;">
+            <br />
+            <asp:ContentPlaceHolder ID="head" runat="server">
+            </asp:ContentPlaceHolder>
+            <asp:ContentPlaceHolder ID="MainContent" runat="server">
+            </asp:ContentPlaceHolder>
+            <hr />
+            <footer>
+                <div style="text-align: center; color: crimson;" class="kanit">
+                    <p>&copy; <%: DateTime.Now.Year %> - KMG Draco</p>
+                </div>
+            </footer>
+        </div>
+
+        <asp:ContentPlaceHolder ID="FooterScript" runat="server">
+        </asp:ContentPlaceHolder>
+    </form>
+</body>
+</html>

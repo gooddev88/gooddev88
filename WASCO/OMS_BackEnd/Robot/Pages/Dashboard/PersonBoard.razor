@@ -1,0 +1,611 @@
+﻿@page "/Dashboard/PersonBoard"
+@using Robot.Data.DA.Leave
+@using Robot.Data.ML
+@using Robot.Data.ML.DPMLeaveModel
+@using Robot.Data.DA.Document
+@using System.IO
+@using static Robot.Data.ML.I_Result
+
+@inject LeaveService leaveService
+
+<style>
+
+    .file-input-zone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: crosshair;
+        position: relative;
+        width: 32px;
+        height: 32px;
+        background-image: url('/assets/img/upload_logo.png');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+            .fix-div{
+        font-size: 1.2rem;
+        height: 60px;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <Breadcrumb Mode="BreadcrumbMode.Auto">
+            @foreach (var b in login.LoginInfo.UserInBoard) {
+                <BreadcrumbItem>
+                    <BreadcrumbLink To=@b.BoardUrl> @b.BoardName</BreadcrumbLink>
+                </BreadcrumbItem>
+            }
+        </Breadcrumb>
+
+     
+
+        <div class="row pt-2">
+            <div class="col-md-10 mx-auto">
+                <div class="card">
+                    <div class="card-body pb-0">
+
+                        <div class="row">
+                            <div class="col-md-2">
+
+                                <SpinLoader IsLoading="isUploading">
+                                    <LoadingTemplate>
+
+                                        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+                                            <br /><br />
+                                            <div class="row pt-2">
+                                                <div class="col-10 mx-auto">
+                                                    <label style="color:blue; font-size:x-small;">... Loading ...</label><br /><br /><br /><br />
+                                                    <CircleFade Color="blue" Size="100px" Center="true" />
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </LoadingTemplate>
+                                    <ContentTemplate>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="file-input-zone">
+                                                    <InputFile OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                                    </InputFile>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div class="row pt-1 pb-3">
+                                            <div class="col-12 mx-0">
+                                                <a @onclick="@DownLoadImage">
+                                                    <img src=@ImageUrl style="width:100%; height:100%;" onerror="this.onerror=null; this.src='/assets/img/pear.png'">
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                    </ContentTemplate>
+                                </SpinLoader>
+                            </div>
+
+                            <div class="col-md-10">
+                                <div class="row">
+                                    <div class="col-md-12 col-sm-12 col-12 text-end">
+                                        <h5 style=" color: black;"> 
+                                              <a class="text-decoration-none" @onclick="@(() => OnRefreshLeaveCumu())">
+                                            <i class="fas fa-sync"></i>&nbsp;<span>ข้อมูลส่วนตัว</span> 
+                                            </a>
+                                            </h5>
+                                    </div>
+
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>รหัสพนักงาน : </span>&nbsp;
+                                        <label style="color:blue;">@login.LoginInfo.CurrentUserInfo.Username</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>ชื่อ : </span>&nbsp;
+                                        <label style="color:blue;">@login.LoginInfo.CurrentUserInfo.FullName</label>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>ชื่อเล่น : </span>&nbsp;
+                                        <label style="color:blue;">@login.LoginInfo.CurrentUserInfo.NickName</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>เพศ : </span>&nbsp;
+                                        <label style="color:blue;">@lblGender</label>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-2">
+                                    <div class="col-md-6">
+                                        <span>แผนก : </span>&nbsp;
+                                        <label style="color:blue;">@lblPosition</label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>ตำแหน่ง : </span>&nbsp;
+                                        <label style="color:blue;">@lblDepartment</label>
+                                    </div>
+                                </div>
+                                 
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-10 mx-auto">
+                <div class="row">
+                    <h5 class="card-title"> <i class="far fa-calendar"></i> &nbsp; วันลาตามปีงบประมาณ @FiscalYear </h5>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-md-10 mx-auto">
+                <div class="row">
+                    @foreach (var l in ListSumHRLeave) { 
+                        <div class="col-md-3 col-sm-3 px-1 py-1">
+                            <a @onclick="@(() => OnNew(l.LeaveType))">
+                                <div class="card shadow-sm  bg-white rounded">
+                                    <div class="card-body">
+                                        <h5 class="card-title">  @l.LeaveTypeDesc</h5>
+                                        <div class="row">
+                                            <div class="col-md-12 text-end">
+                                                <p class="card-text">
+                                                    <span style="font-size:2.5rem"> <strong>@l.LeaveDay</strong></span> <small>วัน </small>
+                                                    @if (l.HasLimitLeaveDay == "YES") {
+                                                        <small>เหลือ </small>  @l.LeaveDayRemain   <small>วัน </small>
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <a href="#" class="card-link text-decoration-none" style="color:dimgray">คลิ๊กเพื่อลา</a>
+
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-4">
+            <div class="col-md-10 mx-auto">
+                <h5 class="card-title"><i class="far fa-thumbs-up"></i> ใบลารออนุมัติ </h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-10 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        @if (LeaveApprovePending.Count > 0) {
+                            @foreach (var l in LeaveApprovePending) {
+                                <div class="row">
+                                    <div class="col-6"> 
+                                        <strong style="font-size:large">@l.LeaveTypeDesc </strong>
+                                        @if (@l.DocType == "ใบยกเลิกลา") {
+                                            <span class="badge rounded-pill bg-danger" style="width:90px">เอกสารยกเลิก</span>
+                                        } &nbsp;
+                                        <span class="badge rounded-pill bg-success" style="width:30px">@l.LeaveDay.ToString("N0")</span>
+
+
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <a @onclick="@(() => OnEdit(l))" class="card-link text-decoration-none">แก้ไข  </a>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <small>
+                                            วันที่ :<Strong>@l.DateFrom.ToString("dd/MM/yyyy")</Strong>  ถึง : <Strong>@l.DateFrom.ToString("dd/MM/yyyy")</Strong>  <br />
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <small>@l.Remark</small>
+                                    </div>
+                                </div>
+
+                                <hr />
+                            }
+                        } else {
+                            <div class="row pt-3">
+                                <div class="col-12 text-center">
+                                    <h5>.. ไม่พบใบลารอการอนุมัติ ..</h5>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row pt-4">
+            <div class="col-md-10 mx-auto">
+                <h5 class="card-title"><i class="fas fa-history"></i>&nbsp; ประวัติการลา </h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-10 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        @if (LeaveHistoryList.Count > 0) {
+                            @foreach (var l in LeaveHistoryList) {
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong> @l.LeaveTypeDesc </strong>
+
+                                    </div>
+                                    <div class="col-8 text-end">
+                                        @if (!l.IsLockCreateCancelDoc) {
+                                            <a @onclick="@(() => OnEdit(l))" class="card-link text-decoration-none">เปิด </a>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+
+                                        @switch (@l.ApproveStatus.ToUpper()) {
+                                            case "APPROVE":
+                                                <span class="badge rounded-pill bg-success" style="width:70px">อนุมัติ</span>
+                                                break;
+                                            case "REJECT":
+                                                <span class="badge rounded-pill bg-danger" style="width:70px">ไม่อนุมัติ</span>
+                                                break;
+                                            case "CANCEL":
+                                                <span class="badge rounded-pill bg-danger" style="width:70px">ยกเลิก</span>
+                                                break;
+                                            default:
+                                                <span class="badge rounded-pill bg-danger" style="width:70px">@l.ApproveStatus</span>
+                                                break;
+                                        }&nbsp;
+                                        @if (@l.DocType == "ใบยกเลิกลา") {
+                                            <span class="badge rounded-pill bg-danger" style="width:90px">เอกสารยกเลิก</span>
+                                        }
+                                        &nbsp; <span style="font-size:small;">โดย @l.ApprovedBy วันที่ : @Convert.ToDateTime(l.ApprovedDate).ToString("dd/MM/yyyy HH:mm")</span>
+                                        <br />
+                                        <small>วันที่ : @l.DateFrom.ToString("dd/MM/yyyy") ถึง : @l.DateFrom.ToString("dd/MM/yyyy")</small>
+
+                                        <br />
+                                        <label style="font-size:small;">@l.Remark</label>
+
+                                    </div>
+
+                                </div>
+                                <hr class="my-2" />
+                            }
+                        } else {
+                            <div class="row pt-3">
+                                <div class="col-12 text-center">
+                                    <h5>... ไม่พบประวัติการลา ...</h5>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+    bool isUploading = false;
+    bool isShowNew = true;
+    public string ImageUrl { get; set; } = "/assets/img/avatar-profile.png";
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public string lblGender { get; set; } = "";
+    public string lblPosition { get; set; } = "";
+    public string lblDepartment { get; set; } = "";
+
+    List<SP_HRLeaveSummary> ListSumHRLeave = new List<SP_HRLeaveSummary>();
+    public List<vw_HRLeave> LeaveHistoryList = new List<vw_HRLeave>();
+    List<SelectOption> cboYear = new List<SelectOption>();
+    public string FiscalYear { get; set; }
+
+    public List<vw_HRLeave> LeaveApprovePending = new List<vw_HRLeave>();
+
+    protected override async Task OnInitializedAsync() {
+        FiscalYear = LeaveService.GetYearFiscalYear(DateTime.Now.Date).ToString();
+        await Task.Run(() => login.CheckLogin());
+        //await Task.Run(() => CheckIsRefresh());
+        //await Task.Run(LoadDropDownList);
+        await Task.Run(LoadData);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+        LeaveApprovePending = LeaveService.ListLeaveApprovePending(user, Convert.ToInt32(FiscalYear));
+        LeaveHistoryList = LeaveService.ListLeaveHistory(rcom, user, Convert.ToInt32(FiscalYear));
+        ListSumHRLeave = LeaveService.ListLeaveSummary(rcom, user, Convert.ToInt32(FiscalYear));
+        isLoading = false;
+        BindData();
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //async Task CheckIsRefresh() {
+    //    if (leaveService.DocSet == null) {
+    //        var docid = await sessionStorage.GetItemAsync<string>(LeaveService.sessionActiveId);
+    //        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //        string com = login.LoginInfo.CurrentCompany.CompanyID;
+    //        string user = login.LoginInfo.CurrentUser;
+    //        if (!string.IsNullOrEmpty(docid)) {
+    //            leaveService.DocSet = leaveService.GetDocSet(rcom, "");
+    //        } else {
+    //            leaveService.DocSet = LeaveService.NewTransaction();
+    //        }
+    //    }
+    //}
+
+    private void SetActiveControl() {
+        CheckPermission();
+    }
+    private void CheckPermission() {
+        //if (!login.CanCreate(login.LoginInfo, "173")) {//173 ข้อมูลลางาน
+        //    isShowNew = false;
+        //}
+        //if (!login.CanOpen(login.LoginInfo, "173")) {
+        //    nav.NavigateTo("NoPermissionPage");
+        //}
+    }
+
+    //async void LoadDropDownList() {
+
+    //    int y = -1;
+    //    for (int i = 2565; i >= DateTime.Now.AddYears(-3).Year + 543; i--) {
+    //        y++;
+    //        SelectOption year = new SelectOption {
+    //                IsSelect = false,
+    //                Value = i.ToString(),
+    //                Description = i.ToString()
+    //            };
+    //        cboYear.Insert(y, year);
+    //    }
+
+    //    SelectYear = cboYear.FirstOrDefault().Value;
+
+    //}
+
+    public void BindData() {
+        // var h = leaveService.DocSet.info;
+
+        Task.Run(() => loadProfile());
+    }
+
+    //async void SelectedYearChanged(SelectOption data) {
+    //    var h = leaveService.DocSet.info;
+    //    DocList = LeaveService.ListDocHRLeavePending(h.Username, Convert.ToInt32(data.Value));
+    //    ListSumHRLeave = LeaveService.ListHRLeaveSummary(h.Username, Convert.ToInt32(SelectYear));
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    async void btnback() {
+        if (!login.CanEdit(login.LoginInfo, "173")) {//ถ้าเป็น Staff ธรรมดาให้ไป Dashboard เลย
+            if (login.LoginInfo?.UserInBoard.Count == 0) {
+                nav.NavigateTo("Dashboard/StartBoard", false);
+            } else {
+                var get_first_board = login.LoginInfo?.UserInBoard.OrderBy(o => o.BoardSort).FirstOrDefault();
+                nav.NavigateTo(get_first_board.BoardUrl, false);
+            }
+        } else {
+            nav.NavigateTo($"Leave/UserLeaveList", false);
+        }
+    }
+
+    async void OnEdit(vw_HRLeave data) {
+        isLoading = true;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, data.LeaveID);
+        leaveService.DocSet = leaveService.GetDocSet(rcom, data.LeaveID);
+        nav.NavigateTo($"Leave/LeaveDetail/0", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    //async void OnCreateCancel(vw_HRLeave data) {
+    //    isLoading = true;
+
+    //    string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    await sessionStorage.SetItemAsync(LeaveService.sessionActiveId, data.Username);
+    //    leaveService.DocSet = leaveService.ConvertToCancelDoc(rcom, data.LeaveID, data.Username);
+    //    nav.NavigateTo($"Leave/LeaveDetail/0", false);
+    //    isLoading = false;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+    async void OnNew(string leave_type) {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com =  login.LoginInfo.CurrentUserInfo.DefaultCompany;
+        var user = login.LoginInfo.CurrentUserInfo;
+        await sessionStorage.RemoveItemAsync(LeaveService.sessionActiveId);
+
+        leaveService.DocSet = LeaveService.NewTransaction(rcom,com  , leave_type);
+        leaveService.DocSet.Leave.Username = user.Username;
+        leaveService.DocSet.Leave.FullName = user.FullName;
+        leaveService.DocSet.Leave.PositionID = user.PositionID;
+        leaveService.DocSet.Leave.PositionName = MasterTypeService.GetType("JOB POSITION", user.PositionID)?.Description1;
+
+        leaveService.DocSet.Leave.CreatedBy = login.LoginInfo.CurrentUser;
+        nav.NavigateTo($"Leave/LeaveDetail/0", false);
+    }
+
+    #region profile management
+
+    async Task loadProfile() {
+        isUploading = true;
+        var user = login.LoginInfo.CurrentUser;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+
+        //var h = leaveService.DocSet.Leave;
+        ImageUrl = FileGo.GetThumbUrl(rcom, "", FileGo.Type_PersonProfile, user);
+        if (string.IsNullOrEmpty(ImageUrl)) {
+            ImageUrl = "/assets/img/avatar-profile.png";
+        }
+        isUploading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnDeleteProfile() {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+        try {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                    Title = "Warning",
+                    Text = $"ต้องการลบรูปใช่หรือไม่",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+            if (string.IsNullOrEmpty(result.Value)) {
+                return;
+            }
+
+            string user = login.LoginInfo.CurrentUser;
+            var h = leaveService.DocSet.info;
+
+            isUploading = true;
+            var rr = await Task.Run(() => fileGo.DeleteFile(rcom, com, FileGo.Type_PersonProfile, h.Username, user));
+            if (rr.Result == "ok") {
+                await loadProfile();
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "error");
+            }
+
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task DownLoadImage() {
+        try {
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string file_url = FileGo.GetFileUrl(rcom, "", FileGo.Type_PersonProfile, user);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        string user = login.LoginInfo.CurrentUser;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        //   string com = login.LoginInfo.CurrentCompany.CompanyID;
+        if (string.IsNullOrEmpty(user)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                //var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                //imgUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_PersonProfile, rcom, "", user);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+            }
+            await Upload();
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    async Task Upload() {
+        try {
+            //var h = leaveService.DocSet.info;
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //   string com = login.LoginInfo.CurrentCompany.CompanyID;
+            isUploading = true;
+            var login_filego = FileGo.GetFileGoLogin();
+            string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            } else {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail") {
+                    upload_file.Clear();
+                    await Swal.FireAsync("Error", update_result.Message1, "error");
+                    //ShowMessage(false, update_result.Message1);
+                } else {
+                    //ShowMessage(true, "Upload Success");
+                    var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+                    var rr = FileGo.SaveXFileRef(xfile_ref);
+                    var rrr = await Task.Run(() => fileGo.DeleteOldFileAfterSave(rcom, "", FileGo.Type_PersonProfile, user, user));
+                    await loadProfile();
+                }
+            }
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    } 
+    void OnRefreshLeaveCumu() {
+        string user = login.LoginInfo.CurrentUser;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+       var r= LeaveService.RefreshLeaveCummu(Convert.ToInt32(FiscalYear) , user, rcom);
+       if (r.Result=="fail") {
+                Swal.FireAsync("Error", "Refresh error", "error");
+        }
+    }
+    #endregion
+
+}

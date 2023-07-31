@@ -1,0 +1,180 @@
+﻿@page "/POS/POSSaleNewDoc"
+ 
+@using System.Text.Json
+@using System.Text 
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    /*loadder*/
+    .my-mockup-layout {
+        position: relative;
+        height: 522px;
+        width: 854px;
+        margin: 0 auto;
+        background-image: url("images/loader-container/LoaderContainer-MockupApp.svg");
+    }
+
+        .my-mockup-layout .k-loader-container {
+            z-index: 1;
+        }
+    /*loadder*/
+</style>
+
+
+    <div class="row pt-3">
+        <div class="col-lg-9 col-md-10 col-sm-11 col-12 mx-auto">
+            <div class="row pt-3">
+                <div class="col-12 text-center">
+                    <h3>เลือกสาขาและวันที่ขาย</h3>
+                </div>
+            </div>
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+
+                            <div class="row pt-3">
+                                <div class="col-md-12 pl-4 pt-1">
+                                    <div class="row">
+                                        <label class="col-3 pt-1">เลือกสาขา</label>
+                                        <div class="col-9">
+                                            <TelerikComboBox @bind-Value="@SelectComID"
+                                                         Data="@ListCompany"
+                                                         TextField="@nameof(CompanyInfoList.Name)"
+                                                         ValueField="@nameof(CompanyInfoList.CompanyID)"
+                                                         Filterable="true"
+                                                         FillMode="@Outline"
+                                                         Width="100%">
+                                            </TelerikComboBox>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row pt-1">
+                                <div class="col-md-12">
+                                    <div class="row">
+                                        <label class="col-3 pt-1">เลือกวันที่</label>
+                                        <div class="col-9">
+                                            <TelerikDatePicker @bind-Value="@SelectbillDate"
+                                                           FillMode="@Outline" Format="dd/MM/yyyy">
+                                            </TelerikDatePicker>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="row pt-4 pb-3 text-center">
+                                <div class="col-12">
+                                    <TelerikButtonGroup SelectionMode="@ButtonGroupSelectionMode.Multiple" Width="40%">
+                                        <ButtonGroupToggleButton Class="px-5 py-2" Size="@(ThemeConstants.Button.Size.Medium)" @onclick="@GoBack" ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                                            กลับเมนู
+                                        </ButtonGroupToggleButton>
+                                        <ButtonGroupToggleButton Class="px-5 py-2" Size="@(ThemeConstants.Button.Size.Medium)" @onclick="@OnSave" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                            เข้าระบบขาย
+                                        </ButtonGroupToggleButton>
+                                    </TelerikButtonGroup>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    public string Outline { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+    DateTime? SelectbillDate = DateTime.Now.Date;
+    public string SelectComID { get; set; } = "";
+
+    List<CompanyInfoList> ListCompany = new List<CompanyInfoList>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadDropDown() {
+
+    }
+
+    async void LoadData() {
+        ListCompany = await _companyService.ListCompanyInfoByComID(login.LogInInfo.UserInCompany);
+        SelectComID = ListCompany.FirstOrDefault().CompanyID;
+        isLoading = false;
+        //if (comid != "x999") {
+        //    var selectComInfo = ListCompany.Where(o => o.CompanyID.ToLower() == comid.ToLower()).FirstOrDefault();
+        //    await Task.Run(() => GotoSalePage(selectComInfo));
+        //}
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+        //if (!Convert.ToBoolean(Permissionmenu.IsOpen))
+        //{
+        //}
+    }
+
+
+    async void OnSave() {
+        if (SelectbillDate == null) {
+            await Swal.FireAsync("", "กรุณาเลือกวันที่ขาย", "error");
+            return;
+        }
+        if (string.IsNullOrEmpty(SelectComID)) {
+            await Swal.FireAsync("", "กรุณาเลือกสาขา", "error");
+            return;
+        }
+        isLoading = true;
+        var selectComInfo = ListCompany.Where(o => o.CompanyID == SelectComID).FirstOrDefault();
+        await Task.Run(() => GotoSalePage(selectComInfo));
+    }
+
+    async void GotoSalePage(CompanyInfoList selectComInfo) {
+        isLoading = true;
+        login.LogInInfo.CurrentCompany = await _companyService.GetComInfoByComID(selectComInfo.RCompanyID, selectComInfo.CompanyID);
+
+        if (string.IsNullOrEmpty(login.LogInInfo.CurrentCompany.ShortCode)) {
+            await Swal.FireAsync("", "ตั้งชื่อย่อ สาขาก่อนเปิดบิลขาย", "error");
+            return;
+        }
+        login.LogInInfo.CurrentTransactionDate = Convert.ToDateTime(SelectbillDate);
+        //await sessionStorage.SetItemAsync(Globals.session_ActiveReqId, select_data.req_id);
+        await sessionStorage.RemoveItemAsync(Globals.SessionActive_PosID);
+        _posService.DocSet = await Task.Run(() => NewTransaction(login.LogInInfo, "webv3", ""));
+        _posService.DocSet.Head.BillDate = login.LogInInfo.CurrentTransactionDate;
+        _posService.DocSet.Head.ComID = login.LogInInfo.CurrentCompany.CompanyID;
+
+        isLoading = false;
+        nav.NavigateTo($"POS/POSSaleDetail", false);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Dashboard/FirstBoard");
+    }
+}

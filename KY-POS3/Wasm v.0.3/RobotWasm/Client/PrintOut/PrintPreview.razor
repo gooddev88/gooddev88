@@ -1,0 +1,25 @@
+﻿@using RobotWasm.Shared.Data.ML.Param;
+<iframe src=@PrintUrl height="100%" width="100%" frameborder="0"></iframe>
+
+<TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                        Text="ระบบกำลังประมวลผล ....."
+                        Visible="@isLoading"
+                        LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+
+@code {
+    [Parameter]
+    public string printid { get; set; }
+
+    public bool isLoading = false;
+    string PrintUrl { get; set; } = "";
+    public ConfigParam Config;
+
+    protected override async void OnParametersSet() {
+        isLoading = true;
+        Config = await Task.Run(() => _configService.GetConfig("print"));
+        PrintUrl = Config.Url + $"/Viewer/KyPos/Viewer.aspx?id={printid}&export={"1"}";
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

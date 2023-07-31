@@ -1,0 +1,254 @@
+﻿@page "/Menu/MainMenu2"
+
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using System.Threading.Tasks;
+@using Robot.Data.DA.LoginCrossApp
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+
+
+
+@inject IHostingEnvironment hostingEnvironment
+@inject ItemService itemService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject ILocalStorageService localStorage
+@inject POSService posService
+@inject PageHistoryState pageHistory
+
+<style>
+    .fix-center {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-5">
+            <div class="col-12 text-center mx-0">
+                <a @onclick="@GoToRootApp">
+                    <strong style="font-size:xx-large;" class="btn-text-dark">เมนูหลัก</strong>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="row px-3 pt-4 pb-3">
+            <div class="col-12">
+                <div class="row pt-2">
+                    <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@ToPOSV2">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/coffeelogo.png" style="width: 3rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.1rem;">ขาย(V2)</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    @if (login.CanOpen(xlogin, "2103")) {
+                        <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@ReportPOSumByStore">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/test-ky.png" style="width: 3rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.1rem;">สรุปรายการซื้อวัตถุดิบ</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                    <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@POSSaleHistory">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/dailyreport.png" style="width: 3rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.1rem;">ประวัติขาย</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    @if (login.CanOpen(xlogin, "9000")) {
+                        <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@GotoSetupMenu">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/cog.png" style="width: 3rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.1rem;">ตั้งค่า</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+
+                </div>
+                <div class="row pt-2">
+                    <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@ToKitchen">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/chef-ky.png" style="width: 3rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.1rem;">ครัว</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+
+                    @if (login.CanOpen(xlogin, "9000")) {
+                        <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                            <a @onclick="@MenuDevTest">
+                                <div class="card card-box-shadow">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <img src="/SALE/assets/img/page-speed.png" style="width: 3rem;" /><br /><br />
+                                                <strong style="color: black; font-size: 1.1rem;">ทดสอบ</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                    <div class="col-md-4 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@ToPOSV3">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/store-pos.png" style="width: 3rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.1rem;">POS V3</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+    bool firstRender = true;
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync() {
+
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null) {
+                nav.NavigateTo("Login", true);
+            } else {
+                xlogin = login.LoginInfo;
+                await Task.Run(LoadData);
+
+            }
+        } else {
+            xlogin = login.LoginInfo;
+            await Task.Run(LoadData);
+
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() { 
+        pageHistory.AddPageToHistory(nav.Uri);
+        isLoading = true;
+        LoadData();
+    }
+
+    void LoadData() {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl() {
+
+    }
+
+    void ToPOSV2() {
+        nav.NavigateTo("POS/POSSaleNewDoc/x999/web2", false);
+    }
+
+    void ToPOSV3() {
+        nav.NavigateTo("POSV3/POSSaleNewDoc", false);
+    }
+
+    void ToKitchen() {
+        nav.NavigateTo("POSV3/POSKitChenList", false);
+    }
+
+    void ReportPOSumByStore() {
+        nav.NavigateTo($"POSREPORTS/PO/ReportPOSumByStore/{login.LoginInfo.CurrentRootCompany.CompanyID}/1/web2");
+    }
+    //POSREPORTS/PO/ReportPOSumByStore/{0}/1/web2
+    void POSSaleHistory() {
+        nav.NavigateTo("POS/POSBillHistory/web2");
+    }
+
+    void GoToRootApp() {
+        var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser);
+        string rootappurl = posService.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+        nav.NavigateTo(rootappurl);
+    }
+
+    void GotoSetupMenu() {
+        //nav.NavigateTo("Menu/MenuConfig");
+        nav.NavigateTo("Menu/SubMenu/SETUP");
+    }
+
+    void MenuDevTest() {
+        nav.NavigateTo("Menu/MenuDevTest");
+    }
+
+}

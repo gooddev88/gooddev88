@@ -1,0 +1,233 @@
+﻿@page "/Master/NewsDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.Master.News.I_NewsSet
+@using Blazorise
+
+<style>
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-checkbox {
+        box-shadow: 0 0 0 2px rgb(0 0 0 / 6%);
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+</style>
+
+@if (!isLoading) {
+
+    <div class="row pt-1">
+        <div class="col-md-8 col-12 mx-auto">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@Back" Class="px-3" FillMode="@(ThemeConstants.Button.FillMode.Flat)"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                <span style="font-size: x-large;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+            </TelerikButton>
+        </div>
+    </div>
+
+    <div class="row pt-2">
+
+        <div class="col-md-8 col-12 mx-auto">
+            <span>วันที่</span>
+            <TelerikDatePicker @bind-Value="@_newsService.DocSet.head.newdate"
+                           FillMode="@ThemeConstants.DatePicker.FillMode.Outline">
+            </TelerikDatePicker>
+        </div>
+
+        <div class="col-md-8 col-12 mx-auto">
+            <span>หัวข้อข่าวประกาศ</span>
+            <TelerikTextBox PlaceHolder="" @bind-Value="@_newsService.DocSet.head.title" />
+        </div>
+        <div class="col-md-8 col-12 mx-auto">
+            <span>รายละเอียด</span>
+            <TelerikTextArea @bind-Value="@_newsService.DocSet.head.desc"
+                         AutoSize="true"
+                         Class="w-100"
+                         PlaceHolder="">
+            </TelerikTextArea>
+        </div>
+
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-md-8 col-12 mx-auto text-center">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+            </TelerikButton>&nbsp;&nbsp;&nbsp;&nbsp;
+            @if (isDelete) {
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnDelete" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                    <i class="fa-solid fa-trash"></i>&nbsp; ลบประกาศ
+                </TelerikButton>
+            }
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    private bool isLoading = false;
+    bool collapse1Visible = true;
+
+    string menuCaption = "";
+    private bool isDelete = true;
+    string Username = "";
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_newsService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_NEWSID);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _newsService.DocSet = await _newsService.GetDocSet(docid);
+                } else {
+                    _newsService.DocSet = NewsService.NewTransaction();
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+
+    }
+
+    protected async Task LoadData() {
+        Username = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        BindData();
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "434");
+        menuCaption = menu.menu_name;
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "434").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsDelete)) {
+            isDelete = false;
+        }
+    }
+
+    public async void BindData() {
+        var h = _newsService.DocSet.head;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    bool ValidData() {
+        var h = _newsService.DocSet.head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.title == "") {
+            Errmsg = "ระบุ หัวข้อประกาศ";
+            isvalid = false;
+        }
+
+        if (h.desc == "") {
+            Errmsg = "ระบุ รายละเอียด";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    protected bool PrepairDataSave() {
+        var h = _newsService.DocSet.head;
+
+        bool isnew = h.newid == "" ? true : false;
+
+        if (isnew) {
+            h.newid = Guid.NewGuid().ToString();
+        } 
+
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = _newsService.DocSet.head;
+        var isnew = PrepairDataSave();
+        string strPayload = JsonSerializer.Serialize(_newsService.DocSet);
+        string url = $"api/News/SaveNews?action={isnew}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                await Swal.FireAsync("", r.Message1, "error");
+            } else {
+                await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                _newsService.DocSet = await _newsService.GetDocSet(h.newid);
+                await sessionStorage.SetItemAsync(Globals.ActiveID_NEWSID, h.newid);
+                await Task.Run(LoadData);
+            }
+        }
+    }
+
+    async void OnDelete() {
+        var h = _newsService.DocSet.head;
+
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+
+        var rs = await _newsService.DeleteDoc(h.newid);
+        isLoading = true;
+        if (rs.Result == "ok") {
+            nav.NavigateTo($"Master/NewsList", false);
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back() {
+        nav.NavigateTo($"Master/NewsList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,2 @@
+เทส Print XamPrint
+https://posdev.kypos.cc/APP/PrintServer/PrintOrderV2?billid=BANZ650122-001&rcom=ky&refid=order&device=m

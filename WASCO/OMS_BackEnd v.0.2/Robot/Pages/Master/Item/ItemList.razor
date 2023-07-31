@@ -1,0 +1,379 @@
+﻿@page "/Master/Item/ItemList" 
+@using Microsoft.AspNetCore.Http;
+@using Robot.Data.DA.Document
+@using Robot.Data.ML
+@using System.IO
+@using Robot.Helper;
+@using static Robot.Data.ML.I_Result
+
+@inject ItemService itemService
+<style>
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/assets/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+
+    
+    
+</style>
+
+@if (itemService.DocSet!=null) {
+    <div class="row">
+        <div class="col-12 mx-auto mx-11">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header"> 
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h4>
+                                        <a @onclick="Back">
+                                            <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                                        </a>
+                                    </h4>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="card-body p-3 pb-1"> 
+                            <div class="row pt-2"> 
+                                <div class="col-md-2">
+                                    <span>ยี่ห้อ</span>
+                                    <TelerikComboBox Value="@SelectBrand"
+                                                 Data="@listBrand"
+                                                 ValueChanged="@( (string type) => ValueChangeItemType(type))"
+                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                 ClearButton="true"
+                                                 Filterable="true"
+                                                 Width="100%">
+                                    </TelerikComboBox>
+
+                                </div>
+                                <div class="col-md-2">
+                                    <span>ค้นหา</span>
+                                    <TelerikTextBox PlaceHolder="คำค้นหา" FillMode="@(ThemeConstants.TextBox.FillMode.Outline)" ValueChanged="@OnTextChanged_Search"></TelerikTextBox>
+                                </div>
+
+                                <div class="col-md-2 pt-4 text-start">
+                                    <TelerikCheckBox Id="chkIsActive" Value="@isShowNotActive" OnChange="@OnChange_chkIsActive"></TelerikCheckBox>
+                                    <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                                </div>
+                            </div>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @if (ListItemInfo!=null) { 
+            <div class="row pt-2" style="min-height:600px">
+                <div class="col-12">
+                    <TelerikGrid Data=@ListItemInfo
+                             ScrollMode="@GridScrollMode.Virtual"
+                             Height="400px"   
+                             RowHeight="50"
+                             PageSize="100"
+                             Groupable="false"
+                             Resizable="true"
+                             FilterMode="@GridFilterMode.FilterMenu"
+                             Reorderable="true"
+                             Sortable="true"  
+                             Navigable="true">
+                        <GridToolBarTemplate>
+                            <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                        </GridToolBarTemplate>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                        </GridExport>
+                        <GridColumns>
+                            <GridColumn Field="@nameof(vw_ItemInfo.ItemID)" Title="รหัสสินค้า" Width="150px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.Name1)" Title="ชื่อสินค้า" Width="200px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.TypeID)" Title="ประเภท" Width="150px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.CateID)" Title="หมวด" Width="150px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.BrandName)" Title="ยี่ห้อ" Width="120px" /> 
+                            <GridColumn Field="@nameof(vw_ItemInfo.UnitID)" Title="หน่วย" Width="120px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.PriceIncVat)" Title="ราคาขาย(Inc Vat.)" Width="150px" DisplayFormat="{0:N2}" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.PriceProIncVat)" Title="ราคาโปรโมชั่น(Inc Vat.)" Width="150px" DisplayFormat="{0:N2}" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.Cost)" Title="ทุน" Width="120px" DisplayFormat="{0:N2}" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.TaxTypeID)" Title="Vat" Width="120px" /> 
+                            <GridColumn Field="@nameof(vw_ItemInfo.RefID)" Title="รหัสอ้างอิง" Width="150px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.Remark1)" Title="หมายเหตุ 1" Width="120px" />
+                            <GridColumn Field="@nameof(vw_ItemInfo.Remark2)" Title="หมายเหตุ 2" Width="120px" />
+                        </GridColumns>
+                    </TelerikGrid>
+                </div>
+            </div>
+            }
+        </div>
+
+    </div>
+}
+
+
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+ 
+
+@code {
+   
+    bool isLoading = true;
+    bool isUploading = false;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool ExportAllPages { get; set; } = true;
+
+
+    public bool Itemreadonly { get; set; } = true;
+
+    public string searchText { get; set; } = "";
+    public bool isShowNotActive { get; set; } = false;
+    DateTime? DatePriceFr = DateTime.Now.Date;
+    DateTime? DatePriceTo = DateTime.Now.Date;
+    public string SelectComID { get; set; } = "";
+    public string SelectShipTo { get; set; } = "";
+    public string SelectPriceTaxcon { get; set; } = "";
+    public string SelectUseLevel { get; set; } = "0";
+
+    public decimal Price { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+    public string ImageUrl { get; set; } = "";
+
+    List<SelectOption> item_select_option = new List<SelectOption>();
+
+    //List<MasterTypeLine> listType { get; set; }
+    List<MasterTypeLine> ListUnit { get; set; }
+    List<MasterTypeLine> listBrand { get; set; }
+    List<MasterTypeLine> ListType { get; set; }
+    List<MasterTypeLine> ListCate { get; set; }
+    //List<MasterTypeLine> listSelectBrand { get; set; }
+    List<MasterTypeLine> listPriceTaxcon { get; set; }
+    List<SelectOption> ListUseLevel { get; set; }
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+
+
+
+
+    public string FillMode { get; set; } = ThemeConstants.TextBox.FillMode.Outline;
+
+
+
+    List<TaxInfoService.SelectListTax> cboVatType = new List<TaxInfoService.SelectListTax>();
+    public string SelectBrand { get; set; } = "";
+    IEnumerable<vw_ItemInfo> ListItemInfo;
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        LoadDropDown();
+        //pageHistory.AddPageToHistory(nav.Uri); 
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+
+        LoadDropDownList();
+        await Task.Run(ListGridSearch);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+        if (itemService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(ItemService.sessionActiveId);
+            if (docid == null) {
+                itemService.DocSet = ItemService.NewTransaction(rcom, com);
+                itemService.DocSet.Info.CreatedBy = user;
+            }
+            if (!string.IsNullOrEmpty(docid)) {
+                itemService.DocSet = itemService.GetDocSet(docid, rcom, com);
+            } else {
+                itemService.DocSet = ItemService.NewTransaction(rcom, com);
+                itemService.DocSet.Info.CreatedBy = user;
+            }
+        }
+    }
+
+    async public void LoadDropDown() {
+        var u = login.LoginInfo;
+
+    }
+
+
+    private void LoadDropDownList() {
+
+        var h = itemService.DocSet.Info;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        
+        listBrand = MasterTypeService.ListType("", "ITEM BRAND", true);
+        ListType = MasterTypeService.ListType("", "ITEM TYPE", true);
+        
+        List<string> filter_Itemcate = new List<string>() { "DISC PER", "DISC AMT" };
+        var Itemcate = MasterTypeService.ListType("", "ITEM CATE", true);
+        ListCate = Itemcate.Where(o => !filter_Itemcate.Contains(o.ValueTXT)).ToList();
+        ListUnit = MasterTypeService.ListType("", "UNIT", true);
+        cboVatType = TaxInfoService.MiniSelectListV2("SALE", "THB", false);
+
+
+
+
+    }
+
+    void BindData() {
+        //var h = itemService.DocSet.Info;
+
+        //if (h.ItemID != "") {
+        //    Itemreadonly = false;
+        //} else {
+        //    Itemreadonly = true;
+        //}
+        //Price = h.Price;
+        //Task.Run(() => loadProfile());
+    }
+
+    async void LoadData() {
+        isLoading = true;
+        var h = itemService.DocSet.Info;
+        BindData();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+        await SetActiveControl();
+    }
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var h = itemService.DocSet.Info;
+        if (h.ItemID == "") {
+            isShowDelete = false;
+        }
+
+        menuCaption = LogInService.GetMenuInfo(login.LoginInfo, "131").Name;
+        if (!login.CanOpen(login.LoginInfo, "131")) {//131 สินค้าและบริการ
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "131")) {
+            isShowNew = false;
+        }
+        if (!login.CanDelete(login.LoginInfo, "131")) { //131  สินค้าและบริการ
+            isShowDelete = false;
+        }
+        if (!login.CanOpen(login.LoginInfo, "131")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+    async void ListGridSearch() {
+        try {
+            isLoading=true;
+            await InvokeAsync(StateHasChanged);
+            var rcom = login.LoginInfo.CurrentRootCompany.RCompanyID;
+            var com = login.LoginInfo.CurrentCompany.CompanyID; 
+            ListItemInfo = ItemService.ListDoc(searchText, rcom, com, SelectBrand, isShowNotActive);
+            //if (dxDataGrid != null) {
+            //    await dxDataGrid.Refresh();
+        //}
+        } catch (Exception) { 
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+
+    async void SearchAction() {
+        //isLoading = true;
+        await Task.Run(ListGridSearch);
+        //isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    //async Task OnRowClickHandler(GridRowClickEventArgs args) {
+
+    //    var data = args.Item as vw_ItemInfo;
+    //    try {
+    //               isLoading = true;
+    //        await InvokeAsync(StateHasChanged);
+    //               await sessionStorage.SetItemAsync(ItemService.sessionActiveId, data.ItemID);
+    //    itemService.DocSet = itemService.GetDocSet(data.ItemID, data.RCompanyID, data.CompanyID);
+    //    item_select_option = new List<SelectOption>();
+    //    LoadData();
+    //    } catch (Exception) {
+    //    } finally {
+    //        isLoading = false;
+    //        await InvokeAsync(StateHasChanged);
+    //    }
+ 
+    //}
+
+    public async void OnChange_chkIsActive(object value) {
+        if (value != null) {
+            isShowNotActive = Convert.ToBoolean(value);
+            SearchAction();
+        }
+    }
+
+    public async void ValueChangeItemType(string data) {
+        if (!string.IsNullOrEmpty(data)) {
+            SelectBrand = data;
+            SearchAction();
+        } else {
+            SelectBrand = "";
+            SearchAction();
+        }
+    }
+
+    public async void OnTextChanged_Search(object Search) {
+        if (Search != null) {
+            searchText = Search.ToString();
+            SearchAction();
+        }
+    }
+
+    async void Back() {
+        nav.NavigateTo("Master/Item/ItemDetail");
+
+    }
+
+
+}

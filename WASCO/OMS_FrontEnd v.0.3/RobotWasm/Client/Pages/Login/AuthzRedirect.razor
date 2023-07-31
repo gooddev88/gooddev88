@@ -1,0 +1,25 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Service.Authen
+@inject AuthenticationStateProvider _authenticationStateProvider;
+<h3>AuthzRedirect</h3>
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        var userLogin = await _localStorage.GetItemAsync<string>(Globals.AuthUsername); 
+        if (string.IsNullOrEmpty(userLogin)) {
+            nav.NavigateTo("Login");
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,87 @@
+﻿@page "/Menu/MenuSIDE/{menugroup}"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+
+        .btn-light:focus {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+</style>
+
+@if (!isLoading) {
+
+    <div class="row pt-3">
+
+        @foreach (var m in UserInMenu.Where(o => o.GroupID == "SETUP" && o.MenuID != "400")) {
+            @if (m.IsOpen == true) {
+        <div class="col-md-4 col-sm-6 col-6 pt-2 pb-5">
+                            <a class="text-decoration-none" href="@m.Url">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                @*<img src="@m.Icon" class="rounded-circle" alt="" width="70" height="70">*@
+                                                <img src="@m.Icon" style="width: 5rem;" /><br /><br />
+                                                <span style="color: black; font-size: 1.1rem;">@m.MenuName</span>
+                                            </div>
+                                        </div>
+                            </a>
+                        </div>
+                                            }
+                }
+            </div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    [Parameter] public string menugroup { get; set; }
+
+    bool isLoading = false;
+    string menuCaption = "";
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        var result = await Task.Run(() => _filego.LoginApiFileGo());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        await SetActiveControl();
+        var filter_app = new List<string> { "DPMQ", "CIMS" };
+        UserInMenu = login.LogInInfo.UserInMenuDisplay.Where(o => filter_app.Contains(o.AppID)).OrderBy(o => o.menu_sort).ToList();
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        if (menugroup != "400") {
+            nav.NavigateTo("NoPermissionPage");
+        }
+    }
+
+}

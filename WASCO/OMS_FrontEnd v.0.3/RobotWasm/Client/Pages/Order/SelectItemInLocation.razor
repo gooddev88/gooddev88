@@ -1,0 +1,208 @@
+﻿@page "/Order/SelectItemInLocation"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">เลือกสินค้าจากสถานที่เก็บ</span></div>
+        </div>
+    </a>
+</div>
+
+<div class="row pt-3">
+    <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+        <div class="card">
+            <div class="card-body">
+
+                <div class="row">
+                    <div class="col-12">
+                        <h4>@ItemName</h4>
+                        <h6>จำนวน @Qty ชิ้น</h6>
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+                <div class="row pt-2">
+                    <div class="col-md-3">
+                        <span>Lot</span><span style="font-size: large; color: red">*</span>
+                        <TelerikComboBox @bind-Value="@SelectLot"
+                                         Data="@ListItemInLocation"
+                                         TextField="@nameof(vw_STKBal.LotNo)"
+                                         ValueField="@nameof(vw_STKBal.LotNo)"
+                                         Filterable="true"
+                                         Width="100%">
+                        </TelerikComboBox>
+                    </div>
+                </div>
+                <hr class="my-3" />
+                @foreach (var item in _soService.DocSet.Lot) {
+                    <div class="row">
+                        <div class="col-12">
+                            <span style="font-size:large;">@item.LocName</span>
+                        </div>
+                        <div class="col-12" style="font-size:small;">
+                            <div class="d-inline-block">
+                                <span>จำนวน</span>&nbsp;&nbsp;<span style="color:red; font-size:smaller;">คงเหลือ @item.QtyBal.ToString("n0") ชิ้น</span>
+                                <input type="number" value="@item.Qty" class="form-control" @onchange="args=> textqtychange(item,args)" />&nbsp;&nbsp;
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="row pt-4">
+                    <div class="col-md-6 col-12">
+                        <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                       @onclick="OnOK" Class="w-100"
+                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                            ตกลง
+                        </TelerikButton>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    public string ItemName { get; set; } = "";
+    public string SelectLot { get; set; } = "";
+    public decimal Qty { get; set; } = 0;
+
+    List<vw_STKBal> ListItemInLocation = new List<vw_STKBal>();
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID;
+        var user = login.LogInInfo.CurrentUser;
+        var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+        if (_soService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID);
+            if (!string.IsNullOrEmpty(docid)) {
+                _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+            } else {
+                _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+                nav.NavigateTo("Order/SelectProduct");
+            }
+        }
+    }
+
+    async void LoadData() {
+        var doc = _soService.DocSet;
+        ItemName = doc.LineActive.ItemName;
+        Qty = doc.LineActive.Qty;
+        LoadLot();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    public async void LoadLot() {
+        var doc = _soService.DocSet;
+        ListItemInLocation = await Task.Run(() => _stockBalanceService.ListLot(doc.Head.RComID, doc.Head.ComID, doc.LineActive.ItemID, doc.LineActive.LocID));
+        await Task.Run(() => RefillOrdQty2Lot());
+
+        var h = _soService.DocSet.Head;
+        var a = _soService.DocSet.LineActive;
+        foreach (var l in ListItemInLocation.Where(o => o.OrdQty > 0)) {
+            vw_OSOLot n = SOFuncService.NewLot(h.RComID, h.ComID, a.LineNum, _soService.DocSet);
+            n.ItemID = a.ItemID;
+            n.ItemName = a.ItemName;
+            n.IsStockItem = true;
+            n.Qty = l.OrdQty;
+            n.QtyBal = l.BalQty;
+            n.Unit = l.UnitID;
+            n.LocID = l.LocID;
+            n.LocName = l.LocName;
+            n.LotNo = l.LotNo;
+            n.SerialNo = l.SerialNo;
+            n.Status = "NEW";
+            n.IsActive = true;
+            doc.Lot.Add(n);
+        }
+    }
+    void RefillOrdQty2Lot() {
+        var doc = _soService.DocSet;
+        var a = _soService.DocSet.LineActive;
+        decimal remain_qty = a.Qty;
+        foreach (var l in ListItemInLocation) {
+            if (remain_qty <= 0) {
+                break;
+            }
+            var lot = doc.Lot.Where(o => o.ItemID == l.ItemID && o.LotNo == l.LotNo && l.LocID == l.LocID).FirstOrDefault();
+            if (lot != null) {//ถ้ามี Lot ค้างอยู่ให้นำจำนวนใน lot นี้มารวมได้วย
+                l.BalQty = l.BalQty + lot.Qty;
+            }
+            if (remain_qty <= l.BalQty) {
+                l.OrdQty = remain_qty;
+            } else {
+                l.OrdQty = l.BalQty;
+            }
+            remain_qty = remain_qty - l.OrdQty;
+        }
+    }
+    public async void OnOK() {
+        var doc = _soService.DocSet;
+        foreach (var l in doc.Line) {
+            l.Status = "OPEN";
+        }
+        foreach (var l in doc.Lot.Where(o => o.LineLineNum == doc.LineActive.LineNum)) {
+            l.Status = "OPEN";
+        }
+        GoBack();
+    }
+
+
+    async Task textqtychange(vw_OSOLot item, ChangeEventArgs args) {
+        var u = _soService.DocSet.Lot.Where(o => o.LineNum == item.LineNum).FirstOrDefault();
+        decimal qty = u.Qty;
+        decimal.TryParse(args.Value.ToString(), out qty);
+        u.Qty = qty;
+    }
+
+
+    void GoBack() {
+        SOFuncService.ClearPendingLine(_soService.DocSet);
+        SOFuncService.ClearPendingLot(_soService.DocSet);
+        nav.NavigateTo("Order/OrderDetail");
+        InvokeAsync(StateHasChanged);
+    }
+}

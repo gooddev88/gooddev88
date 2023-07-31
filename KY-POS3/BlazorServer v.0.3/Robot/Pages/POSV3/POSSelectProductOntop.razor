@@ -1,0 +1,247 @@
+﻿@page "/POSV3/POSSelectProductOntop/{linenum}"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject TableInfoService tableService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<div class="row pt-2 px-2">
+    <div class="col-12">
+        <div class="card" style="border-radius: 10px;">
+            <div class="card-body p-3">
+                <div class="row">
+                    <div class="col-md-1 col-sm-2 col-2 text-left">
+                        <a ID="btnback" class="" @onclick="@Back">
+                            <img src="/SALE/assets/img/back.png" style="width:2rem;" />
+                        </a>&nbsp;
+                    </div>
+                    <div class="col-md-11 col-sm-10 col-10 pl-0 text-left">
+                        <strong style="font-size:2rem; color:crimson;">รายการอาหาร</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-1 pb-2 px-3">
+    <div class="col-12 text-left">
+        <a class="btn btn-info btn-lg text-white" @onclick="@(() => SearchCateFoods())">
+            <span>@lblFoods</span>
+        </a>&nbsp;
+        <a class="btn btn-danger btn-lg text-white" @onclick="@(() => SearchCateBevrages())">
+            <span>@lblBevrages</span>
+        </a>
+    </div>
+</div>
+
+<div class="row pt-1 px-3 pb-4">
+    <div class="col-12">
+        <div class="row pb-0">
+            @foreach (var l in posService.Menu.Where(o => o.TypeID != "DISCOUNT"))
+            {
+                <div class="col-md-4 col-sm-4 col-4">
+                    <a class="btn" style="height: auto; width:100%;" @onclick="@(() => SelectMenuItem(l))">
+                        <div class="row ">
+                            <div class="col-12 pl-1 pr-1  text-center">
+                                <img src='@l.ImageUrl' alt="" style="width: 100%;"
+                                     onerror="this.onerror=null; this.src='/SALE/assets/img/pear.png'" />
+                                <br />
+                                <span style="font-size: 12px; " class="textmenu">@l.Name</span><br />
+                                <span style="font-size: 12px; ">@l.Price.ToString("n2") ฿</span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="row">
+                        <div class="col-12 px-0 text-center">
+                            <a class="btn btn-sm" @onclick="@(() => AddQtyInLine(l))">
+                                <i class="fas fa-plus-circle fa-lg" style="font-size:2rem"></i>
+                            </a>
+                            <a class="btn btn-sm" @onclick="@(() => RemoveQtyInLine(l))">
+                                <i class="fas fa-minus-circle" style="font-size:1.9rem"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@*<Footer_POSSelectProduct></Footer_POSSelectProduct>*@
+
+@if (string.IsNullOrEmpty(posService.DocSet.LineActive.ItemID))
+{
+    <div class="row fix-bottom"></div>
+}
+else
+{
+    <div class="row mx-0 fix-bottom">
+        <div class="col-md-2 col-sm-3 col-3 pt-1 px-1">
+            <img src='@posService.DocSet.LineActive.ImageUrl' alt="" style="width: 6rem;" />&nbsp;
+        </div>
+        <div class="col-md-6 col-sm-5 col-5 pt-3 pr-0">
+            <span style="font-size: small; " class="textmenu">@posService.DocSet.LineActive.ItemName</span><br />
+            <span style="font-size: small;">@posService.DocSet.LineActive.Qty.ToString("n0") รายการ</span><br />
+            <span style="font-size: small;">@posService.DocSet.LineActive.Price.ToString("n0") บาท</span>
+        </div>
+        <div class="col-md-4 col-sm-4 col-4 text-right pt-3 px-0">
+            <a class="btn" @onclick="@(() => AddQtyInLineActive(posService.DocSet.LineActive))">
+                <i class="fas fa-plus-circle fa-lg" style="font-size:3rem"></i>
+            </a>
+            <a class="btn" @onclick="@(() => RemoveQtyInLineActive(posService.DocSet.LineActive))">
+                <i class="fas fa-minus-circle" style="font-size:2.9rem"></i>
+            </a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int linenum { get; set; }
+
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string lblFoods { get; set; } = "อาหาร";
+    public string lblBevrages { get; set; } = "เครื่องดื่ม";
+    List<POSService.POSMenuItem> Menu = new List<POSService.POSMenuItem>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (posService.DocSet == null) {
+            posService.DocSet = await Task.Run(() => posService.GetSessionDocSet());
+            // posService.Menu = await Task.Run(() => posService.GetSessionMenu());
+            posService.Menu = posService.ListMenuItem(posService.DocSet.Head.RComID, posService.DocSet.Head.ComID, posService.DocSet.Head.ShipToUsePrice);
+            posService.Tenders = await Task.Run(() => posService.GetSessionTenders());
+            if (posService.DocSet == null) {
+                nav.NavigateTo($"POS/POSSaleNewDoc/{posService.DocSet.Head.ComID}", false);
+            }
+        }
+
+        if (login.LoginInfo== null)
+    {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+        isLoading = false;
+    }
+    void LoadData()
+    {
+        Menu = posService.Menu;
+    }
+
+    void SelectMenuItem(POSService.POSMenuItem head)
+    {
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == head.ItemID).FirstOrDefault();
+        posService.DocSet = posService.AddItem(posService.DocSet, -1);
+        nav.NavigateTo($"POSV3/POSSelectProduct", false);
+        InvokeAsync(StateHasChanged);
+    }
+
+    async  void AddQtyInLine(POSService.POSMenuItem data)
+    {
+
+        if (data.TypeID == "DISCOUNT")
+        {
+            return;
+        }
+
+        posService.DocSet.LineActive = posService.DocSet.Line.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        if (posService.DocSet.LineActive == null)
+        {
+            posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+            posService.DocSet = posService.AddItem(posService.DocSet, -1);
+        }
+        else
+        {
+            var lineitem = posService.DocSet.Line.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+            lineitem.Qty = lineitem.Qty + 1;
+            posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        }
+
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    }
+
+    async  void RemoveQtyInLine(POSService.POSMenuItem data)
+    {
+        var lineitem = posService.DocSet.Line.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        lineitem.Qty = lineitem.Qty - 1;
+        if (lineitem.Qty <= 0)
+        {
+            posService.DocSet.Line.RemoveAll(o => o.ItemID == data.ItemID);
+        }
+        else
+        {
+
+        }
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    }
+
+    async  void AddQtyInLineActive(POSSaleConverterService.POS_SaleLineModel data)
+    {
+
+        if (data.ItemTypeID == "DISCOUNT")
+        {
+            return;
+        }
+        var lineitem = posService.DocSet.Line.Where(o => o.LineNum == data.LineNum).FirstOrDefault();
+        lineitem.Qty = lineitem.Qty + 1;
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    }
+
+    async  void RemoveQtyInLineActive(POSSaleConverterService.POS_SaleLineModel data)
+    {
+        var lineitem = posService.DocSet.Line.Where(o => o.LineNum == data.LineNum).FirstOrDefault();
+        lineitem.Qty = lineitem.Qty - 1;
+        if (lineitem.Qty <= 0)
+        {
+            posService.DocSet.Line.RemoveAll(o => o.LineNum == data.LineNum);
+        }
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    }
+
+    void SearchCateFoods()
+    {
+     //   posService.Menu = Menu;
+        posService.Menu = posService.Menu.Where(o => o.CateID == "FOODS").ToList();
+        InvokeAsync(StateHasChanged);
+    }
+
+    void SearchCateBevrages()
+    {
+        //posService.Menu = Menu;
+        posService.Menu = posService.Menu.Where(o => o.CateID == "BEVERAGES").ToList();
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+       // posService.Menu = Menu;
+
+
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

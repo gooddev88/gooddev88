@@ -1,0 +1,63 @@
+﻿@page "/Sample/Syncfusion/SyncMap"
+@using Syncfusion.Blazor.Maps
+@inject HttpClient Http
+<h3>Syncfusion Map</h3>
+@if (MapShapeData != null) {
+    <SfMaps>
+        <MapsZoomSettings Enable="true"></MapsZoomSettings>
+        <MapsTitleSettings Text="Thailand land of smile"></MapsTitleSettings>
+        <MapsLegendSettings Visible="true"></MapsLegendSettings>
+
+        <MapsLayers>
+            <MapsLayer ShapeData="@MapShapeData"
+                   ShapePropertyPath='new string[] {"name"}'
+                   DataSource="SecurityCouncilDetails"
+                   ShapeDataPath="Name" TValue="UNCouncilCountry">
+                <MapsDataLabelSettings Visible="true" LabelPath="Name" IntersectionAction="IntersectAction.Hide"></MapsDataLabelSettings>
+                <MapsShapeSettings Fill="#E5E5E5" ColorValuePath="Membership">
+                    <MapsShapeColorMappings>
+                        <MapsShapeColorMapping Value="Permanent" Color='new string[] {"#EDB46F"}'></MapsShapeColorMapping>
+                        <MapsShapeColorMapping Value="Non-Permanent" Color='new string[] {"#F1931B"}'></MapsShapeColorMapping>
+                    </MapsShapeColorMappings>
+                </MapsShapeSettings>
+            </MapsLayer>
+
+        </MapsLayers>
+    </SfMaps>
+
+}
+
+
+@code {
+
+
+    public class MapDataSettings {
+        public bool async { get; set; }
+        public string dataOptions { get; set; }
+        public string type { get; set; }
+    }
+    public MapDataSettings MapShapeData = null;
+
+    protected override async Task OnInitializedAsync() {
+        MapShapeData = new MapDataSettings();
+        MapShapeData.async = true;
+        MapShapeData.type = "GET";
+        MapShapeData.dataOptions = "assets/geojson/thailand.json";
+        //MapShapeData.dataOptions  = await Http.GetStringAsync ("assets/geojson/thailand.json");
+    }
+
+    public string[] Categories = new string[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+    public List<UNCouncilCountry> SecurityCouncilDetails = new List<UNCouncilCountry>{
+         new UNCouncilCountry { Name= "Krabi", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "Phichit", Membership= "Permanent" } ,
+     new UNCouncilCountry { Name= "Phitsanulok", Membership= "Permanent" } ,
+   new UNCouncilCountry { Name= "Phetchabun", Membership= "Permanent" }
+    };
+
+    public class UNCouncilCountry {
+        public string Name { get; set; }
+        public string Membership { get; set; }
+    };
+
+
+}

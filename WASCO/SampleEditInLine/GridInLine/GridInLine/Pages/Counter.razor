@@ -1,0 +1,55 @@
+﻿@page "/counter"
+@using static GridInLine.Data.TestService;
+
+ 
+@if (_testService.menu!=null &&  _testService.myoption !=null) {
+
+
+@foreach (var item in _testService.menu) {
+    <div class="checkbox" @key="item">
+        <input type="checkbox" id="@item.MenuID" checked="@item.IsSelect" @onchange="args=> checkedChanged(item,args)">
+            <label for="@item.MenuID">@item.MenuID - @item.Name</label>
+    </div><br />
+       
+    <input type="text"  value="@item.Remark" @onchange="args=> textchange(item,args)" /><br />
+        <TelerikDropDownList Class="tlk-dd-sm tlk-dd-bg-white w-100" 
+        Value="@item.Ontop"
+        Data="@_testService.myoption" 
+        TextField="Desc"
+                     ValueField="value"
+                     ValueChanged="@((string v) => selectChanged(v, item.MenuID))" />
+
+}
+}
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        LoadData();
+    }
+
+
+
+    private void LoadData() {
+        _testService.myoption = _testService.CreateOption();
+        if (_testService.menu==null) {
+            _testService.menu = _testService.CreateTextList();
+        }  
+    }
+
+    async Task textchange(MyMenu item, ChangeEventArgs args) {
+        var u = _testService.menu.Where(o => o.MenuID == item.MenuID).FirstOrDefault();
+        u.Remark = (string)args.Value;
+ 
+    }
+    async Task checkedChanged(MyMenu item, ChangeEventArgs args) {
+        var u = _testService.menu.Where(o => o.MenuID == item.MenuID).FirstOrDefault();
+        u.IsSelect = (bool)args.Value; 
+    }
+
+    async Task selectChanged(string value, string menuid) {
+        var u = _testService.menu.Where(o => o.MenuID == menuid).FirstOrDefault();
+        var v = _testService.myoption.Where(o => o.value == value).FirstOrDefault();
+        u.Ontop = v.value;
+    }
+  
+}

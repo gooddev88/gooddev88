@@ -1,0 +1,53 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RobotWasm.Client.Pages.Login
+@inherits LayoutComponentBase
+<style>
+    body{
+         background-color: #E4ECF4;
+        overflow: hidden;
+    }
+</style>
+
+    <AuthorizeView>
+    <Authorized>
+     
+    <TelerikRootComponent> 
+        <div Class="container-fluid">
+    @Body
+    </div>
+    </TelerikRootComponent>
+        </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+
+@code {
+    public string CompanyName { get; set; } = "";
+    public string FullName { get; set; } = "";
+    public string MacNo { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(login.CheckLogin);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    async void LoadData() {
+        CompanyName = login.LogInInfo.CurrentRootCompany.Name1;
+        FullName = "ผู้ขาย " + login.LogInInfo.CurrentUserInfo.FullName;
+        MacNo = "รหัสเครื่อง " + login.LogInInfo.CurrentMacNo;
+    }
+
+    async private Task LogOut() {
+        await login.Logout();
+        //nav.NavigateTo("/", true);
+        //nav.NavigateTo("Dashboard/StartBoard", true);
+    }
+    //async private Task Shit() {
+    //    var result = await Http.GetStringAsync("https://admin.disaster.go.th/api/Announcement/GetCountViewInDate?datefrom=20220912&dateto=20220912");
+    //    Console.WriteLine(result);
+    //}
+}

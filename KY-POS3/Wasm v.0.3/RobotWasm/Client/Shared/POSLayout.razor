@@ -1,0 +1,24 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization;
+@using RobotWasm.Client.Pages.Login
+@inherits LayoutComponentBase
+
+@*<ReconnectDialog> </ReconnectDialog>*@
+
+<AuthorizeView>
+    <Authorized>
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <TelerikRootComponent>
+                    @Body
+                </TelerikRootComponent>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+}

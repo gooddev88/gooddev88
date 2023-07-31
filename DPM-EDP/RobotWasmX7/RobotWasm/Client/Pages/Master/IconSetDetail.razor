@@ -1,0 +1,624 @@
+﻿@page "/Master/IconSetDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+
+    .k-checkbox:checked, .k-checkbox.k-checked {
+        border-color: #03a9f4;
+        background-color: #03a9f4;
+    }
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-window {
+        left: 0pxx !important;
+        width: 0pxx !important;
+        height: 600pxx !important;
+        min-width: 120pxx !important;
+        min-height: 100pxx !important;
+    }
+
+    /*start telerik upload*/
+
+    .k-upload-files {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .k-form-hint {
+        display: block;
+        margin-top: 1em;
+    }
+
+    .demo-section > .kd-demo-heading {
+        padding-bottom: 0;
+        margin-bottom: 1em;
+    }
+
+    .k-file-success {
+        display: none !important;
+    }
+    /*end  telerik upload*/
+
+    /*start basic upload*/
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    /*end  basic upload*/
+
+</style>
+
+
+@if (!isLoading) {
+
+    <TelerikWindow Class="telerik-pop col-md-6 col-sm-8 col-11 mx-auto" Centered="true"
+               Modal="true" @bind-Visible="@isPopupMain">
+        <WindowTitle>
+            <strong>Info</strong>
+        </WindowTitle>
+        <WindowActions>
+            @*<WindowAction Name="Close" />*@
+        </WindowActions>
+        <WindowContent>
+
+            <div class="row">
+                <div class="col-12">
+                    <h3>@Caption</h3>
+                </div>
+            </div>
+
+            <div class="row pt-1">
+                <div class="col-12">
+                    <span>ชื่อไอคอน</span>
+                    <TelerikTextBox PlaceHolder="" @bind-Value="@_iconSetService.DocSet.head.icon_name" />
+                </div>
+            </div>
+
+            <div class="row pt-1">
+                <div class="col-12">
+                    <span>จัดเรียง</span>
+                    <TelerikNumericTextBox Decimals="0" Enabled="true" Format="N0" Max="1000"
+                                       Class="text-center font-weight-bold" @bind-Value="Sort"></TelerikNumericTextBox>
+                </div>
+            </div>
+
+            <div class="row pt-1">
+                <div class="col-12">
+                    <TelerikCheckBox Id="chkIsActive" @bind-Value="@active"></TelerikCheckBox>
+                    <span style="font-size:medium;">ใช้งาน</span>
+                </div>
+            </div>
+
+
+            @if (_iconSetService.DocSet != null) {
+                @if (!string.IsNullOrEmpty(_iconSetService.DocSet.head.icon_id)) {
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="fw-bold">อัพโหลดไฟล์</h5>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="row pt-3">
+                                        <div class="col-12">
+                                            <div class="file-input-zone">
+                                                <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                                </InputFile>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                            </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!isUploading) {
+                                @if (_iconSetService.DocSet.files.Count() > 0) {
+                                    <div class="row pt-1">
+                                        <div class="col-10 mx-auto mx-0 text-center">
+                                            <a @onclick="@(() => DownloadFIle(@_iconSetService.DocSet.files.FirstOrDefault()))">
+                                                <img src=@_iconSetService.DocSet.vhead.img_path class="img-circle" style="width:9rem;">
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 text-end">
+                                            <a class="btn btn-default" @onclick="@(() => OnDeleteFile(@_iconSetService.DocSet.files.FirstOrDefault()))"> <i class="far fa-trash-alt"></i></a>
+                                        </div>
+                                    </div>
+                                }
+                            } else {
+                                <div class="loader-container">
+                                    <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            <div class="row pt-3">
+                <div class="col-12 text-end">
+                    <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                               @onclick="@OnSave" Class="px-4 py-2"
+                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                        <i class="fa-solid fa-floppy-disk ga-lg"></i>&nbsp; บันทึกข้อมูล
+                    </TelerikButton>&nbsp;&nbsp;
+                    <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                               @onclick="@OnClose"
+                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                        <i class="fa-solid fa-rectangle-xmark"></i>&nbsp; ปิด
+                    </TelerikButton>
+                </div>
+            </div>
+        </WindowContent>
+    </TelerikWindow>
+
+    <TelerikDialog @bind-Visible="@dialog_Visible" Class="col-2" ShowCloseButton="false" Title="">
+        <DialogContent>
+            <div class="text-center">
+                @if (Error_dialog == "error") {
+                    <i style="color:#f27474;" class="fa-regular fa-circle-xmark fa-3x"></i>
+                } else {
+                    <i style="color:#37b400;" class="fa-regular fa-circle-check fa-3x"></i>
+                }
+                <br /><br />
+                <span style="text-align: center;">@Caption_dialog</span>
+            </div>
+        </DialogContent>
+        <DialogButtons>
+            <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" OnClick="@ConfirmSave">ตกลง</TelerikButton>
+        </DialogButtons>
+    </TelerikDialog>
+
+    <div class="col-md-10 col-sm-12 col-12 mx-auto pb-3">
+        <div class="row">
+            <div class="col-md-6 col-12 pt-2">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                           @onclick="@Back" Class="px-3" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    <span style="font-size: medium;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+                </TelerikButton>
+            </div>
+            <div class="col-md-6 col-12 pt-2 text-end">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                           @onclick="@NewDoc" Class="px-3"
+                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                    <i class="fa-solid fa-file fa-lg"></i>&nbsp; เพิ่มชุดไอคอน
+                </TelerikButton>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+                <TelerikTextBox PlaceHolder="คำค้นหา" FillMode="@(ThemeConstants.TextBox.FillMode.Outline)" ValueChanged="@OnTextChanged_Search"></TelerikTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                @if (DocList!=null)
+                {       
+                    <TelerikListView Data=@DocList
+                             Pageable="true"
+                             PageSize="8">
+                        <Template>
+                            <div class="row">
+                                <div class="col-8 pt-3">
+                                    <span class="card-title">ชื่อไอคอน : @context.icon_name</span><br />
+                                    <span class="card-title">ชื่อไฟล์ : @context.filename</span> <br />
+                                    <div class="pt-2 d-inline">
+                                        <span class="fw-bold">ลำดับ @context.sort.ToString("n0")</span>
+                                    </div>&nbsp;&nbsp;
+                                    <TelerikButton Size="@(ThemeConstants.Button.Size.Small)"
+                                           @onclick="@(() => Edit(context))" Class="px-3"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                                        <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                    </TelerikButton>&nbsp;
+                                    <TelerikButton Size="@(ThemeConstants.Button.Size.Small)"
+                                           @onclick="@(() => DeleteLine(context))" Class="px-3"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                                        <i class="fa-solid fa-trash"></i> ลบ
+                                    </TelerikButton>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <a @onclick="@(() => DownloadFIleInListView(context.file_id))">
+                                        <img src=@context.img_path style="width:5rem;">
+                                    </a>
+                                </div>
+                            </div>
+                            <hr class="my-2" />
+
+                        </Template>
+                    </TelerikListView>
+                }
+                else
+                {
+                    <div class="row pt-5">
+                        <div class="col-12 text-center">
+                            <i class="fa-solid fa-circle-exclamation" style="color: #ff6358;font-size: 6rem;"></i><br /><br />
+                            <span class="font-weight-bold"> ไม่พบไอคอน </span>
+                        </div>
+                    </div>
+                          }
+            </div>
+        </div>
+
+    </div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    private bool isLoading = false;
+    private bool isUploading = false;
+    bool collapse1Visible = true;
+
+    string Caption = "";
+    public bool isPopupMain { get; set; } = false;
+    public string ImageUrl { get; set; } = "";
+
+    //dialog
+    private bool dialog_Visible { get; set; } = false;
+    string Caption_dialog = "";
+    string Error_dialog = "";
+
+
+    string menuCaption = "";
+    public int Sort { get; set; }
+    public bool active { get; set; } = true;
+    public bool is_default { get; set; } = false;
+    private bool isShowDelete = true;
+
+    string SearchText = "";
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+
+    public TelerikGrid<vw_icon_set> dxDataGrid { get; set; }
+    IEnumerable<vw_icon_set> DocList;
+
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public TelerikGrid<vw_xfile_ref> TrFileGrid { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await Task.Run(LoadGrdIconSet);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_iconSetService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.Active_IDCONID);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _iconSetService.DocSet = await _iconSetService.GetDocSet(docid);
+                } else {
+                    _iconSetService.DocSet = IconSetService.NewTransaction();
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+
+    }
+
+    protected async Task LoadData() {
+        BindData();
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "438");
+        menuCaption = menu.menu_name;
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "438").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsDelete)) {
+            isShowDelete = true;
+        }
+    }
+
+    async Task LoadGrdIconSet() {
+        DocList = await _iconSetService.ListDoc(SearchText);
+    }
+
+    async Task SearchAction() {
+        await Task.Run(LoadGrdIconSet);
+    }
+
+    public async void BindData() {
+        var h = _iconSetService.DocSet.head;
+        if (string.IsNullOrEmpty(h.icon_id))
+        {
+            h.sort = await _iconSetService.GenSort();
+        } 
+
+        if (h.is_active == 1) {
+            active = true;
+        } else {
+            active = false;
+        }
+        Sort = h.sort;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidData() {
+        var h = _iconSetService.DocSet.head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.icon_name == "") {
+            Errmsg = "ระบุ ชื่อไอคอน";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Caption_dialog = Errmsg;
+            Error_dialog = "error";
+            dialog_Visible = true;
+        }
+        return isvalid;
+    }
+
+    protected async Task<bool> PrepairDataSave() {
+        var h = _iconSetService.DocSet.head;
+
+        bool isnew = h.icon_id == "" ? true : false;
+        if (isnew)
+        {
+            if (string.IsNullOrEmpty(h.icon_id))
+            {
+                h.icon_id = Guid.NewGuid().ToString();
+            }
+        }
+        h.sort = Sort;
+        h.is_active = Convert.ToInt32(active);
+
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData())
+        {
+            return;
+        }
+
+        var h = _iconSetService.DocSet.head;
+        var isnew = await Task.Run(() => PrepairDataSave());
+        var rs = await Task.Run(() => _iconSetService.Save(_iconSetService.DocSet, isnew));
+        if (rs.Result.ToString() == "fail")
+        {
+            Caption_dialog = rs.Message1;
+            Error_dialog = "error";
+            dialog_Visible = true;
+            return;
+        }
+        else
+        {
+            _iconSetService.DocSet = await _iconSetService.GetDocSet(h.icon_id);
+            await sessionStorage.SetItemAsync(Globals.Active_IDCONID, h.icon_id);
+            if (isnew)
+            {
+                var r = await _logTranService.CreateTransLog(h.icon_id, login.LogInInfo.CurrentUser, "จัดการ เมนูไอคอน", "เพิ่ม จัดการ เมนูไอคอน");
+            }
+            else
+            {
+                var r = await _logTranService.CreateTransLog(h.icon_id, login.LogInInfo.CurrentUser, "จัดการ เมนูไอคอน", "แก้ไข จัดการ เมนูไอคอน");
+            }
+            BindData();
+            Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+            Error_dialog = "success";
+            dialog_Visible = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async void ConfirmSave()
+    {
+        dialog_Visible = false;
+        //isPopupMain = false;
+        //await Task.Run(LoadGrdIconSet);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnClose() {
+        isPopupMain = false;
+        await Task.Run(LoadGrdIconSet);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnTextChanged_Search(object Search) {
+        if (Search != null) {
+            SearchText = Search.ToString();
+            await Task.Run(() => SearchAction());
+        }
+    }
+
+    async void Edit(vw_icon_set data) {
+        Caption = "แก้ไขเอกสาร";
+        isPopupMain = true;
+        _iconSetService.DocSet = await _iconSetService.GetDocSet(data.icon_id);
+        BindData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void DeleteLine(vw_icon_set data) {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบไอคอน",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+
+        var rs = await _iconSetService.DeleteDoc(data.icon_id, login.LogInInfo.CurrentUser);
+        var r = await _logTranService.CreateTransLog(data.icon_id,login.LogInInfo.CurrentUser, "จัดการ เมนูไอคอน", "ลบ จัดการ เมนูไอคอน");
+        if (rs.Result == "ok") {
+            dxDataGrid?.Rebind();
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+        await Task.Run(LoadGrdIconSet);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task NewDoc() {
+        Caption = "เพิ่มเอกสาร";
+        isPopupMain = true;
+        await sessionStorage.RemoveItemAsync(Globals.Active_IDCONID);
+        _iconSetService.DocSet = IconSetService.NewTransaction();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back() {
+        nav.NavigateTo($"Menu/MenuSIDE/400", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    #region upload file
+
+    public async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = _iconSetService.DocSet.head;
+        if (string.IsNullOrEmpty(h.icon_id)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+        string user = login.LogInInfo.CurrentUser;
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = await _filego.NewFilesInfoPostgres("ICON_CATEGORY", "DPM", "", h.icon_id);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+            }
+
+            if (_iconSetService.DocSet.files.Count() > 0) {
+                var rr = await Task.Run(async () => _filego.DeleteFileByFileIdPostgres("DPM", "", "ICON_CATEGORY", h.icon_id, _iconSetService.DocSet.files.FirstOrDefault().file_id, login.LogInInfo.CurrentUser));
+            }
+            var data = await _filego.SaveToFileGo(upload_file, user);
+
+            _iconSetService.DocSet = await _iconSetService.GetDocSet(h.icon_id);
+            await Task.Run(LoadGrdIconSet);
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    public async void DownloadFIleInListView(string file_id)
+    {
+        try
+        {
+            var h = _iconSetService.DocSet.head;
+            string file_url = await _filego.GetFileUrlPostgres(file_id);
+            if (!string.IsNullOrEmpty(file_url))
+            {
+                nav.NavigateTo(file_url, true);
+            }
+        }
+        catch
+        {
+
+        }
+    }
+
+    public async void DownloadFIle(vw_xfile_ref data) {
+        try {
+            var h = _iconSetService.DocSet.head;
+            string file_url = await _filego.GetFileUrlPostgres(data.file_id);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+    public async Task OnDeleteFile(vw_xfile_ref data) {
+        try {
+
+            var h = _iconSetService.DocSet.head;
+            var rr = await Task.Run(() => _filego.DeleteFileByFileIdPostgres("DPM", "", "ICON_CATEGORY", h.icon_id, data.file_id, login.LogInInfo.CurrentUser));
+            if (rr.Result == "ok") {
+                _iconSetService.DocSet = await _iconSetService.GetDocSet(h.icon_id);
+                BindData();
+                Caption_dialog = "ลบภาพสำเร็จ";
+                Error_dialog = "success";
+                dialog_Visible = true;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                Caption_dialog = rr.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            }
+        } catch {
+        } finally {
+
+        }
+    }
+
+    #endregion
+
+}

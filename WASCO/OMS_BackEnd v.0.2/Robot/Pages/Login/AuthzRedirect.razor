@@ -1,0 +1,42 @@
+﻿
+@*
+@using Tools
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider authStateProvider
+@using Robot.Data
+@using Robot.Data.DA.Login
+@inject LogInService login
+
+*@
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    bool isLoading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateTask;
+        ((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        nav.NavigateTo("Login", true);
+        //nav.NavigateTo("ApiDoc/ApiDocList", true);
+
+        //if (authenticationState?.User?.Identity is null || !authenticationState.User.Identity.IsAuthenticated)
+        //{
+        //    var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+
+        //    if (string.IsNullOrWhiteSpace(returnUrl))
+        //    { 
+        //        Navigation.NavigateTo("Login", true);
+        //        //Navigation.NavigateTo("POS/POSSaleDetail/{BGSAZ640705-002}", true);
+        //    }
+
+        //}
+    }
+
+}

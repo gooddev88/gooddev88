@@ -1,0 +1,196 @@
+﻿@page "/ApiServ/ApiMasterList"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+
+</style>
+
+@if (!isLoading) {
+
+            <div class="row">
+                <div class="col-6">
+                    <Breadcrumb Mode="BreadcrumbMode.Auto">
+                        <BreadcrumbItem Active>
+                            <BreadcrumbLink To="ApiServ/ApiMasterList">@menuCaption</BreadcrumbLink>
+                        </BreadcrumbItem>
+                    </Breadcrumb>
+                </div>
+        @*@if (isShowNew) {*@
+                <div class="col-6" style="text-align:right;">
+                    <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@ChangeCateApi" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                        <i class="fa-solid fa-repeat"></i>&nbsp; เปลี่ยนหมวดหมู่ API
+                    </TelerikButton>
+                    <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@NewDoc" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                        <i class="fa-solid fa-file fa-lg"></i>&nbsp; เพิ่ม Data Set
+                    </TelerikButton>
+                </div>
+        @*}*@
+            </div>
+
+    @* --ค้นหา--*@
+            <Accordion>
+                <Collapse Visible="@collapse1Visible">
+                    <CollapseHeader>
+                        <Heading Size="HeadingSize.Is5">
+                            <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                        </Heading>
+                    </CollapseHeader>
+                    <CollapseBody>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+                        </div>
+                    </CollapseBody>
+                </Collapse>
+            </Accordion>
+
+
+            <div class="row pt-3">
+                <div class="col-md-12">
+            @if (DocList != null) {
+           <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="20"
+                             Navigable="true">
+                            <GridToolBar>
+                                <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                                <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                            </GridToolBar>
+
+                            <GridExport>
+                                <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                            </GridExport>
+                            <GridColumns>
+                              <GridColumn Field="@nameof(api_master.api_id)" Title="แก้ไข" Editable="false" Width="80px">
+                                    <Template>
+                                @{
+                                    var data = context as api_master;
+                                                <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa-solid fa-pen-to-square" style="font-size:20px"></i></button>
+                                }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field=@nameof(api_master.api_id) Title="รหัสชุดข้อมูล" Width="150px" />
+                                <GridColumn Field=@nameof(api_master.api_name) Title="ชื่อชุดข้อมูล" Width="300px" />
+                                <GridColumn Field=@nameof(api_master.api_desc) Title="รายละเอียดข้อมูล" Width="350px" />
+                                <GridColumn Field=@nameof(api_master.cate) Title="หมวดหมู่ข้อมูล" Width="160px" />
+                                @*<GridColumn Field=@nameof(api_master.source_cate) Title="API Source" Width="160px" />*@
+                            </GridColumns>
+                        </TelerikGrid>
+            }
+                </div>
+            </div>
+
+} else {
+        <div class="loader-container">
+            <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+        </div>
+}
+
+
+@code {
+
+    private bool isLoading = false;
+    private bool isShowNew = true;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool ExportAllPages { get; set; } = true;
+    public string SearchText { get; set; } = "";
+
+    IEnumerable<api_master> DocList;
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        //await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadData());
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckPermission() {
+        if (login != null) {
+            var menu = UserService.GetMenuInfo(login.LogInInfo, "1000");
+            var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "1000").FirstOrDefault();
+            menuCaption = menu.menu_name;
+            if (!Convert.ToBoolean(Permissionmenu.IsCreate)) {
+                isShowNew = false;
+            }
+        }
+    }
+    //    async Task CheckIsRefresh() {
+    //    try {
+    //        if (_apiMasterService.DocSet == null) {
+    //            string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_ApiMasterEdit);
+    //            if (!string.IsNullOrEmpty(docid)) {
+    //                _apiMasterService.DocSet = await _apiMasterService.GetDocSet(docid);
+    //            } else {
+    //                _apiMasterService.DocSet = ApiMasterService.NewTransaction();
+    //            }
+    //        }
+    //    } catch (Exception ex) {
+    //        var xx = ex.Message;
+    //    } 
+    //}
+    async Task LoadData() {
+        await CheckPermission();
+        DocList = await _apiMasterService.Listapi_master(SearchText);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Edit(api_master select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(Globals.ActiveID_ApiMasterEdit, select_data.api_id);
+        _apiMasterService.DocSet = await _apiMasterService.GetDocSet(select_data.api_id);
+        nav.NavigateTo($"ApiServ/ApiMasterDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc() {
+        await sessionStorage.RemoveItemAsync(Globals.ActiveID_ApiMasterEdit);
+        _apiMasterService.DocSet = ApiMasterService.NewTransaction();
+        string url = $"ApiServ/ApiMasterDetail";
+        nav.NavigateTo(url);
+    }
+
+    async void ChangeCateApi() {
+        string url = $"ApiServ/SelectListApiAllCate";
+        nav.NavigateTo(url);
+    }
+
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,64 @@
+﻿ 
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using static RobotWasm.Client.Pages.DPMBoard.A01.A01Data
+
+
+
+<TelerikRootComponent>
+<TelerikChart>
+    <ChartTooltip Visible="true"></ChartTooltip>
+    <ChartSeriesItems>
+        <Telerik.Blazor.Components.ChartSeries Type="Telerik.Blazor.ChartSeriesType.Column" Name="ชนิดถนน" Data="@Data"  Field="@nameof(ChartData.Y)">
+            <Telerik.Blazor.Components.ChartSeriesLabels Visible="true" Format="{0:N0}"></Telerik.Blazor.Components.ChartSeriesLabels>
+        </Telerik.Blazor.Components.ChartSeries>
+    </ChartSeriesItems>
+
+    <ChartCategoryAxes>
+        <ChartCategoryAxis Categories="@xAxisItems">
+            <ChartCategoryAxisLabels>
+                <ChartCategoryAxisLabelsRotation Angle="@LabelsRotation" />
+            </ChartCategoryAxisLabels>
+        </ChartCategoryAxis>
+
+    </ChartCategoryAxes>
+
+
+    <ChartLegend Position="ChartLegendPosition.Bottom">
+    </ChartLegend>
+</TelerikChart>
+</TelerikRootComponent>
+@code {
+    [Parameter] public List<ChartData> Data { get; set; }
+
+    string[] xAxisItems;
+    public List<object> series1Data;
+
+    public TelerikChart roadType { get; set; }
+    string LabelsRotation = "-30";
+
+
+   
+    protected override async Task OnParametersSetAsync()
+   {
+    await LoadData();       
+   }
+
+    async private Task LoadData() {
+        try {
+            xAxisItems = new string[Data.Count()];
+            series1Data = new List<object>();
+            int i = 0;
+            foreach (var d in Data) {
+                xAxisItems[i] = d.X;
+                series1Data.Add((object)d.Y);
+                i++;
+            }
+           await InvokeAsync(StateHasChanged);
+              //  roadType.Refresh();
+        } catch (Exception ex) {
+            throw;
+        }
+    }
+
+}

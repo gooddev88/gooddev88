@@ -1,0 +1,354 @@
+﻿@page "/POSREPORTS/PO/ReportPOSumByItem/{rcom}/{isshowpendingonly}"
+@using System.Globalization
+@using Robot.Data.DA.REPORTS.PO
+@*@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.ML;
+@using Robot.Data.DA.User
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA.REPORTS.PO
+@using Blazored.LocalStorage
+@using Blazored.SessionStorage
+@using System.Globalization
+
+@inject SweetAlertService Swal
+@inject POSService posService
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+@inject LogInService login*@
+@inject PageHistoryState pageHistory
+
+<style>
+
+    .btn-success {
+        background-color: #20bf6b;
+        border-color: #20bf6b;
+    }
+
+        .btn-success:hover {
+            background-color: #26de81;
+            border-color: #26de81;
+        }
+
+        .btn-success:not(:disabled):not(.disabled).active, .btn-success:not(:disabled):not(.disabled):active, .show > .btn-success.dropdown-toggle {
+            background-color: #26de81;
+            border-color: #26de81;
+        }
+
+    .btn-link {
+        font-weight: 400 !important;
+        color: #007bff !important;
+        text-decoration: none !important;
+    }
+
+        .btn-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        .btn-link:not(:disabled):not(.disabled).active, .btn-link:not(:disabled):not(.disabled):active, .show > .btn-link.dropdown-toggle {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-3">
+            <div class="col-11 mx-auto text-center mx-0">
+                <a ID="btnback" class="btn btn-dark w-100 text-white" @onclick="@Back">
+                    <span style="font-size: 1.5rem;">
+                        <i class="fas fa-chevron-circle-left"></i>&nbsp;รายการซื้อสินค้าสรุปวัตถุดิบ
+                    </span>
+                </a>
+            </div>
+        </div>
+
+
+        <div class="row pb-1 pt-1">
+            <div class="col-11 mx-auto text-left mx-0">
+                <a @onclick="@GoToSumbyStore" class="btn btn-default">
+                    <i class="fas fa-store">  สรุปตามสาขา</i>
+
+                </a>
+            </div>
+        </div>
+
+
+        <div class="row pt-3">
+            <div class="col-11 mx-auto">
+                <div class="card">
+                    <div class="card-body p-2">
+
+                        <div class="row pb-2">
+                            <div class="col-12">
+                                <a class="btn btn-link w-100" data-toggle="collapse" @onclick="@(() => { IsVisible = !IsVisible; })">
+                                    <i class="fas fa-filter"></i>
+                                    <span style="font-size:medium;">ตัวกรอง</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="collapse @(IsVisible ? "show" : "")">
+                            <div class="row" style="display: inline-flex !important;">
+                                @foreach (var v in item_select_option) {
+                                    <div class="col-3">
+                                        <DxCheckBox Checked="@v.IsSelect" CheckedChanged="@((bool value) => ChangeFilter(value, v.Value))"><span>@v.Description</span></DxCheckBox>
+                                    </div>
+                                    @*<br />*@
+                                }
+                            </div>
+                        </div>
+                        @if (isshowpendingonly == "0") {
+                            <div class="row pt-1">
+                                <div class="col-5">
+
+                                    <TelerikDatePicker @bind-Value="DateFr"
+                                                   Format="dd MMMM yyyy">
+                                    </TelerikDatePicker>
+                                </div>
+                                <div class="col-5">
+                                    <TelerikDatePicker @bind-Value="DateTo"
+                                                   Format="dd MMMM yyyy">
+                                    </TelerikDatePicker>
+                                </div>
+                                <div class="col-2 pl-0"> 
+                                    <a @onclick="@(async () => await SearchAction())" class="btn btn-info text-white">
+                                        ค้นหา
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        @if (datalist.Count() > 0) {
+            <div class="row pb-2">
+                <div class="col-11 mx-auto mx-0">
+                    @foreach (var d in item_select_option.Where(o => o.IsSelect)) {
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <div class="card">
+                                    <a class="w-100" data-toggle="collapse" @onclick="@(() => { d.IsVisible = !d.IsVisible; })">
+                                        <div class="card-header" style="background-color: gold;">
+                                            <div class="row">
+                                                <div class="col-6 text-left">
+                                                    <h4 class="">@d.Description</h4>
+                                                </div>
+                                                <div class="col-6 text-right">
+                                                    <h4 class=""><strong> @datalist.Where(o => o.ItemID == d.Value).Sum(o => o.Amt).ToString("n0") ฿</strong></h4>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="collapse @(d.IsVisible ? "show" : "")">
+                                        <div class="card-body">
+                                            @foreach (var l in datalist.Where(o => o.ItemID == d.Value).ToList()) {
+                                                <div class="row">
+                                                    <div class="col-8 text-left">
+                                                        <span style="font-size: 20px">@l.ItemName</span>
+                                                        <br />
+                                                        <span style="font-size: 12px">@l.PODate.ToString("dd/MM/yyyy")</span>
+
+
+                                                    </div>
+                                                    <div class="col-4 text-right">
+                                                        <span style="font-size: 12px">@l.CompanyName</span>
+                                                        <br />
+                                                        <strong style="font-size: 20px">@l.Amt.ToString("N0")</strong>
+                                                    </div>
+                                                </div>
+                                                <hr class="my-1" />
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+
+                </div>
+            </div>
+        } else {
+            <div class="row pt-5">
+                <div class="col-12 text-center">
+                    <img src="/SALE/assets/img/filesearch.png" style="width:9rem;" /><br />
+                    <span class="font-weight-bold" style="color:gray;"> ไม่พบรายการซื้อวัตถุดิบ </span>
+                </div>
+            </div>
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter]
+    public string isshowpendingonly { get; set; }
+
+    [Parameter]
+    public string rcom { get; set; }
+
+    bool isLoading = true;
+
+    List<SelectOption> item_select_option = new List<SelectOption>();
+    List<SelectOption> company_select_option = new List<SelectOption>();
+    List<PORequestSummaryByItem> datalist = new List<PORequestSummaryByItem>();
+
+    bool isOther { get; set; } = true;
+    bool isSUP { get; set; } = true;
+    bool isMarketThai { get; set; } = true;
+    DateTime? DateFr = DateTime.Now.AddDays(-2);
+    DateTime? DateTo = DateTime.Now;
+
+    public bool IsVisible { get; set; } = false;
+
+    protected override async Task OnInitializedAsync() {
+        //if (login.LoginInfo == null)
+        //{
+        //    login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        //    if (login.LoginInfo == null)
+        //    {
+        //        nav.NavigateTo("Login");
+        //    }
+        //}
+        await Task.Run(LoadFilter);
+        await Task.Run(LoadData);
+    }
+
+    void LoadFilter() {
+        //var itemoptn = ItemService.ListItemForSelect(login.LoginInfo.CurrentRootCompany.CompanyID,new List<string> { "RMK", "FGK" });
+        //foreach (var v in itemoptn) {
+        //    var IsExsit = item_select_option.Where(o => o.Value == v.Value).FirstOrDefault();
+        //    if (IsExsit == null) {
+        //        item_select_option.Add(v);
+        //    }
+        //}
+    }
+
+    void LoadData() {
+        datalist = POReportService.ListDataPOSumByItem(Convert.ToDateTime(DateFr).Date, Convert.ToDateTime(DateTo).Date, rcom, "", "", Convert.ToInt32(isshowpendingonly)).Where(o => o.Qty != 0).ToList();
+        // ConvertComToOption(datalist);
+        ConvertItemToOption(datalist);
+        isLoading = false;
+    }
+
+    //void ConvertComToOption(List<PORequestSummaryByItem> data)
+    //{
+    //    company_select_option = new List<SelectOption>();
+
+    //    var query = (from t in data
+    //                 group t by new { t.ComID, t.CompanyName }
+    //         into grp
+    //                 select new
+    //                 {
+    //                     grp.Key.ComID,
+    //                     grp.Key.CompanyName
+    //                 }).ToList();
+
+    //    int i = 0;
+    //    foreach (var d in query.OrderBy(o => o.ComID))
+    //    {
+    //        i++;
+    //        SelectOption o = new SelectOption();
+    //        o.IsSelect = true;
+    //        o.Sort = i;
+    //        o.Value = d.ComID;
+    //        o.Description = d.CompanyName;
+    //        company_select_option.Add(o);
+    //    }
+
+    //}
+
+    void ConvertItemToOption(List<PORequestSummaryByItem> data) {
+        if (item_select_option == null) {
+            item_select_option = new List<SelectOption>();
+
+        }
+
+        var query = (from t in data
+                     group t by new { t.ItemID, t.ItemName }
+         into grp
+                     select new {
+                         grp.Key.ItemID,
+                         grp.Key.ItemName
+                     }).ToList();
+
+        int i = 0;
+        foreach (var d in query.OrderBy(o => o.ItemName)) {
+            var exist = item_select_option.Where(o => o.Value == d.ItemID).FirstOrDefault();
+            if (exist == null) {
+                i++;
+                SelectOption o = new SelectOption();
+                o.IsSelect = true;
+                o.Sort = i;
+                o.Value = d.ItemID;
+                o.Description = d.ItemName;
+                o.IsVisible = false;
+                item_select_option.Add(o);
+            }
+
+        }
+
+    }
+    //void ShowItemDetail(PORequestSummaryByItem data) {
+    //    var podate_str = data.PODate.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+    //    nav.NavigateTo($"POSREPORTS/PO/ReportPODetailByStore/{data.ToLocID}/{data.VendorID}/{podate_str}/{isshowpendingonly}", false);
+    //    InvokeAsync(StateHasChanged);
+    //}
+
+    async Task SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async Task ChangeFilter(bool isCheck, string value) {
+        var s = item_select_option.Where(o => o.Value == value).FirstOrDefault();
+        s.IsSelect = isCheck;
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+        //this.StateHasChanged();
+    }
+
+    async void Back() {
+        //nav.NavigateTo($"POSREPORTS/PO/ReportPOSumByStore/{rcom}/1");
+        //await InvokeAsync(StateHasChanged);
+        var url = pageHistory.GetGoBackPage();
+        nav.NavigateTo(url);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToSumbyStore() {
+        //nav.NavigateTo($"POSREPORTS/PO/ReportPOSumByStore/{rcom}/1");
+        var url = pageHistory.GetGoBackPage();
+        nav.NavigateTo(url);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

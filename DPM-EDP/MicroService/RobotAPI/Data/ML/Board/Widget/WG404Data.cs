@@ -1,0 +1,10 @@
+﻿namespace RobotAPI.Data.ML.Board.Widget {
+    public class WG404Data {
+        //สถานะเครื่องจักรกลสาธารณภัย แบ่งตามศูนย์
+         
+        public string unit { get; set; }
+        public string status { get; set; }
+        public int count_result { get; set; }
+
+    }
+}

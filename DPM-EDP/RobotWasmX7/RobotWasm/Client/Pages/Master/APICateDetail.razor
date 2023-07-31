@@ -1,0 +1,837 @@
+﻿@page "/Master/APICateDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.Master.ApiCate.I_ApiCateSet
+@using Blazorise
+
+<style>
+
+        div.gallery div{
+        margin:5px;
+        border:1px solid black;
+        padding:5px;
+        width:21%;
+        float:left;
+        text-align: center;
+    }
+
+    div.gallery div img{
+        width:70%;
+    }
+
+    .title {
+        font-size:medium;
+        margin: 0.4rem 0 0.3rem 0;
+        text-align:center;
+    }
+
+    /*listview card image*/
+
+    .k-listview-content {
+        display: block !important;
+    }
+
+    .footer-note {
+        text-align: right;
+        font-style: italic;
+        font-size: 0.85em;
+    }
+
+    /*end listview card image*/
+
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+    .k-window {
+        left: 0pxx !important;
+        width: 0pxx !important;
+        height: 600pxx !important;
+        min-width: 120pxx !important;
+        min-height: 100pxx !important;
+    }
+
+    /*start telerik upload*/
+
+    .k-upload-files {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .k-form-hint {
+        display: block;
+        margin-top: 1em;
+    }
+
+    .demo-section > .kd-demo-heading {
+        padding-bottom: 0;
+        margin-bottom: 1em;
+    }
+
+    .k-file-success {
+        display: none !important;
+    }
+    /*end  telerik upload*/
+
+    /*start basic upload*/
+
+    .file-input-zone {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: pointer;
+        /*cursor: crosshair;*/
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 30px;
+        background-size: 33px 30px;
+        background-image: url('/img/attachment-file.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    /*end  basic upload*/
+
+</style>
+
+
+@if (!isLoading) {
+
+            <TelerikWindow Class="telerik-pop col-md-6 col-sm-8 col-11 mx-auto" Centered="true"
+                        Modal="true" @bind-Visible="@isPopupMain">
+            <WindowTitle>
+                <strong>INFO</strong>
+            </WindowTitle>
+            <WindowActions>
+                @*<WindowAction Name="Close" />*@
+            </WindowActions>
+            <WindowContent>
+
+                            @if (!isShowIconSet)
+            {
+
+        <div class="row">
+            <div class="col-12">
+                <h3>@Caption</h3>
+            </div>
+        </div>
+                
+        <div class="row pt-1">
+            <div class="col-md-12">
+                <span>รหัสหมวดหมู่ของข้อมูล</span>
+                <TelerikTextBox PlaceHolder="" @bind-Value="@_apiCateService.DocSet.head.cate_id" Enabled="@false" />
+            </div>
+        </div>
+
+        <div class="row pt-1">
+            <div class="col-12">
+                <span>ชื่อหมวดหมู่ของข้อมูล</span>
+                <TelerikTextBox PlaceHolder="" @bind-Value="@_apiCateService.DocSet.head.cate_name" />
+            </div>
+        </div>
+
+            <div class="row pt-1">
+                <div class="col-12">
+                    <span>เรียงลำดับ</span>
+                    <TelerikNumericTextBox Decimals="0" Enabled="true" Format="N0"
+                                       Class="pe-2" @bind-Value="Sort"></TelerikNumericTextBox>
+                </div>
+            </div>
+
+        @if (_apiCateService.DocSet != null) {
+        @if (!string.IsNullOrEmpty(_apiCateService.DocSet.head.cate_id)) {
+            
+                <div class="row pt-4">
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="fw-bold">อัพโหลดไฟล์</h5>
+                            </div>
+                        </div>
+                        <div class="row">
+                                <div class="col-8">
+                                    <div class="file-input-zone">
+                                        <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                        </InputFile>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>แนบไฟล์</span>
+                                    </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                </div>
+                                <div class="col-4 text-end">
+                                    <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                                       @onclick="@BtnSelectIcon" Class="px-3" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                                        <span><i class="fa-solid fa-circle-check"></i>&nbsp;เลือกไอคอน</span>
+                                    </TelerikButton>
+                                </div>
+                        </div>
+
+                        @if (!isUploading) {
+                            @if (_apiCateService.DocSet.files.Count() > 0) {
+                                    <div class="row pt-1">
+                                        <div class="col-10 mx-auto mx-0 text-center">
+                                            <a @onclick="@(() => DownloadFIle(@_apiCateService.DocSet.files.FirstOrDefault()))">
+                                                <img src=@_apiCateService.DocSet.head.img_path class="img-circle" style="width:8rem;">
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 text-end">
+                                            <a class="btn btn-default" @onclick="@(() => OnDeleteFile(@_apiCateService.DocSet.files.FirstOrDefault()))"> <i class="far fa-trash-alt"></i></a>
+                                        </div>
+                                    </div>
+                                }
+                    } else {
+                <div class="loader-container">
+                    <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+                </div>
+            }
+    </div>
+</div>
+        }
+    }
+
+        <div class="row pt-3">
+            <div class="col-12 text-end">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                               @onclick="@OnSave" Class="px-4 py-2"
+                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                    <i class="fa-solid fa-floppy-disk ga-lg"></i>&nbsp; บันทึกข้อมูล
+                </TelerikButton>&nbsp;&nbsp;
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                               @onclick="@OnClose"
+                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                    <i class="fa-solid fa-rectangle-xmark"></i>&nbsp; ปิด
+                </TelerikButton>   
+            </div>
+        </div>
+
+        }else
+            {
+                                <div class="row">
+                <div class="col-12">
+                        <TelerikListView Data=@IconSetList
+                                 Height="600px" Pageable="true"
+                             PageSize="12">
+                            <HeaderTemplate>
+                                <div class="row">
+                                    <div class="col-6 pt-2">
+                                        <div class="d-inline">
+                                            คลิ๊ก เลือกไอคอนที่ต้องการ
+                                        </div>
+                                        <TelerikButton Size="@(ThemeConstants.Button.Size.Small)"
+                                               @onclick="@CloseSelectIcon"
+                                               ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                                            <i class="fa-solid fa-circle-chevron-left"></i>&nbsp; กลับไปก่อนหน้า
+                                        </TelerikButton>
+                                    </div>
+                                </div>
+                            </HeaderTemplate>
+                            <Template>
+                                <a @onclick="@(() => SelectImage(context))">
+                                <div class="gallery">
+                                    <div>
+                                    <img src="@context.img_path" alt="@context.icon_name" />
+                                        <p class="title">@context.icon_name</p>
+                                    </div>
+                                </div>
+                                </a>
+                            </Template>
+                            <FooterTemplate>
+                                <div class="footer-note">ทั้งหมด : @IconSetList.Count().ToString()</div>
+                            </FooterTemplate>
+                        </TelerikListView>
+                    </div>
+                </div>
+            }
+
+            </WindowContent>
+        </TelerikWindow>
+                <TelerikDialog @bind-Visible="@dialog_Visible" Class="col-2" ShowCloseButton="false" Title="">
+    <DialogContent>
+        <div class="text-center">
+            @if (Error_dialog == "error")
+            {
+                    <i style="color:#f27474;" class="fa-regular fa-circle-xmark fa-3x"></i>
+                }else {
+                    <i style="color:#37b400;" class="fa-regular fa-circle-check fa-3x"></i>
+                }
+                <br /><br />
+        <span style="text-align: center;">@Caption_dialog</span>
+        </div>
+    </DialogContent>
+    <DialogButtons>
+        <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" OnClick="@ConfirmSave">ตกลง</TelerikButton>
+        @*<TelerikButton OnClick="@(() => { dialog_Visible = false; })">No</TelerikButton>*@
+        @*<TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" OnClick="@(() => { dialog_Visible = false; })">OK</TelerikButton>*@
+    </DialogButtons>
+</TelerikDialog>
+
+    <TelerikDialog @bind-Visible="@dialog_images_Visible" Class="col-2" ShowCloseButton="false" Title="">
+        <DialogContent>
+            <div class="text-center">
+                @if (Error_dialog == "error")
+                {
+                    <i style="color:#f27474;" class="fa-regular fa-circle-xmark fa-3x"></i>
+                }
+                else
+                {
+                    <i style="color:#37b400;" class="fa-regular fa-circle-check fa-3x"></i>
+                }
+                <br /><br />
+                <span style="text-align: center;">@Caption_dialog</span>
+            </div>
+        </DialogContent>
+        <DialogButtons>
+            <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" @onclick="@(() => ConfirmImage())">ตกลง</TelerikButton>
+            <TelerikButton OnClick="@(() => { dialog_images_Visible = false; })">ยกเลิก</TelerikButton>
+        </DialogButtons>
+    </TelerikDialog>
+
+    <div class="col-md-10 col-sm-12 col-12 mx-auto pb-3">
+        <div class="row">
+            <div class="col-md-6 col-12 pt-2">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                           @onclick="@Back" Class="px-3" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    <span style="font-size: medium;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+                </TelerikButton>
+            </div>
+            <div class="col-md-6 col-12 pt-2 text-end">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                           @onclick="@NewDoc" Class="px-3"
+                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                    <i class="fa-solid fa-file fa-lg"></i>&nbsp; เพิ่มหมวดหมู่ของข้อมูล
+                </TelerikButton>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+                <TelerikTextBox PlaceHolder="คำค้นหา" FillMode="@(ThemeConstants.TextBox.FillMode.Outline)" ValueChanged="@OnTextChanged_Search"></TelerikTextBox>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-12">
+                <TelerikGrid Data=@DocList
+                         @ref="@grd"
+                         Pageable="true"
+                         Groupable="false"
+                         Sortable="true"
+                         Resizable="true"
+                         Reorderable="true"
+                         PageSize="30"
+                         Navigable="true"
+                         RowDraggable="true"
+                         OnRowDrop="@((GridRowDropEventArgs<vw_api_cate> args) => ReOrder(args))">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_api_cate.cate_id)" Title="แก้ไข" Editable="false" Width="90px">
+                            <Template>
+                                @{
+                                var data = context as vw_api_cate;
+                                <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa-solid fa-pen-to-square" style="font-size:20px"></i></button>
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field="@nameof(vw_api_cate.cate_id)" Title="รหัสหมวดหมู่ของข้อมูล" Width="190px" />
+                    <GridColumn Field="@nameof(vw_api_cate.cate_name)" Title="ชื่อหมวดหมู่ของข้อมูล" Width="220px" />
+                    <GridColumn Field="@nameof(vw_api_cate.filename)" Title="ชื่อไฟล์" Width="180px" />
+                    <GridColumn Field="@nameof(vw_api_cate.sort)" Title="เรียงลำดับ" Width="170px" />
+                    @if (isShowDelete) {
+                        <GridColumn Title="ลบ" Editable="false" Width="75px">
+                            <Template>
+                                @{
+                                    var data = context as vw_api_cate;
+                                    <div class="text-center">
+                                    <button class="btn btn-sm" @onclick="@(() => DeleteLine(data))"><i class="fa-solid fa-trash" style="font-size:20px"></i>  </button>
+                                    </div>
+                                }
+                            </Template>
+                        </GridColumn>
+                    }
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+
+</div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    private bool isLoading = false;
+    private bool isUploading = false;
+    bool collapse1Visible = true;
+
+    string Caption = "";
+    public bool isPopupMain { get; set; } = false;
+
+    //dialog
+    private bool dialog_Visible { get; set; } = false;
+    string Caption_dialog = "";
+    string Error_dialog = "";
+
+    //dialog image
+    private bool dialog_images_Visible { get; set; } = false;
+    string iconid = "";
+    string fileid = "";
+    private bool isShowIconSet = false;
+    IEnumerable<vw_icon_set> IconSetList;
+
+    string menuCaption = "";
+    private bool isShowDelete = true;
+
+    string SearchText = "";
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+
+    public int Sort { get; set; } 
+
+    public TelerikGrid<vw_api_cate> grd { get; set; }
+    IEnumerable<vw_api_cate> DocList;
+
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public TelerikGrid<vw_xfile_ref> TrFileGrid { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+        await Task.Run(LoadGrdApiCate);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_apiCateService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_CateID);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _apiCateService.DocSet = await _apiCateService.GetDocSet(docid);
+                } else {
+                    _apiCateService.DocSet = ApiCateService.NewTransaction();
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+    }
+
+    protected async Task LoadData() {
+        BindData();
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "432");
+        menuCaption = menu.menu_name;
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "432").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsDelete)) {
+            isShowDelete = true;
+        }
+    }
+
+    async Task LoadGrdApiCate() {
+        DocList = await _apiCateService.ListDoc(SearchText);
+        grd?.Rebind();
+    }
+
+    async Task SearchAction() {
+        await Task.Run(LoadGrdApiCate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void BindData() {
+        var h = _apiCateService.DocSet.head;
+        if (!string.IsNullOrEmpty(h.cate_id)) {
+            Sort = h.sort;
+        }else {
+            Sort = await _docCateService.GenSort();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    bool ValidData() {
+        var h = _apiCateService.DocSet.head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        //if (cateid == "") {
+        //    Errmsg = "!! ระบุ รหัสหมวดหมู่";
+        //    isvalid = false;
+        //}
+
+        if (h.cate_name == "") {
+            Errmsg = "ระบุ ชื่อหมวดหมู่";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            //Swal.FireAsync("", Errmsg, "error");
+            Caption_dialog = Errmsg;
+            Error_dialog = "error";
+            dialog_Visible = true;
+        }
+        return isvalid;
+    }
+
+    protected async Task<bool> PrepairDataSave()
+    {
+        var h = _apiCateService.DocSet.head;
+
+        bool isnew = h.cate_id == "" ? true : false;
+        if (isnew)
+        {
+            if (string.IsNullOrEmpty(h.cate_id))
+            {
+                List<string>? list_docid = await Task.Run(() => _iDRuunerService.GetNewIDV2("APICATE", "DPM", "", DateTime.Now.Date, true, "th"));
+                h.cate_id = list_docid[1];
+            }
+        }
+
+        h.sort = Sort;
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = _apiCateService.DocSet.head;
+        var isnew = await Task.Run(() => PrepairDataSave());
+        string strPayload = JsonSerializer.Serialize(_apiCateService.DocSet);
+        string url = $"api/ApiCate/SaveApiCate";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                //await Swal.FireAsync("", r.Message1, "error");
+                Caption_dialog = r.Message1;
+                Error_dialog = "error";
+                dialog_Visible = true;
+            } else {
+                _apiCateService.DocSet = await _apiCateService.GetDocSet(h.cate_id);
+                await sessionStorage.SetItemAsync(Globals.ActiveID_CateID, h.cate_id);
+                if (isnew)
+                {
+                    var rs = await _logTranService.CreateTransLog(_apiCateService.DocSet.head.cate_id,login.LogInInfo.CurrentUser, "หมวดหมู่ของข้อมูล", "เพิ่มหมวดหมู่ของข้อมูล");
+                }else
+                {
+                    var rs = await _logTranService.CreateTransLog(_apiCateService.DocSet.head.cate_id,login.LogInInfo.CurrentUser, "หมวดหมู่ของข้อมูล", "แก้ไขหมวดหมู่ของข้อมูล");
+                }
+
+                BindData();
+                Caption_dialog = "บันทึกข้อมูลสำเร็จ";
+                Error_dialog = "success";
+                dialog_Visible = true;
+                //await Task.Run(LoadData);
+                //await Task.Run(LoadGrdApiCate);
+                //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                await InvokeAsync(StateHasChanged); 
+            }
+        }
+    }
+
+    public async void ConfirmSave()
+    {
+        dialog_Visible = false;
+        isPopupMain = false;
+        await Task.Run(LoadGrdApiCate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+     // SelectImage
+    async void SelectImage(vw_icon_set data) {
+        dialog_images_Visible = true;
+        iconid = data.icon_id;
+        fileid = data.file_id;
+        Caption_dialog = "เลือกภาพนี้เพื่ออัพโหลด";
+        Error_dialog = "success";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void ConfirmImage()
+    {
+        string user = login.LogInInfo.CurrentUser;
+        var h = _apiCateService.DocSet.head;
+
+        var datafile = await Task.Run(() => _filego.GetFileInBytePostgres("DPM","","ICON_CATEGORY",iconid));
+        var file = await Task.Run(() => _filego.GetFileIdPostgres("DPM","","ICON_CATEGORY",iconid));
+
+        upload_file = new List<FilesInfo>();
+        var nfile = await _filego.NewFilesInfoPostgres("API_CATEGORY","DPM","",h.cate_id);
+        nfile.data = Convert.ToBase64String(datafile.data);
+        nfile.file_type = file.filetype;
+        nfile.fileName = file.filename;
+        upload_file.Add(nfile);
+
+        if (_apiCateService.DocSet.files.Count() > 0)
+        {
+            var rr = await Task.Run(async () => _filego.DeleteFileByFileIdPostgres("DPM", "", "API_CATEGORY", h.cate_id,_apiCateService.DocSet.files.FirstOrDefault().file_id,user));
+        }
+
+        var data = await _filego.SaveToFileGo(upload_file, user);
+        _apiCateService.DocSet = await _apiCateService.GetDocSet(h.cate_id);
+
+        iconid = "";
+        fileid = "";
+        dialog_images_Visible = false;
+        isShowIconSet = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadGrdIconSet() {
+        IconSetList = await _iconSetService.ListDoc("");
+    }
+
+    async void BtnSelectIcon()
+    {
+        await Task.Run(LoadGrdIconSet);
+        isShowIconSet = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void CloseSelectIcon() {
+        isShowIconSet = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // end SelectImage
+
+    public async void OnClose() {
+        isPopupMain = false;
+        await Task.Run(LoadGrdApiCate);
+        await InvokeAsync(StateHasChanged); 
+    }
+
+    public async void OnTextChanged_Search(object Search) {
+        if (Search != null) {
+            SearchText = Search.ToString();
+            await Task.Run(() => SearchAction());
+        }else {
+            SearchText = "";
+            await Task.Run(() => SearchAction());
+        }
+        await InvokeAsync(StateHasChanged); 
+    }
+
+    async void Edit(vw_api_cate data) {
+        Caption = "แก้ไขเอกสาร";
+        isPopupMain = true;
+        _apiCateService.DocSet = await _apiCateService.GetDocSet(data.cate_id);
+        BindData();
+        //nav.NavigateTo($"Master/MasterTypeDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void DeleteLine(vw_api_cate data) {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบหมวดหมู่ของข้อมูล",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value)) {
+            return;
+        }
+
+        var rs = await _apiCateService.DeleteDoc(data.cate_id);
+        if (rs.Result == "ok") {
+            var r = await _logTranService.CreateTransLog(_apiCateService.DocSet.head.cate_id,login.LogInInfo.CurrentUser, "หมวดหมู่ของข้อมูล", "ลบหมวดหมู่ของข้อมูล");
+            grd?.Rebind();
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+        await Task.Run(LoadGrdApiCate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task NewDoc() {
+        Caption = "เพิ่มเอกสาร";
+        isPopupMain = true;
+
+        await sessionStorage.RemoveItemAsync(Globals.ActiveID_CateID);
+        _apiCateService.DocSet = ApiCateService.NewTransaction();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back() {
+        nav.NavigateTo($"Menu/MenuSIDE/400", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+        #region upload file
+
+    public async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+
+        //if (_apiCateService.DocSet.files.Count() > 0)
+        //{
+        //    Caption_dialog = "กรุณา ลบรูปภาพก่อน";
+        //    Error_dialog = "error";
+        //    dialog_Visible = true;
+        //    return;
+        //}
+
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        var h = _apiCateService.DocSet.head;
+        if (string.IsNullOrEmpty(h.cate_id)) {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+        string user = login.LogInInfo.CurrentUser;
+        try {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1)) {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var nfile = await _filego.NewFilesInfoPostgres("API_CATEGORY", "DPM", "", h.cate_id);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+            }
+
+            if (_apiCateService.DocSet.files.Count() > 0)
+            {
+                var rr = await Task.Run(async () => _filego.DeleteFileByFileIdPostgres("DPM", "", "API_CATEGORY", h.cate_id, _apiCateService.DocSet.files.FirstOrDefault().file_id, user));
+            }
+            var data = await _filego.SaveToFileGo(upload_file, user);
+
+            _apiCateService.DocSet = await _apiCateService.GetDocSet(h.cate_id);
+            TrFileGrid?.Rebind();
+        } catch (Exception ex) {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    public async void DownloadFIle(vw_xfile_ref data) {
+        try {
+            var h = _apiCateService.DocSet.head;
+            string file_url = await _filego.GetFileUrlPostgres(data.file_id);
+            if (!string.IsNullOrEmpty(file_url)) {
+                nav.NavigateTo(file_url, true);
+            }
+        } catch {
+
+        }
+    }
+
+    public async Task OnDeleteFile(vw_xfile_ref data) {
+        try {
+            //SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+            //        Title = "Warning",
+            //        Text = $"หากยืนยันการลบ จะไม่สามารถนำไฟล์กลับมาได้อีก",
+            //        ShowCancelButton = true,
+            //        ConfirmButtonText = "Yes",
+            //        CancelButtonText = "No"
+            //    });
+            //if (string.IsNullOrEmpty(result.Value)) {
+            //    return;
+            //}
+
+            var h = _apiCateService.DocSet.head;
+            var rr = await Task.Run(() => _filego.DeleteFileByFileIdPostgres("DPM", "", "API_CATEGORY", h.cate_id, data.file_id, login.LogInInfo.CurrentUser));
+            if (rr.Result == "ok") {
+                _apiCateService.DocSet = await _apiCateService.GetLatestFiles(_apiCateService.DocSet);
+                await InvokeAsync(StateHasChanged);
+            } else {
+                await Swal.FireAsync("Error", rr.Message1, "info");
+            }
+        } catch {
+        } finally {
+
+        }
+    }
+
+    #endregion
+
+    private async void ReOrder(GridRowDropEventArgs<vw_api_cate> args)
+    {
+        var new_id = args.Item.cate_id;
+        var new_sort = args.Item.sort;
+        var old_id = args.DestinationItem.cate_id;
+        var old_sort = args.DestinationItem.sort;
+
+        if (old_sort > new_sort)
+        {
+            var reNumber_item = DocList.Where(o => o.sort <= old_sort && o.sort > new_sort && o.cate_id != new_id).ToList();
+            foreach (var i in reNumber_item)
+            {
+                i.sort = i.sort - 1;
+            }
+            var get_new = DocList.Where(o => o.cate_id == new_id).FirstOrDefault();
+            get_new.sort = old_sort;
+            //var get_old = ListNewsCateHead.Where(o => o.CateID == old.CateID).FirstOrDefault();
+            //get_old.Sort = get_old.Sort - 1;
+
+        }
+        else
+        {
+            var reNumber_item = DocList.Where(o => o.sort >= old_sort && o.sort < new_sort && o.cate_id != new_id).ToList();
+            foreach (var i in reNumber_item)
+            {
+                i.sort = i.sort + 1;
+            }
+
+            var get_new = DocList.Where(o => o.cate_id == new_id).FirstOrDefault();
+            get_new.sort = old_sort;
+        }
+
+        DocList = DocList.OrderBy(o => o.cate_id).ThenBy(o => o.sort).ToList();
+
+        try
+        {
+            var rs = await Task.Run(()=> _apiCateService.ReOrder(ApiCateService.ConvertViewToHead(DocList.ToList())));
+        }
+        catch (Exception ex)
+        {
+
+        }
+        await Task.Run(LoadGrdApiCate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,133 @@
+﻿@page "/Menu/MainMenu"
+
+@*
+@using Robot.Data.DA
+@using System.Threading.Tasks;
+@using Data.DA.Login
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Tools
+
+*@
+@*
+@inject IHostingEnvironment hostingEnvironment
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+*@
+
+
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <Breadcrumb Mode="BreadcrumbMode.Auto">
+            <BreadcrumbItem>
+                <BreadcrumbLink To="">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+                <BreadcrumbLink To="Menu/MainMenu">Master</BreadcrumbLink>
+            </BreadcrumbItem>
+        </Breadcrumb>
+
+        <div class="row pb-3">
+            <div class="col-12">
+                <div class="row">
+                    @if (login.CanOpen(xlogin, "176"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-6 p-1">
+                            <Button @onclick="@ToNewsCate" Color="Color.Light" Class="w-100">
+                                <div><i class="fas fa-layer-group fa-3x"></i>&nbsp;</div>
+                                <h3>@LogInService.GetMenuInfo(xlogin,"176").Desc1</h3>
+                                <span>
+                                    แสดง เพิ่ม แก้ไข การตั้งค่าหมวดข่าว
+                                </span>
+                            </Button>
+                        </div>
+                    }
+
+@*                    @if (login.CanOpen(xlogin, "173"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-6 p-1">
+                            <Button @onclick="@ToNewsCate" Color="Color.Light" Class="w-100">
+                                <div><i class="fas fa-envelope-open-text fa-3x"></i>&nbsp;</div>
+                                <h3>@LogInService.GetMenuInfo(xlogin,"173").Desc1</h3>
+                                <span>
+                                    แสดง เพิ่ม แก้ไข ข้อมูลลางาน
+                                </span>
+                            </Button>
+                        </div>
+                    }*@
+
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+    bool firstRender = true;
+    bool isLoading = true;
+
+    //   protected override async Task OnParametersSetAsync() {
+    //    if (!await Task.Run(() => login.CheckLogin())) {
+    //        nav.NavigateTo("Login", true);
+    //    }
+    //}
+ 
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri); 
+                      await Task.Run(()=>login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+ 
+
+
+
+    void LoadData() {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl() {
+
+    }
+
+    void ToNewsCate() {
+        nav.NavigateTo("NewCate/NewCateDetail", false);
+    }
+
+}

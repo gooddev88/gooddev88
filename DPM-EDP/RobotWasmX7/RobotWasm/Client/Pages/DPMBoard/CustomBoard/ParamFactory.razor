@@ -1,0 +1,47 @@
+﻿@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Param
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets
+
+
+@switch (WidgetID) {
+    case "wg101":
+    case "wg102":
+    case "wg103":
+    case "wg104":
+    case "wg105":
+    case "wg106":
+    case "wg107":
+    case "wg108":
+    case "wg109":
+    case "wg110":
+    case "wg111":
+    case "wg112":
+    case "wg113":
+    case "wg114":
+    case "wg116":
+    case "wg117":
+    case "wg118":
+    case "wg119":
+        <ParamGroup10 WidgetID="@WidgetID" BoardID="@BoardID" WidgetName="@WidgetName" OnReturnData="ReturnDataHandler"></ParamGroup10>
+        break;
+    case "wg507":
+        <ParamGroup50 WidgetID="@WidgetID" BoardID="@BoardID" WidgetName="@WidgetName" OnReturnData="ReturnDataHandler"></ParamGroup50>
+        break;
+    default:
+        break;
+}
+
+
+@code {
+
+    [Parameter] public string WidgetID { get; set; }
+    [Parameter] public string WidgetName { get; set; }
+    [Parameter] public string BoardID { get; set; }
+
+    [Parameter] public EventCallback<string> OnReturnDataToBase { get; set; }
+
+
+    void ReturnDataHandler(string action) {
+        OnReturnDataToBase.InvokeAsync(action);
+    }
+
+}

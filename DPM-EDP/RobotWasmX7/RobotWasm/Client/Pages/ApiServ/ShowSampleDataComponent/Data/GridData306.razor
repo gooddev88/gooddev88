@@ -1,0 +1,189 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.Data
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+        .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay{
+        position:fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom:0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DATA306</h4>
+        <h5>ข่าวล่าสุด 100 ลำดับแรก</h5>
+    </div>
+</div>
+<hr />
+
+        <TelerikLoaderContainer Visible="@isLoading">
+            <Template>
+                <div class="lds-dual-ring"></div>
+            </Template>
+        </TelerikLoaderContainer>
+
+    <div class="row">
+        <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+            </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-12">
+              <TelerikGrid Data="@ndata"
+                             Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                        <GridToolBar>
+                            <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                            <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                            <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                            <GridSearchBox />
+                        </GridToolBar>
+                        <GridExport>
+                            <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                        </GridExport>
+                        <GridColumns>
+                <GridColumn Field="@(nameof(Data306Set.DataRow.id))" Title="id" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.news_id))" Title="news_id" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.title))" Title="title" Width="300"  />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.detail))" Title="detail" Width="300" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.pic_link))" Title="pic_link" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.news_link))" Title="news_link" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.news_cate))" Title="news_cate" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.type))" Title="type" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.source))" Title="source" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.tag))" Title="tag" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.like_count))" Title="like_count" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.n_timestamp))" Title="n_timestamp" Width="150" />
+                
+                <GridColumn Field="@(nameof(Data306Set.DataRow.news_cate_logo))" Title="news_cate_logo" />
+                <GridColumn Field="@(nameof(Data306Set.DataRow.news_order_logo))" Title="news_order_logo" />
+                 
+                        </GridColumns>
+                    </TelerikGrid>
+        </div>
+    </div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public Data306Set.DocSet data_set { get; set; }
+    public List<Data306Set.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+     //   if (data_set != null) {
+     //       ndata = data_set.rows.Where(o =>
+     //    (
+     //        o.browser.ToLower().Contains(search)
+     //        || search == ""
+     //    )
+     //).ToList();
+     //   }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=data306");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<Data306Set.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                        isLoading = false;
+                return;
+            }
+            data_set = (Data306Set.DocSet)query.Result;
+            ndata = data_set.rows;
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

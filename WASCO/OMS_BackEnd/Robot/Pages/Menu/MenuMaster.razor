@@ -1,0 +1,160 @@
+﻿@page "/Menu/MenuMaster/{menugroup}"
+
+@*
+    @using Robot.Data.DA
+    @using System.Threading.Tasks;
+    @using Data.DA.Login
+    @using Microsoft.AspNetCore.Hosting;
+    @using Blazored.LocalStorage
+    @using Tools
+
+*@
+@*
+    @inject IHostingEnvironment hostingEnvironment
+    @inject LogInService login
+    @inject IJSRuntime JsRuntime
+    @inject NavigationManager nav
+    @inject ILocalStorageService localStorage
+    @inject PageHistoryState pageHistory
+
+*@
+
+<style>
+
+    .btn-light {
+        color: #000;
+        background-color: white;
+        border-color: black;
+    }
+
+        .btn-light:hover {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+
+        .btn-light:focus {
+            color: #000;
+            background-color: #009ef730 !important;
+            border-color: #00a3ff !important;
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <Breadcrumb Mode="BreadcrumbMode.Auto" Class="pt-2">
+            @*    <BreadcrumbItem>
+                <BreadcrumbLink To="Menu/MainMenu">Home</BreadcrumbLink>
+                </BreadcrumbItem>*@
+            <BreadcrumbItem>
+                <BreadcrumbLink Active To="Dashboard/PersonBoard">@menuCaption</BreadcrumbLink>
+            </BreadcrumbItem>
+        </Breadcrumb>
+
+        <div class="row pb-3">
+            <div class="col-12">
+                <div class="row">
+
+                    @foreach (var m in menus) {
+                        @if (login.CanOpen(xlogin, m.MenuID)) {
+                            <div class="col-md-3 col-sm-6 col-6 p-1">
+                                <a href="@m.Url" class="w-100 btn btn-light">
+                                    <div> <i class="@m.Icon" style="font-size:2rem"></i> </div>
+                                    <h5>@m.Name</h5>
+                                    <span style="font-size:small">
+                                        @m.Desc2
+                                    </span>
+                                </a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter] public string menugroup { get; set; }
+    string menuCaption = "";
+    
+    LogInService.LoginSet xlogin = LogInService.NewLoginSet();
+    bool firstRender = true;
+    bool isLoading = true;
+    List<UserMenu> menus = new List<UserMenu>();
+
+    protected override async Task OnInitializedAsync() {
+      
+        await Task.Run(() => login.CheckLogin());
+        xlogin = login.LoginInfo;
+        menus = await Task.Run(() => LogInService.ListMenuInParent(login.LoginInfo, menugroup));
+       await GetMenuGroupInfo();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() {
+        string uri = nav.Uri;
+        pageHistory.AddPageToHistory(uri);
+        isLoading = true;
+        LoadData();
+    }
+    async Task GetMenuGroupInfo(){
+          menuCaption = LogInService.GetMenuGroup(login.LoginInfo, menugroup).Name;
+    }
+    void LoadData() {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl() {
+
+    }
+
+    //void ToCustomer() {
+    //    nav.NavigateTo("Master/Customer/CustomerList", false);
+    //}
+
+    //void ToItem() {
+    //    nav.NavigateTo("Master/Item/ItemDetail", false);
+    //}
+
+    //void ToCompany() {
+    //    nav.NavigateTo("Master/Company/CompanyList", false);
+    //}
+
+    //void ToMasterType() {
+    //    nav.NavigateTo("Master/MasterType/MasterTypeList", false);
+    //}
+
+    //void ToUser() {
+    //    nav.NavigateTo("Master/User/UserList", false);
+    //}
+
+    //void ToUserGroup() {
+    //    nav.NavigateTo("Master/UserGroup/UserGroupList", false);
+    //}
+
+    //void ToNewCate() {
+    //    nav.NavigateTo("NewCate/NewCateDetail", false);
+    //}
+
+    //void ToLeave() {
+    //    nav.NavigateTo("Leave/UserLeaveList", false);
+    //}
+
+}

@@ -1,0 +1,92 @@
+﻿@*@page "/"*@
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Maps
+@using Telerik.Blazor.Components
+<PageTitle>Index</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
+<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
+<MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
+
+<MudLink Href="Sample/Syncfusion/SyncMap">Syncfusion Map</MudLink><br />
+<MudLink Href="Sample/Tlk/TMapOpenGeoJson">Telerik Geojson Map</MudLink><br />
+<MudLink Href="Sample/Tlk/TMapOpenStreet">Telerik Street Map</MudLink><br />
+<MudLink Href="Sample/Tlk/TMapOpenStreet">JJkk</MudLink><br />
+<TelerikRootComponent>
+<TelerikChart>
+    <Telerik.Blazor.Components.ChartTooltip Visible="true"></Telerik.Blazor.Components.ChartTooltip>
+    <ChartTitle Text="Site Visitors Stats"></ChartTitle>
+    <Telerik.Blazor.Components.ChartLegend Visible="false"></Telerik.Blazor.Components.ChartLegend>
+
+    <Telerik.Blazor.Components.ChartSeriesItems>
+        <Telerik.Blazor.Components.ChartSeries Type="Telerik.Blazor.ChartSeriesType.Bar" Name="Total Visits" Data="@Series1Data">
+        </Telerik.Blazor.Components.ChartSeries>
+        <Telerik.Blazor.Components.ChartSeries Type="Telerik.Blazor.ChartSeriesType.Bar" Name="Unique visitors" Data="@Series2Data">
+        </Telerik.Blazor.Components.ChartSeries>
+    </Telerik.Blazor.Components.ChartSeriesItems>
+
+    <Telerik.Blazor.Components.ChartValueAxes>
+        <Telerik.Blazor.Components.ChartValueAxis Max="140000"></Telerik.Blazor.Components.ChartValueAxis>
+    </Telerik.Blazor.Components.ChartValueAxes>
+
+    <Telerik.Blazor.Components.ChartCategoryAxes>
+        <ChartCategoryAxis Categories="@Categories"></ChartCategoryAxis>
+    </Telerik.Blazor.Components.ChartCategoryAxes>
+
+</TelerikChart>
+
+</TelerikRootComponent>
+
+
+<SfMaps>
+    <MapsTitleSettings Text="Members of the UN Security Council"></MapsTitleSettings>
+    @* To add legend *@
+    <MapsLegendSettings Visible="true"></MapsLegendSettings>
+    <MapsLayers>
+        <MapsLayer ShapeData='new {dataOptions= "https://cdn.syncfusion.com/maps/map-data/world-map.json"}'
+                   ShapePropertyPath='new string[] {"name"}'
+                   DataSource="SecurityCouncilDetails"
+                   ShapeDataPath="Name" TValue="UNCouncilCountry">
+            <MapsDataLabelSettings Visible="true" LabelPath="Name" IntersectionAction="IntersectAction.Hide"></MapsDataLabelSettings>
+            <MapsShapeSettings Fill="#E5E5E5" ColorValuePath="Membership">
+                <MapsShapeColorMappings>
+                    <MapsShapeColorMapping Value="Permanent" Color='new string[] {"#EDB46F"}'></MapsShapeColorMapping>
+                    <MapsShapeColorMapping Value="Non-Permanent" Color='new string[] {"#F1931B"}'></MapsShapeColorMapping>
+                </MapsShapeColorMappings>
+            </MapsShapeSettings>
+        </MapsLayer>
+    </MapsLayers>
+</SfMaps>
+
+
+@code{
+            public List<object> Series1Data = new List<object>() { 56000, 63000, 74000, 91000, 117000, 138000 };
+    public List<object> Series2Data = new List<object>() { 52000, 34000, 23000, 48000, 67000, 83000 };
+   
+    
+    
+    public string[] Categories = new string[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+      public List<UNCouncilCountry> SecurityCouncilDetails = new List<UNCouncilCountry>{
+         new UNCouncilCountry { Name= "China", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "France", Membership= "Permanent" },
+         new UNCouncilCountry { Name= "Russia", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "Kazakhstan", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Poland", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Sweden", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "United Kingdom", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "United States", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "Bolivia", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Eq. Guinea", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Ethiopia", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Côte d Ivoire", Membership= "Permanent"},
+         new UNCouncilCountry { Name= "Kuwait", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Netherlands", Membership= "Non-Permanent"},
+         new UNCouncilCountry { Name= "Peru", Membership= "Non-Permanent"}
+    };
+
+    public class UNCouncilCountry
+    {
+        public string Name { get; set; }
+        public string Membership { get; set; }
+    };
+}

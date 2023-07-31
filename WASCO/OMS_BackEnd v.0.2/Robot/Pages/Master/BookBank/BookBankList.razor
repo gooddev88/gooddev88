@@ -1,0 +1,185 @@
+﻿@page "/Master/BookBank/BookBankList"
+@inject BookBankService bookbankService
+
+<style>
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-md-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Menu/MenuMaster/MASTER">@menuGroupCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Master/BookBank/BookBankList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+                <div class="col-md-6">
+                    @if (isShowNew) {
+                        <div class="col-6" style="text-align:right;">
+                            <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                                <i class="fas fa-plus-circle"></i>&nbsp;
+                                เพิ่มใหม่
+                            </Button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion>
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row">
+                        <div class="col-4">
+                           <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                                        <TelerikCheckBox Id="chkIsActive" @bind-Value="@Filter.ShowNotActive"></TelerikCheckBox>
+                                <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                                    </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+                                <TelerikGrid Data=@DocList
+                             ScrollMode="@GridScrollMode.Virtual"
+                             Height="600px" RowHeight="40" PageSize="30"
+                             Resizable=true
+                             Reorderable=true
+                             Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+                    <GridToolBarTemplate>
+                        <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBarTemplate>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(BookBankInfo.BookID)" Title="แก้ไข" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as BookBankInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(BookBankInfo.BookID)" Title="เลขบัญชี" Width="150px" />
+                        <GridColumn Field="@nameof(BookBankInfo.BookDesc)" Title="รายละเอียดบัญชี" Width="300px" />
+                        <GridColumn Field="@nameof(BookBankInfo.BankCode)" Title="ชื่อย่อธนาคาร" Width="120px" />
+                        <GridColumn Field="@nameof(BookBankInfo.BankName)" Title="ชื่อธนาคาร" Width="200px" />
+                        <GridColumn Field="@nameof(BookBankInfo.BranchName)" Title="สาขา" Width="130px" />
+                        <GridColumn Field=@nameof(BookBankInfo.Sort) Title="ลำดับ" DisplayFormat="{0:N0}" Width="150px" />
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool ExportAllPages { get; set; } = true;
+
+    BookBankService.I_BookBankFiterSet Filter = BookBankService.NewFilterSet();
+    IEnumerable<BookBankInfo> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() {
+
+    }
+
+    async void LoadData() {
+        SetDefaultFilter();
+        DocList = BookBankService.ListDoc(Filter);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void SetDefaultFilter() {
+        Filter.RCom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+    }
+
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "167");
+        menuCaption = menu.Name;
+             menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "167")) {//167 บัญชีธนาคาร
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "167")) {
+            isShowNew = false;
+        }
+    }
+    async void Edit(BookBankInfo select_data) {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+        await sessionStorage.SetItemAsync(CompanyService.sessionActiveId, select_data.BookID);
+        isLoading = true;
+        bookbankService.DocSet = bookbankService.GetDocSet(select_data.BookID, rcom, com);
+        nav.NavigateTo($"Master/BookBank/BookBankDetail", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async void NewDoc() {
+        var u = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(CompanyService.sessionActiveId);
+        bookbankService.DocSet = BookBankService.NewTransaction(u.CurrentRootCompany.CompanyID, u.CurrentCompany.CompanyID);
+        
+        nav.NavigateTo($"Master/BookBank/BookBankDetail", false);
+    }
+}

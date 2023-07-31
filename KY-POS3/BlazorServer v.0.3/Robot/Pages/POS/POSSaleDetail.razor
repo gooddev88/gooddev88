@@ -1,0 +1,1416 @@
+﻿@page "/POS/POSSaleDetail/{pagecomefrom}"
+
+
+<style>
+
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+
+    .w-33 {
+        width: 33%;
+    }
+
+    .w-40 {
+        width: 40%;
+    }
+
+    .font-small {
+        font-size: small;
+    }
+
+    .font-DisAmtPer {
+        font-size: 0.840rem;
+    }
+
+    .dxbs-data-row {
+        font-size: smaller;
+    }
+
+    .table {
+        font-size: smaller;
+    }
+
+    .my-text-center {
+        text-align: center;
+    }
+
+    .textmenu {
+        display: block;
+        /* width: 100px;*/
+        text-align: center;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .myPopUp > .modal-content {
+        min-width: 1200px;
+        left: 50%;
+        transform: translate(-50%);
+    }
+
+</style>
+<SpinLoader IsLoading="@isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="pb-2" hidden="@isdivmain">
+
+            <div class="row pb-2">
+                <div class="col-12">
+                    <div class="card rounded-0">
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-1 text-center">
+                                    <a ID="btnhome" style="text-decoration: none;cursor:pointer" @onclick="@GoRootApp">
+                                        <img src="/SALE/assets/img/home-pos.png" style="width: 40px;" /><br />
+                                        <span style="font-size:small">Home</span>
+                                    </a>&nbsp;
+                                </div>
+                                <div class="col-1 text-center " hidden="hidden">
+                                    <a ID="btnMore" style="text-decoration: none;cursor:pointer" @onclick="@GoMore">
+                                        <img src="/SALE/assets/img/more-pos.png" style="width: 40px;" /><br />
+                                        <span style="font-size:small">เพิ่มเติม</span>
+                                    </a>&nbsp;
+                                </div>
+                                <div class="col-1 text-center">
+                                    <a ID="btnnew" style="text-decoration: none;cursor:pointer" @onclick="@OnNew">
+                                        <img src="/SALE/assets/img/New-pos.png" style="width: 40px;" /><br />
+                                        <span style="font-size:small">รายการใหม่</span>
+                                    </a>&nbsp;
+                                </div>
+                                <div class="col-1 text-center">
+                                    <a ID="btnCheckBill" style="text-decoration: none;cursor:pointer" @onclick="@GoCheckBill">
+                                        <img src="/SALE/assets/img/bill-pos.png" style="width: 40px;" /><br />
+                                        <span style="font-size:small">เช็คบิล</span>
+                                    </a>&nbsp;
+                                </div>
+
+                                <div class="col-1 text-center">
+                                    <a ID="btnMore" style="text-decoration: none;cursor:pointer" @onclick="@GoBillHistory">
+                                        <img src="/SALE/assets/img/more-pos.png" style="width: 40px;" /><br />
+                                        <span style="font-size:small">ประวัติบิล</span>
+                                    </a>&nbsp;
+                                </div>
+
+
+
+
+                                <div class="col-8 pt-2 text-end">
+                                    <Dropdown>
+                                        <DropdownToggle Color="Color.Secondary">
+                                            Option
+                                        </DropdownToggle>
+                                        <DropdownMenu>
+                                            @if (@ShowDelete) {
+                                                <DropdownItem onclick="@(async () => await OnDelete())">
+                                                    <img src="/SALE/assets/img/delete-pos.png" alt="" style="width: 40px;" />&nbsp;
+                                                    <span>ยกเลิก</span>
+                                                </DropdownItem>
+                                                <DropdownDivider />
+                                            }
+                                            <DropdownItem @onclick="@ShowHideImageProduct">@showOrHidItemImageCaption</DropdownItem>
+                                            <DropdownItem @onclick="@ShowPOSSaleLog">Log</DropdownItem>
+                                        </DropdownMenu>
+                                    </Dropdown>
+
+
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row pb-1">
+                <div class="col-12">
+                    <div class="card rounded-0">
+                        <div class="card-body pt-2 py-1">
+                            <div class="row">
+                                <div class="col-6">
+                                    <span class="text-center" style="font-size: small;  ">
+                                        @lblCompanyName
+                                    </span><br />
+                                    @if (login.LoginInfo != null) {
+                                        @login.LoginInfo.CurrentUser
+                                    }
+
+                                </div>
+
+                                @if (isShowEditDate) {
+                                    <div class="col-6 text-end pl-0">
+                                        <TelerikDatePicker @bind-Value=@posService.DocSet.Head.BillDate Width="120px"
+                                                       FillMode="@ThemeConstants.TextBox.FillMode.Outline" Format="dd/MM/yyyy">
+                                        </TelerikDatePicker>
+                                        <a @onclick="@(async () => await SaveDate())">
+                                            &nbsp;  <i class="fas fa-check-circle" style="color:green"></i>
+                                        </a>
+
+                                    </div>
+                                } else {
+                                    <div class="col-6 text-end pl-0">
+                                        @if (@posService.DocSet != null) {
+                                            <label style="font-size:medium;">วันที่ : @posService.DocSet.Head.BillDate.ToString("dd/MM/yyyy")</label>
+                                            @if (canchangeDate) {
+                                                <a @onclick="@(async () => await ShowEditDate())">
+
+                                                    &nbsp; <i class="fas fa-calendar-alt" style="color:darkblue"></i>
+                                                </a>
+                                            }
+                                        }
+
+
+                                    </div>
+                                }
+
+                            </div>
+
+                            <div class="row">
+                                <div class="col-2 pr-0">
+                                    <a ID="btnShipTo" @onclick="@OnShipTo">
+                                        @if (@posService.DocSet != null) {
+                                            @switch (@posService.DocSet.Head.ShipToLocID) {
+                                                case "":
+                                                    <img src="/SALE/assets/img/Sale-icon.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "GRAB":
+                                                    <img src="/SALE/assets/img/grab.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "SHOPEE":
+                                                    <img src="/SALE/assets/img/shopee_logo.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "LINEMAN":
+                                                    <img src="/SALE/assets/img/lineman.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "PANDA":
+                                                    <img src="/SALE/assets/img/padda.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "ROBINHOOD":
+                                                    <img src="/SALE/assets/img/robinhood.png" alt="" style="width: 60px;" />
+                                                    break;
+                                                case "ONLINE":
+                                                    <img src="/SALE/assets/img/online.png" alt="" style="width: 60px;" />
+                                                    break;
+
+                                                default:
+                                                    <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 60px;" />
+                                                    break;
+                                            }
+                                        }
+
+                                    </a>
+                                </div>
+                                <div class="col-7 pl-0">
+                                    <label style="color:dimgray; font-size:small;"><i style="color:green;" class="far fa-check-circle fa-lg"></i>&nbsp; @lblOrderID</label><br />
+                                    @if (lblBillID != "") {
+                                        <label style="color: dimgray; font-size: small;"><i style="color:orange;" class="far fa-check-circle fa-lg"></i>&nbsp; @lblBillID</label>
+                                    }
+                                </div>
+                                <div class="col-3 pt-1 text-end">
+                                    <a ID="btnAddTables" runat="server"
+                                       class="btn btn-info px-3"
+                                       @onclick="@AddTables">
+                                        @if (@posService.DocSet != null) {
+                                            <label class="text-white">@posService.DocSet.Head.TableName</label>
+                                        }
+
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* เลือกสินค้า *@
+            <div class="scrollmenu">
+                @if (posService.ItemCate != null) {
+                    @foreach (var m in posService.ItemCate) {
+                        <a @onclick="@(async () => await ItemCateClick(m.ValueTXT))">@m.Description1</a>
+                    }
+                }
+
+
+            </div>
+        </div>
+        <div class="row pt-2" hidden="@isdivpay">
+            <div class="col-11 mx-auto">
+                <div class="card shadow mb-5 rounded">
+                    <div class="card-header pb-2 pt-2">
+                        <div class="row ">
+                            <div class="col-md-6 pt-2 ">
+                                <i class="fas fa-comments-dollar fa-2x"></i>&nbsp;
+                                <label runat="server">ข้อมูลการจ่ายเงิน &nbsp;</label>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row ">
+                            <div class="col-12 mx-auto pt-4 pb-4">
+
+                                <div class="row pb-3 pr-2">
+                                    <label class="col-4 pt-1 text-end">ยอดรวม &nbsp;</label>
+                                    <span class="col-8" style="font-size:larger"><strong> @txtremain_pay &nbsp; ฿  </strong></span>
+                                </div>
+                                <div class="row pb-3">
+                                    <label class="col-4 pt-1 text-end">จ่ายโดย &nbsp;</label>
+
+
+                                    <TelerikComboBox Value="@SelectTenderType"
+                                                     Data="@posService.Tenders"
+                                                     ScrollMode="@DropDownScrollMode.Virtual"
+                                                     ValueField="@(nameof(SelectOption.Value))"
+                                                     TextField="@(nameof(SelectOption.Description))"
+                                                     Width="100%" PageSize="10" ItemHeight="35"
+                                                     ValueChanged="@( (string    data) => SelectedItemChanged(data))"
+                                                     Filterable="true"
+                                                     Size="ThemeConstants.DropDownList.Size.Large"
+                                                     FilterOperator="@StringFilterOperator.Contains">
+                                        <ComboBoxSettings>
+                                            <ComboBoxPopupSettings Width="450px" Height="300px"></ComboBoxPopupSettings>
+                                        </ComboBoxSettings>
+                                       
+                                    </TelerikComboBox>
+
+                                </div>
+
+                                <div class="row pb-1 pr-2">
+                                    <label class="col-4 pt-1 text-end">รับเงิน &nbsp;</label>
+                                    <TelerikTextBox @bind-Value="@txtCustPayAmt"
+                                                    Size="ThemeConstants.DropDownList.Size.Small" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 text-center mx-auto">
+                                        <a ID="btnSubmitPayment" runat="server"
+                                           class="btn btn-success text-white"
+                                           @onclick="@OnSubmitPayment">
+                                            <i class="fas fa-check-circle"></i>&nbsp;&nbsp;
+                                            <span>ตกลง</span>
+                                        </a>
+                                        <a ID="btnPaymentBackToMain" runat="server"
+                                           class="btn btn-danger text-white"
+                                           @onclick="@PaymentBackToMain">
+                                            <i class="far fa-times-circle"></i>&nbsp;&nbsp;
+                                            <span>ปิด</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pb-1" hidden="@isdivselectitem">
+            <div class="col-6 pr-0">
+                <div class="row pb-1" style="margin-right: 0px !important; margin-left: 0px !important;">
+                    <div class="col-12 px-1">
+                        <div class="input-group">
+                 
+                             <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" >
+                            <TelerikButton @onclick="@OnTextChanged" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                            
+ 
+                      
+                            @*   <div class="input-group-append">
+                            <a ID="btnDiscPer" class="btn btn-warning btn-sm" @onclick="@btnDiscPer">
+                            <span>%</span>
+                            </a>
+                            <a ID="btnDiscAmt" class="btn btn-danger btn-sm" @onclick="@btnDiscAmt">
+                            <span>฿</span>
+                            </a>
+                            </div>*@
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row pb-0">
+                    @if (menu.Where(o => o.TypeID != "DISCOUNT").ToList().Count() == 0) {
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-12">
+                                            <span style="font-size:large;color:gray">   ไม่มีรายการสินค้า </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    } else {
+                        @foreach (var l in menu.Where(o => o.TypeID != "DISCOUNT")) {
+                            <div class="col-4">
+                                <a class="btn" style="height: auto; width:100%;" @onclick="@(() => SelectMenuItem(l))">
+                                    <div class="row ">
+                                        <div class="col-12 pl-1 pr-1  text-center">
+                                            @if (isshowproductImage == "1") {
+
+                                                <img src='@l.ImageUrl' alt="" style="width: 150px;"
+                                         onerror="this.src='/sale/assets/img/pear.png'" />
+                                                <br />
+                                                <span style="font-size: 16px; " class="textmenu">@l.Name</span>
+                                                <span style="font-size: 16px; ">@l.Price.ToString("n2") ฿</span>
+                                            } else {
+                                                @*      <div class="card">
+                                    <div class="card-body">*@
+                                                <span style="font-size: 16px; " class="textmenu">@l.Name</span>
+                                                <span style="font-size: 16px; ">@l.Price.ToString("n2") ฿</span>
+                                                <hr />
+                                                @*</div>*@
+                                                @*</div>*@
+                                            }
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    }
+
+                </div>
+
+            </div>
+            <div class="col-6 pl-1">
+                <div class="row pb-1" style="margin-right: 0px !important; margin-left: 0px !important;">
+                    <div class="col-12 px-1">
+                        <div class="input-group">
+                            <TelerikTextBox @bind-Value="@txtDisAmtPer"
+                                            Size="ThemeConstants.DropDownList.Size.Small" />
+
+                            <div class="input-group-append">
+                                <a ID="btnDiscPer" class="btn btn-warning btn-sm" @onclick="@btnDiscPer">
+                                    <span>%</span>
+                                </a>
+                                <a ID="btnDiscAmt" class="btn btn-danger btn-sm" @onclick="@btnDiscAmt">
+                                    <span>฿</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row pt-2 pl-2 pr-2">
+                    <div class="col-12 ">
+                        @if (posService.DocSet != null) {
+                            @foreach (var l in posService.DocSet.Line.Where(o => o.IsLineActive == true && !(o.IsOntopItem && o.Price == 0))) {
+                                <div class="row">
+                                    <div class="col-5">
+                                        <span style="font-size:large"><b> @l.KitchenFinishCount</b></span>
+                                        <img src='@l.KitchenMessageLogo' alt="" />
+                                        <span style="font-size:small"><b> @l.ItemName</b></span>
+                                    </div>
+                                    <div class="col-2 text-end">
+                                        @if (login.LoginInfo.CurrentCompany.PriceTaxCondType == "INC VAT") {
+                                            <span style="font-size: small; margin-top: 5px; ">@l.TotalAmtIncVat.ToString("n2")฿ </span>
+                                        } else {
+                                            <span style="font-size: small; margin-top: 5px; ">@l.TotalAmt.ToString("n2")฿ </span>
+                                        }
+
+                                    </div>
+                                    <div class="col-5 text-end">
+                                        <div class="btn-group" role="group">
+                                            @if (l.ItemTypeID != "DISCOUNT") {
+                                                <a class="btn" @onclick="@(() => OnAddItem(l))">
+                                                    <i class="fas fa-plus-circle fa-lg" style="font-size:20px"></i>
+                                                </a>
+                                                <span style="font-size: medium; margin-top: 5px; "><b> @l.Qty.ToString("n0") </b> </span>
+                                            }
+                                            <a class="btn" @onclick="@(() => OnRemoveItem(l))">
+                                                <i class="fas fa-minus-circle" style="font-size:20px"></i>
+                                            </a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                    </div>
+                </div>
+
+
+                <hr />
+                <div class="row text-end pb-2 pr-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+                    <div class="col-12 px-1">
+                        <h5>
+                            <span style="font-size: 15px">VAT &nbsp;</span>
+                            <label class="badge rounded-pill bg-primary" ID="lblSumVatAmt" Text="0.00">@lblSumVatAmt</label>
+                            <span style="font-size: 15px">&nbsp; บาท</span>
+                            <br />
+                            <span style="font-size: 15px">ยอดรวม VAT &nbsp;</span>
+                            <label class="badge rounded-pill bg-primary" ID="lblSumTotalAmtIncVat" Text="0.00">@lblSumTotalAmtIncVat</label>
+                            <span style="font-size: 15px">&nbsp; บาท</span>
+                            <br />
+                            <span style="font-size: 15px">หลังปัดเศษ &nbsp;</span>
+                            <label class="badge rounded-pill bg-primary" ID="lblSumNetTotalAfterRound" Text="0.00">@lblSumNetTotalAfterRound</label>
+                            <span style="font-size: 15px">&nbsp; บาท</span>
+                        </h5>
+                    </div>
+                </div>
+                <hr />
+                @if (posService.DocSet != null) {
+                    @if (posService.DocSet.Head.ShipToLocID == "" || posService.DocSet.Head.ShipToLocID == "ONLINE") {
+                        <div class="row pb-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+                            <div class="col-12 px-1">
+                                <a ID="btnpay" style="width:100%; color:white;" class="btn btn-success" @onclick="@btnpay">
+                                    <i class="far fa-comment-alt-dollar"></i> <span>เลือกวิธีชำระ</span>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                }
+
+
+
+                <div class="row pb-2" hidden="@isdivgrdpayment" style="margin-right: 0px !important; margin-left: 0px !important; font-size:small;">
+                    <div class="col-12 px-1">
+                        <div style="overflow-x: auto; width: 100%">
+                            <div class="row pt-2 pl-0 pr-1">
+                                <div class="col-12 ">
+                                    @if (posService.DocSet != null) {
+                                        @if (posService.DocSet.Payment.Where(o => o.IsLineActive == true).ToList().Count == 0) {
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row text-center">
+                                                        <div class="col-12">
+                                                            <span style="font-size:large;color:gray">   ไม่มีรายการชำระเงิน </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        } else {
+                                            @foreach (var l in posService.DocSet.Payment.Where(o => o.IsLineActive == true)) {
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <span style="font-size:medium"> <b> @l.PaymentType</b></span>
+
+                                                            </div>
+                                                            <div class="col-6 text-end">
+
+                                                                <a class="btn" @onclick="@(() => OnRemovePayment(l))">
+                                                                    <i class="fas fa-minus-circle" style="font-size:25px"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row ">
+                                                            <div class="col-6">
+                                                                <span style="font-size: small;">รับเงิน </span>
+                                                            </div>
+                                                            <div class="col-6 text-left">
+                                                                <span style="font-size:large">  @l.GetAmt.ToString("n2") ฿ </span>
+                                                            </div>
+                                                        </div>
+                                                        @if (l.PaymentType == "CASH") {
+                                                            <div class="row">
+                                                                <div class="col-6">
+                                                                    <span style="font-size: small; ">เงินทอน </span>
+                                                                </div>
+                                                                <div class="col-6 text-left">
+                                                                    <span style="font-size:large">  @l.ChangeAmt.ToString("n2") ฿ </span>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    }
+
+
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+                @if (posService.DocSet != null) {
+                    @if (posService.DocSet.Head.BillID != "") {
+                        <div class="row pb-2">
+                            <div class="col-md-5 col-sm-12 col-12 mx-auto">
+                                <TelerikTextBox @bind-Value="@txtMemberCode"
+                                        Size="ThemeConstants.DropDownList.Size.Small" />
+
+
+                            </div>
+                        </div>
+                        <div class="row pb-2" style="margin-right: 0px !important; margin-left: 0px !important;">
+                            <div class="col-12 px-1 text-center">
+                                <div class="btn-group" role="group" aria-label="Basic example">
+                                    <a ID="btnPrintOrder" style="color:white;" class="btn btn-secondary" @onclick="@OnPrintOrder">
+                                        <span>พิมพ์รายการ</span>
+                                    </a>
+                                    @if (posService.DocSet.Head.INVID != "") {
+                                        <a ID="btnPrintbill" style="color:white;" class="btn btn-secondary" @onclick="@OnPrintBill">
+                                            <span>พิมพ์ใบเสร็จ</span>
+                                        </a>
+                                        <a ID="btnPrintinv" style="color:white;" class="btn btn-secondary" @onclick="@POSSaleTax">
+                                            <span>พิมพ์ใบกำกับ</span>
+                                        </a>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+
+
+
+
+                <div class="row pb-2" hidden="@isdivbtnsave" style="margin-right: 0px !important; margin-left: 0px !important;">
+                    <div class="col-12  text-center pl-2 pr-2">
+                        @if (ShowSaveOrder) {
+                            <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Info)" OnClick="@(async () => await OnSave())" Enabled="@(!visibleButton)">
+                                บันทึกรายการ
+                                <TelerikLoader Class="loader-indicator" ThemeColor="light" Visible="@visibleButton"></TelerikLoader>
+                            </TelerikButton>
+
+                        }
+
+                        @if (ShowSaveBill) {
+                            <TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)" OnClick="@(async () => await SaveBill())" Enabled="@(!visibleButton)">
+                                รับชำระ
+                                <TelerikLoader Class="loader-indicator" ThemeColor="light" Visible="@visibleButton"></TelerikLoader>
+                            </TelerikButton>
+                        }
+                        &nbsp;
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+        <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                       @bind-Visible=@isPopupSaveLog Modal="true">
+            <WindowTitle>
+                <strong>SaveLog</strong>
+            </WindowTitle>
+            <WindowActions>
+                <WindowAction Name="Close" />
+            </WindowActions>
+            <WindowContent>
+                @*<DxDataGrid Data="@pos_salelog"
+                ShowPager="false"
+                CssClass="gridBrowseDx"
+                ColumnResizeMode=" DataGridColumnResizeMode.Component"
+                DataNavigationMode="DataGridNavigationMode.ShowAllDataRows"
+                SelectionMode="DevExpress.Blazor.DataGridSelectionMode.SingleSelectedDataRow"
+                ShowFilterRow="false">
+
+                <Columns>
+                <DxDataGridColumn Width="120px" Field="@nameof(POS_SaleLog.SaveNo)" Caption="ครั้งที่บันทึก" />
+                <DxDataGridColumn Width="160px" Field="@nameof(POS_SaleLog.ItemName)" Caption="สินค้า" />
+                <DxDataGridSpinEditColumn Width="120px" Field="@nameof(POS_SaleLog.Price)" Caption="Price" DisplayFormat="N2" />
+                <DxDataGridSpinEditColumn Width="120px" Field="@nameof(POS_SaleLog.Qty)" Caption="จำนวน" DisplayFormat="N2" />
+                <DxDataGridDateEditColumn Width="120px" Field="@nameof(POS_SaleLog.CreatedDate)" DisplayFormat="dd/MM/yyyy HH:mm" Caption="เวลา" />
+                <DxDataGridColumn Width="120px" Field="@nameof(POS_SaleLog.CreatedBy)" Caption="ผู้บันทึก" />
+                <DxDataGridColumn Width="120px" Field="@nameof(POS_SaleLog.CreatedByApp)" Caption="สร้างโดยแอป" />
+
+                </Columns>
+                </DxDataGrid>*@
+            </WindowContent>
+        </TelerikWindow>
+
+
+        <TelerikWindow Class="telerik-pop" Width="1000px" Height="700px" Centered="true"
+                       @bind-Visible=@isPopupPrint Modal="true">
+            <WindowTitle>
+                <strong>Printer master</strong>
+            </WindowTitle>
+            <WindowActions>
+                <WindowAction Name="Close" />
+            </WindowActions>
+            <WindowContent>
+                @* <XPreview printid="@printid"></XPreview>*@
+            </WindowContent>
+        </TelerikWindow>
+
+
+
+    </ContentTemplate>
+</SpinLoader>
+@code {
+
+    //[Parameter]
+    //public string billid { get; set; }
+    [Parameter]
+    public string pagecomefrom { get; set; } = "";
+    public bool isLoading = false;
+    public bool visibleButton { get; set; }
+    string isshowproductImage = "1";
+    bool isdivmain { get; set; } = false;
+    bool isdivpay { get; set; } = true;
+    bool isdivselectitem { get; set; } = false;
+    bool isdivgrdpayment { get; set; } = false;
+    bool isdivbtnsave { get; set; } = false;
+    bool isShowEditDate = false;
+
+    bool canchangeDate = false;
+
+    bool isPopupSaveLog { get; set; } = false;
+    string reportname = "";
+    bool isPopupPrint { get; set; } = false;
+    public string printid { get; set; } = "";
+
+    public List<POS_SaleLog> pos_salelog = new List<POS_SaleLog>();
+    public List<POSMenuItem> menu = new List<POSMenuItem>();
+    public string selectItemCate = "";
+    public string searchItem = "";
+    public string showOrHidItemImageCaption = "ซ่อนรูปสินค้า";
+
+    public string txtMemberCode = null;
+
+    bool ShowSaveOrder { get; set; } = true;
+    bool ShowSaveBill { get; set; } = true;
+    bool ShowDelete { get; set; } = true;
+    string PrintUrl { get; set; } = "";
+
+    string billdate { get; set; } = "";
+
+    int pageSize = 10000;
+    int count;
+
+
+
+    public string lblCompanyName { get; set; }
+    public string lblBillID { get; set; } = "-";
+    public string lblOrderID { get; set; } = "ออเดอร์ใหม่";
+    public string SelectTenderType { get; set; } = "CASH";
+
+    public string txtDisAmtPer { get; set; }
+    public string txtremain_pay { get; set; }
+    public string txtCustPayAmt { get; set; } = "0";
+
+
+    public string lblSumVatAmt { get; set; } = "0.00";
+    public string lblSumTotalAmtIncVat { get; set; } = "0.00";
+    public string lblSumNetTotalAfterRound { get; set; } = "0.00";
+
+    private string isDevice { get; set; }
+    private bool mobile { get; set; }
+
+
+
+
+
+
+    //protected override async Task OnParametersSetAsync() {
+    //    if (posService.DocSet == null) {
+    //        nav.NavigateTo($"POS/POSSaleNewDoc/x999/{pagecomefrom}");
+    //    }
+
+    //}
+    protected override void OnInitialized() {
+
+
+    }
+
+
+    protected override async Task OnInitializedAsync() {
+
+        pageHistory.AddPageToHistory(nav.Uri);
+        isshowproductImage = await Task.Run(() => posService.GetLocalSttorageShowProductImage());
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(() => LoadData());
+
+
+
+    }
+
+    private void CheckPermission() {
+        var h = posService.DocSet.Head;
+
+        canchangeDate = login.CanEdit(login.LoginInfo, "F5991");//แก้ไขใบเสร็จ
+
+
+    }
+    async Task CheckIsRefresh() {
+        if (posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(POSService.sessionActiveId);
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string user = login.LoginInfo.CurrentUser;
+            if (!string.IsNullOrEmpty(docid)) {
+                posService.DocSet = posService.GetDocSet(docid, rcom);
+            } else {
+
+                posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo, pagecomefrom, ""));
+                posService.DocSet.Head.CreatedBy = user;
+                posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+                posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+            }
+            if (posService.Menu == null) {
+                posService.Menu = posService.ListMenuItem(posService.DocSet.Head.RComID, posService.DocSet.Head.ComID, posService.DocSet.Head.ShipToUsePrice);
+            }
+
+            if (posService.ItemCate == null) {
+                posService.ItemCate = posService.ListItemCate(posService.DocSet.Head.RComID);
+            }
+
+        }
+
+    }
+    protected override Task OnAfterRenderAsync(bool firstRender) {
+        JsRuntime.InvokeVoidAsync("windowLoaded");
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+
+    async Task LoadData() {
+        var h = posService.DocSet.Head;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentCompany.CompanyID;
+
+        await LoadMenu();
+        BindData();
+        SetActiveControl();
+        isLoading = false;
+    }
+
+
+
+    async void OnTextChanged() {
+        isLoading = true;
+        await Task.Run(LoadMenu);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void BindData() {
+        var h = posService.DocSet.Head;
+
+        lblCompanyName = login.LoginInfo.CurrentCompany.Name1 + " " + login.LoginInfo.CurrentCompany.Name2 + " - " + login.LoginInfo.CurrentCompany.CompanyID;
+        if (h.BillID == "") {
+            lblOrderID = "ออเดอร์ใหม่";
+        } else {
+            if (h.BillID != "") {
+                lblOrderID = h.BillID;
+            }
+
+        }
+        lblBillID = "-";
+        if (h.INVID != "") {
+            lblBillID = h.INVID;
+        }
+        if (!string.IsNullOrEmpty(h.FINVID)) {
+            lblBillID = lblBillID + " / " + h.FINVID;
+        }
+        if (isshowproductImage == "1") {
+            showOrHidItemImageCaption = "ซ่อนรูปภาพสินค้า";
+        } else {
+            showOrHidItemImageCaption = "แสดงรูปภาพสินค้า";
+        }
+
+        txtMemberCode = h.CustomerID;
+
+        billdate = h.BillDate.ToString("dd/MM/yyyy");
+        lblSumTotalAmtIncVat = h.NetTotalAmtIncVat.ToString("n2");
+        lblSumVatAmt = h.NetTotalVatAmt.ToString("n2");
+        lblSumNetTotalAfterRound = h.NetTotalAfterRound.ToString("n2");
+        txtremain_pay = (h.NetTotalAfterRound - h.PayTotalAmt).ToString("n2");
+        SetActiveControl();
+        //InvokeAsync(StateHasChanged);
+    }
+    async void ShowHideImageProduct() {
+        isshowproductImage = await Task.Run(() => posService.SetLocalSttorageShowProductImage());
+        BindData();
+        await InvokeAsync(StateHasChanged);
+    }
+    void ShowPOSSaleLog() {
+        isPopupSaveLog = true;
+        var h = posService.DocSet.Head;
+        pos_salelog = posService.ListPOS_SaleLog(h.RComID, h.ComID, h.BillID);
+
+    }
+    void SelectedItemChanged(string  data) {
+
+        if (data == null) {
+            return;
+        }
+       // var item = posService.Tenders.Where(o => o.Value == data).FirstOrDefault();
+        try {
+            if (data == "CASH" || data == "VOUCHER") {
+                txtCustPayAmt = "0";
+            } else {
+                txtCustPayAmt = (posService.DocSet.Head.NetTotalAfterRound - posService.DocSet.Head.PayTotalAmt).ToString("n2");
+            }
+
+
+        } catch (Exception ex) {
+        } finally {
+
+        }
+    }
+    async Task ItemCateClick(string cateid) {
+        var m = posService.ItemCate.Where(o => o.ValueTXT == cateid).FirstOrDefault();
+        selectItemCate = m.ValueTXT;
+        LoadMenu();
+    }
+    void SetActiveControl() {
+        var h = posService.DocSet.Head;
+        ShowSaveOrder = true;
+        ShowSaveBill = true;
+        ShowDelete = false;
+
+        if (h.BillID != "") {
+            ShowDelete = true;
+        }
+        if (h.INVID != "") {//เก็บเงินแล้ว
+            ShowSaveOrder = false;
+            ShowSaveBill = false;
+            if (!login.CanOpen(login.LoginInfo, "F5992")) {//  F5992 ยกเลิกบิล
+                ShowDelete = false;
+            }
+        }
+        if (h.IsActive == false) {
+            ShowSaveOrder = false;
+            ShowSaveBill = false;
+            ShowDelete = false;
+        }
+
+        if (new List<string> { "GRAB", "PANDA", "LINEMAN", "SHOPEE" }.Contains(h.ShipToLocID)) {//ขายให้ grap และอื่นๆให้ Add Payment เลย
+            isdivpay = true;
+
+        }
+        CheckPermission();
+    }
+
+    void SetDivVisible(string type) {
+
+        switch (type) {
+            case "main":
+                isdivbtnsave = false;
+                isdivpay = true;
+                isdivmain = false;
+                isdivselectitem = false;
+                isdivgrdpayment = false;
+                break;
+            case "pay":
+                isdivbtnsave = true;
+                isdivpay = false;
+                isdivmain = true;
+                isdivselectitem = true;
+                isdivgrdpayment = true;
+                break;
+        }
+        BindData();
+    }
+    async Task LoadMenu() {
+
+        menu = posService.Menu.Where(o =>
+                                             (o.CateID == selectItemCate || selectItemCate == "")
+                                             && (
+                                                 o.Name.Contains(searchItem)
+                                             )
+
+        ).ToList();
+        // InvokeAsync(StateHasChanged);
+    }
+
+
+
+    async void OnNew() {
+        posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo, "webv2", ""));
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        //await Task.Run(() => posService.SetSessionMenu(posService.Menu));
+        BindData();
+        PrintUrl = "";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoCheckBill() {
+        // await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSCheckBillList/{pagecomefrom}", false);
+    }
+    async void GoMore() {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        nav.NavigateTo($"POS/POSMenuMore", false);
+    }
+    async void GoBillHistory() {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSBillHistory/{pagecomefrom}", false);
+        await InvokeAsync(StateHasChanged);
+    }
+    void GoRootApp() {
+        //  nav.NavigateTo($"Menu/MainMenu", false);
+        string forwardurl = "";
+        switch (pagecomefrom) {
+            case "web1":
+                var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+                string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+                nav.NavigateTo(rootappurl);
+                break;
+            case "web2":
+                nav.NavigateTo($"Menu/MainMenu", false);
+                InvokeAsync(StateHasChanged);
+                break;
+        }
+    }
+
+
+    async Task OnDelete() {
+        var h = posService.DocSet.Head;
+        //ตัวอย่าง Sweet Alert แบบสั้นๆ
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions {
+                Title = "Warning",
+                Text = $"ยืนยันการลบออเดอร์!",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (!string.IsNullOrEmpty(result.Value)) {
+
+            var r = posService.DeleteDoc(h.BillID, "", login.LoginInfo);
+            if (r.Result == "fail") {
+                await Swal.FireAsync("", r.Message1.ToString(), "error");
+            } else {
+                await Swal.FireAsync("Success", "ลบบิลเสร็จเรียบร้อย", SweetAlertIcon.Success);
+                posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo, "webv2", ""));
+
+                BindData();
+                await InvokeAsync(StateHasChanged);
+
+            }
+        }
+
+
+
+    }
+
+
+
+    async void AddTables() {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        if (string.IsNullOrEmpty(posService.DocSet.Head.ShipToLocID)) {
+            nav.NavigateTo($"POS/POSSelectTable/{pagecomefrom}", false);
+        } else {
+            nav.NavigateTo($"POS/POSShiptoRefID/{pagecomefrom}", false);
+        }
+
+
+
+    }
+
+    async void OnShipTo() {
+        if (posService.DocSet.Head.BillID != "") {
+            await Swal.FireAsync("", "เปลี่ยนช่องทางขายได้ก่อนบันทึกออเดอร์เท่านั้น", "error");
+            return;
+        }
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSShipToPage/{pagecomefrom}", false);
+    }
+
+    void OnSubmitPayment() {
+        AddPayment();
+        SetDivVisible("main");
+    }
+
+    void PaymentBackToMain() {
+        SetDivVisible("main");
+    }
+
+
+    void AddPayment() {
+        decimal CustPayAmt = 0;
+        decimal.TryParse(txtCustPayAmt, out CustPayAmt);
+        posService.AddPayment(posService.DocSet, SelectTenderType, CustPayAmt);
+        SelectTenderType = "CASH";
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        InvokeAsync(StateHasChanged);
+    }
+
+    void AddOnlinePayment() {
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        var h = posService.DocSet.Head;
+        posService.AddPayment(posService.DocSet, "ONLINE", Convert.ToDecimal(h.NetTotalAfterRound));
+        SelectTenderType = "CASH";
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    void btnpay() {
+        txtCustPayAmt = "0";
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        SetDivVisible("pay");
+    }
+
+    void btnDiscPer() {
+        decimal disc = 0;
+        decimal.TryParse(txtDisAmtPer, out disc);
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == "DISCPER01").FirstOrDefault();
+        posService.AddItem(posService.DocSet, 1, disc);
+        txtDisAmtPer = "0";
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        InvokeAsync(StateHasChanged);
+        //   _gridItemRef.Refresh();
+    }
+
+    void btnDiscAmt() {
+        decimal disc = 0;
+        decimal.TryParse(txtDisAmtPer, out disc);
+        disc = POSService.CalDiscountInVat(posService.DocSet, disc);
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == "DISCAMT01").FirstOrDefault();
+        posService.AddItem(posService.DocSet, 1, disc);
+        txtDisAmtPer = "0";
+        //await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+
+        BindData();
+    }
+
+
+    //async void RemoveQtyInLine(POSSaleConverterService.POS_SaleLineModel data) {
+    //    var update_line = posService.DocSet.Line.Where(o => o.LineUnq == data.LineUnq).FirstOrDefault();
+    //    update_line.Qty = update_line.Qty - 1;
+    //    if (update_line.Qty <= 0) {
+    //        posService.DocSet.Line.RemoveAll(o => o.LineNum == data.LineNum);
+    //        update_line.IsLineActive = false;
+    //    }
+
+    //    posService.DocSet = POSService.CalDocSet(posService.DocSet);
+    //    await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    //    BindData();
+    //}
+    void SelectMenuItem(POSMenuItem head) {
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == head.ItemID).FirstOrDefault();
+        posService.DocSet = posService.AddItem(posService.DocSet, 777, 0);
+        //  await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+
+        BindData();
+        //InvokeAsync(StateHasChanged);
+        //_gridItemRef.Refresh();
+    }
+
+    void OnAddItem(POSSaleConverterService.POS_SaleLineModel data) {
+        if (data.ItemTypeID == "DISCOUNT") {
+            return;
+        }
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        posService.DocSet = posService.AddItem(posService.DocSet, 777, 0);
+        BindData();
+
+
+        //var lineitem = posService.DocSet.Line.Where(o => o.LineUnq == data.LineUnq).FirstOrDefault();
+        //lineitem.Qty = lineitem.Qty + 1;
+        //posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        ////await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        //BindData();
+    }
+
+    void OnRemoveItem(POSSaleConverterService.POS_SaleLineModel data) {
+        posService.DocSet.SelectItem = posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        posService.DocSet = posService.AddItem(posService.DocSet, -777, 0);
+        BindData();
+
+
+
+
+
+
+        //var r = posService.DeleteItem(posService.DocSet, data.LineUnq);
+        ////  await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        //BindData();
+    }
+
+    void OnRemovePayment(POSSaleConverterService.POS_SalePaymentModel data) {
+        //posService.DocSet.Payment.RemoveAll(o => o.PaymentType == data.PaymentType);
+        //posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        // await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        posService.RemovePayment(posService.DocSet, data.PaymentType);
+        BindData();
+    }
+
+
+    bool ValidData() {
+        var line = posService.DocSet.Line;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        if (line.Count() == 0) {
+            Errmsg = "ไม่พบรายการสินค้า";
+            isvalid = false;
+        }
+
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+
+    // save
+
+    private bool PrepairDataSave() {
+        var h = posService.DocSet.Head;
+        bool isNew = h.BillID == "" ? true : false;
+        if (isNew) { // new
+            string shortShiptoId = "";
+            var getShiptoInfo = ShipToService.ListShipTo().Where(o => o.ShipToID == h.ShipToLocID).FirstOrDefault();
+            if (getShiptoInfo != null) {
+                shortShiptoId = getShiptoInfo.ShortID;
+            }
+            h.BillID = IDRuunerService.GenPOSSaleID("ORDER", h.RComID, h.ComID, h.MacNo, shortShiptoId, false, h.BillDate)[1];
+            posService.DocSet = posService.checkDupBillID(posService.DocSet);
+        }
+
+        posService.DocSet.Head.CustomerID = txtMemberCode == null ? "" : txtMemberCode;
+        posService.DocSet.Head.ModifiedBy = login.LoginInfo.CurrentUser;
+        return isNew;
+    }
+
+    async Task OnSave() {
+
+        if (!ValidData()) {
+            return;
+        }
+        visibleButton = true;
+        await InvokeAsync(StateHasChanged);
+        try {
+
+            var h = posService.DocSet.Head;
+            var r = SaveOrder();
+            if (r.Result == "fail") {
+                await Swal.FireAsync("Error", r.Message1.ToString(), "error");
+                return;
+            } else {
+                posService.DocSet = posService.GetDocSet(h.BillID, login.LoginInfo.CurrentRootCompany.CompanyID);
+                LoadData();
+                await Swal.FireAsync("Success", "บันทึกสำเร็จ", "success");
+            }
+        } catch (Exception) {
+        } finally {
+            visibleButton = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+
+    public I_Result.I_BasicResult SaveOrder() {
+        I_Result.I_BasicResult r = new I_Result.I_BasicResult { Result = "ok", Message1 = "", Message2 = "" };
+
+
+        var h = posService.DocSet.Head;
+        bool isNew = PrepairDataSave();
+        try {
+            posService.DocSet = POSService.CalDocSet(posService.DocSet);
+            r = POSService.Save(POSSaleConverterService.ConvertI_POSSaleSet2I_POSSaleUploadDoc(posService.DocSet), true);
+
+        } catch (Exception ex) {
+            r.Result = "fail";
+            r.Message1 = r.Message1 + " " + ex.Message;
+        } finally {
+
+
+        }
+        return r;
+    }
+
+    async Task SaveBill() {
+
+        var h = posService.DocSet.Head;
+        if (new List<string> { "GRAB", "PANDA", "LINEMAN", "SHOPEE" }.Contains(h.ShipToLocID)) {//ขายให้ grap และอื่นๆให้ Add Payment เลย
+            AddOnlinePayment();
+        }
+        //if (h.BillID == "") {//ถ้ายังไม่ได้บันทึก Bill ให้บันทึกบิลก่อน
+        //    SaveOrder();
+        //}
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        var diff = h.NetTotalAfterRound - h.PayTotalAmt;
+
+        if (diff > 0) {
+            await Swal.FireAsync("Warning", "ชำระราคาสินค้าไม่ครบ", "error");
+            return;
+        }
+        if (diff < 0) {
+            if (!IsOverPayable()) {
+                await Swal.FireAsync("Warning", "ชำระราคาสินค้าเกินจำนวน", "error");
+                return;
+            }
+
+        }
+        if (posService.DocSet.Payment.Count == 0) {
+            await Swal.FireAsync("Warning", "ยังไม่ชำระเงิน", "error");
+            return;
+        }
+        visibleButton = true;
+        await InvokeAsync(StateHasChanged);
+        try {
+            SaveInvoice();
+        } catch {
+
+
+        } finally {
+            visibleButton = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+    private bool IsOverPayable() {
+        bool result = false;
+        var hasCash = posService.DocSet.Payment.Where(o => o.PaymentType == "CASH").ToList().Count;
+        var hasVoucher = posService.DocSet.Payment.Where(o => o.PaymentType == "VOUCHER").ToList().Count;
+        var hastransfer = posService.DocSet.Payment.Where(o => o.PaymentType == "TRANSFER").ToList().Count;
+        var hascredit = posService.DocSet.Payment.Where(o => o.PaymentType == "CREDIT").ToList().Count;
+        if (hasCash > 0 && hasVoucher > 0) {
+            result = true;
+        }
+        if (hasCash > 0 && hastransfer > 0) {
+            result = true;
+        }
+        if (hasCash > 0 && hascredit > 0) {
+            result = true;
+        }
+        return result;
+    }
+
+
+    void SaveInvoice() {
+        var r = SaveOrder();
+        if (r.Result == "fail") {
+            Swal.FireAsync("Error", r.Message1.ToString(), "error");
+            return;
+        }
+
+        var mac = login.LoginInfo.CurrentMacNo;
+        var user = login.LoginInfo.CurrentUser;
+        var h = posService.DocSet.Head;
+        var shortShiptoId = ShipToService.ListShipTo().Where(o => o.ShipToID == h.ShipToLocID).FirstOrDefault().ShortID;
+        var comInfo = CompanyService.GetComInfoByComID(h.RComID, h.ComID);
+        posService.DocSet.Head.INVID = IDRuunerService.GenPOSSaleID("INV", h.RComID, h.ComID, mac, shortShiptoId, false, h.BillDate)[1];
+        posService.DocSet = posService.checkDupInvoiceID(posService.DocSet, mac);
+
+        posService.DocSet.Head.INVID = h.INVID;
+        posService.DocSet.Head.Status = "CLOSED";
+        posService.DocSet.Head.ModifiedBy = user;
+        posService.DocSet.Head.ModifiedDate = DateTime.Now;
+        var rb = POSService.Save(POSSaleConverterService.ConvertI_POSSaleSet2I_POSSaleUploadDoc(posService.DocSet), true);
+        if (rb.Result == "fail") {
+            Swal.FireAsync("Error", rb.Message1.ToString(), "error");
+            return;
+        } else {
+            IDRuunerService.GenPOSSaleID("INV", h.RComID, h.ComID, mac, shortShiptoId, true, h.BillDate);
+            Swal.FireAsync("Success", "บันทึกสำเร็จ", "success");
+            LoadData();
+        }
+    }
+
+    void POSSaleTax() {
+        //  await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+        nav.NavigateTo($"POS/POSSaleTax", false);
+    }
+
+
+    public async Task OnPrintOrder() {
+        string printform_id = "R411";
+        if (posService.DocSet.Head.IsVatRegister == true) {
+            printform_id = "R412";
+        }
+        var r = await Task.Run(() => Robot.PrintOut.CreatePrintData.R40X.RunReport.Convert2PrintData(posService.DocSet, printform_id));
+        if (r.Result == "ok") {
+            printid = r.Message2;
+            isPopupPrint = true;
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("Error", r.Message1, "error");
+            return;
+        }
+
+        var mobile = await JsRuntime.InvokeAsync<bool>("isDevice");
+        var isDevice = mobile ? "Mobile" : "Desktop";
+
+        if (isDevice == "Desktop") {
+            isPopupPrint = true;
+        } else {
+            isPopupPrint = false;
+            string baseurl = Globals.ApiPrintMasterBaseUrl;
+            //string yurl = $"{baseurl}/Viewer/KyPos/Viewer.aspx?id={printid}&export={"1"}";
+            string yurl = $"{baseurl}/TempFile/Print/{printid}.pdf";
+            yurl = yurl.Replace("http://", "https://");
+            await JsRuntime.InvokeVoidAsync("sendUrlToPrint", yurl);
+
+        }
+
+    }
+    async public Task SaveDate() {
+        var h = posService.DocSet.Head;
+        if (h.BillID != "") {
+            await Task.Run(() => OnSave());
+        }
+
+        isShowEditDate = false;
+    }
+    async public Task ShowEditDate() {
+        isShowEditDate = true;
+    }
+
+    public async Task OnPrintBill() {
+
+        string printform_id = "R401";
+        posService.DocSet = posService.GetDocSet(posService.DocSet.Head.BillID, login.LoginInfo.CurrentRootCompany.CompanyID);
+        if (posService.DocSet.Head.IsVatRegister == true) {
+            printform_id = "R402";
+        }
+
+        var r = await Task.Run(() => Robot.PrintOut.CreatePrintData.R40X.RunReport.Convert2PrintData(posService.DocSet, printform_id));
+        if (r.Result == "ok") {
+            printid = r.Message2;
+            isPopupPrint = true;
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("Error", r.Message1, "error");
+            return;
+        }
+
+
+        var mobile = await JsRuntime.InvokeAsync<bool>("isDevice");
+        var isDevice = mobile ? "Mobile" : "Desktop";
+
+        if (isDevice == "Desktop") {
+            isPopupPrint = true;
+        } else {
+            isPopupPrint = false;
+            string baseurl = Globals.ApiPrintMasterBaseUrl;
+            //string yurl = $"{baseurl}/Viewer/KyPos/Viewer.aspx?id={printid}&export={"1"}";
+            string yurl = $"{baseurl}/TempFile/Print/{printid}.pdf";
+            yurl = yurl.Replace("http://", "https://");
+            await JsRuntime.InvokeVoidAsync("sendUrlToPrint", yurl);
+
+        }
+    }
+
+
+
+}
+
+
+
+

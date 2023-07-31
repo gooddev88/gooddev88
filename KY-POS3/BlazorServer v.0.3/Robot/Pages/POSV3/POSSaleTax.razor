@@ -1,0 +1,320 @@
+﻿@page "/POSV3/POSSaleTax"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@*@using Robot.Data.DA.LoginCrossApp*@
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<style>
+    .myPopUp {
+        height: calc(100vh - 3.5rem);
+    }
+
+        .myPopUp > .modal-content {
+            min-width: 950px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div class="row pt-4 pb-2">
+            <div class="col-lg-8 col-md-10 col-sm-11 col-11 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-12 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <i class="fas fa-step-backward fa-2x"></i>&nbsp;
+                                    <strong style="font-size:x-large; color:black;">กลับ</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @*InputCssClass="col-md-8 form-control"*@
+                    <div class="card-body">
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ชื่อลูกค้า &nbsp;</label>
+                                <DxTextBox CssClass=""
+                                           @bind-Text="@txtCustomerName"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="SizeMode.Medium">
+                                </DxTextBox>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>สาขา &nbsp;</label>
+                                <DxTextBox @bind-Text="@txtCustBranchName"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="SizeMode.Medium">
+                                </DxTextBox>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 1 &nbsp;</label>
+                                <DxTextBox @bind-Text="@txtBillAddr1"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="SizeMode.Medium">
+                                </DxTextBox>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>ที่อยู่ 2 &nbsp;</label>
+                                <DxTextBox @bind-Text="@txtBillAddr2"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="SizeMode.Medium">
+                                </DxTextBox>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <label>เลขผู้เสียภาษี &nbsp;</label>
+                                <DxTextBox @bind-Text="@txtCustTaxID"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="SizeMode.Medium">
+                                </DxTextBox>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-lg-8 col-md-10 col-sm-11 col-11 mx-auto text-center">
+                <a class="btn btn-success w-100 text-white"
+                   @onclick="@OnPrintTax">พิมพ์ใบกำกับ</a>
+            </div>
+        </div>
+
+        <DxPopup @bind-Visible="@isPopupPrintVisible"
+                 ShowFooter="true"
+                 CssClass="text-center"
+                 HeaderText="Edit Contact">
+            <BodyTemplate>
+                @if (@isPopupPrintVisible)
+                {
+                    <iframe src=@PrintUrl frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                }
+            </BodyTemplate>
+            <FooterContentTemplate>
+                <DxButton CssClass="popup-button" RenderStyle="ButtonRenderStyle.Secondary" SizeMode="ControlSizeBig" Text="ปิด" Click="@(() => isPopupPrintVisible = false)" />
+            </FooterContentTemplate>
+        </DxPopup>
+
+        <DxPopup @bind-Visible="@isPopupPrintDesktop"
+                 ShowFooter="true"
+                 CssClass="myPopUp"
+                 HeaderText="Edit Contact">
+            <BodyTemplate>
+                @if (@isPopupPrintDesktop)
+                {
+                    <iframe src=@PrintUrl frameborder="0" style="height:100%;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                }
+            </BodyTemplate>
+            <FooterContentTemplate>
+                <DxButton CssClass="popup-button" RenderStyle="ButtonRenderStyle.Secondary" SizeMode="ControlSizeBig" Text="ปิด" Click="@(() => isPopupPrintVisible = false)" />
+            </FooterContentTemplate>
+        </DxPopup>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string txtCustomerName { get; set; } = "";
+    public string txtCustBranchName { get; set; } = "";
+    public string txtBillAddr1 { get; set; } = "";
+    public string txtBillAddr2 { get; set; } = "";
+    public string txtCustTaxID { get; set; } = "";
+
+    bool isPopupPrintVisible { get; set; } = false;
+    bool isPopupPrintDesktop { get; set; } = false;
+    string PrintUrl { get; set; } = "";
+
+    private string isDevice { get; set; }
+    private bool mobile { get; set; }
+    private SizeMode ControlSizeBig = SizeMode.Large;
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (posService.DocSet == null) {
+            posService.DocSet = await Task.Run(() => posService.GetSessionDocSet());
+            // posService.Menu = await Task.Run(() => posService.GetSessionMenu());
+            posService.Menu = posService.ListMenuItem(posService.DocSet.Head.RComID, posService.DocSet.Head.ComID, posService.DocSet.Head.ShipToUsePrice);
+            posService.Tenders = await Task.Run(() => posService.GetSessionTenders());
+            if (posService.DocSet == null) {
+                nav.NavigateTo($"POS/POSSaleNewDoc/{posService.DocSet.Head.ComID}", false);
+            }
+        }
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        var h = posService.DocSet.Head;
+        BindData();
+        isLoading = false;
+    }
+
+    void BindData()
+    {
+        var h = posService.DocSet.Head;
+        txtCustomerName = h.CustomerName;
+        txtCustBranchName = h.CustBranchName;
+        txtBillAddr1 = h.CustAddr1;
+        txtBillAddr2 = h.CustAddr2;
+        txtCustTaxID = h.CustTaxID;
+    }
+
+    bool ValidData()
+    {
+        var line = posService.DocSet.Line;
+
+        bool isvalid = true;
+        string Errmsg = "";
+        if (line.Count() == 0)
+        {
+            Errmsg = "ไม่พบรายการสินค้า";
+            isvalid = false;
+        }
+
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    private void PrepairDataSave()
+    {
+        var h = posService.DocSet.Head;
+        h.CustomerName = txtCustomerName;
+        h.CustBranchName = txtCustBranchName;
+        h.CustAddr1 = txtBillAddr1;
+        h.CustAddr2 = txtBillAddr2;
+        h.CustTaxID = txtCustTaxID;
+
+    }
+
+    public async Task OnPrintTax()
+    {
+        isLoading = true;
+        await Task.Delay(2000);
+        isLoading = false;
+
+        mobile = await JsRuntime.InvokeAsync<bool>("isDevice");
+        isDevice = mobile ? "Mobile" : "Desktop";
+
+        var h = posService.DocSet.Head;
+        if (txtCustomerName == "")
+        {
+            await Swal.FireAsync("", "กรอกชื่อลูกค้า..", "error");
+            return;
+        }
+
+        if (txtCustBranchName == "")
+        {
+            await Swal.FireAsync("", "กรอกสาขา..", "error");
+            return;
+        }
+
+        if (txtBillAddr1 == "")
+        {
+            await Swal.FireAsync("", "กรอกที่อยู่..", "error");
+            return;
+        }
+
+        if (txtCustTaxID == "")
+        {
+            await Swal.FireAsync("", "กรอกเลขผู้เสียภาษี..", "error");
+            return;
+        }
+
+        PrepairDataSave();
+
+        var rr = posService.SaveTaxSlip(posService.DocSet,login.LoginInfo.CurrentMacNo);
+        if (rr.Result == "fail")
+        {
+            await Swal.FireAsync("", rr.Message1, "error");
+            return;
+        }
+        else
+        {
+            nav.NavigateTo($"XReportViewer/PrintFInvoice/{h.BillID}");
+            //string subApp = "APP";
+            //string rootdomain = nav.BaseUri.ToString().Replace("SALE/", "");
+
+            //if (isDevice == "Desktop")
+            //{
+            //    isPopupPrintVisible = false;
+            //    isPopupPrintDesktop = true;
+            //    PrintUrl = rootdomain + subApp + $"/PrintServer/PrintOrderV1?billid={h.BillID}&rcom={h.RComID}&refid=tax&device=d";
+            //}
+            //else
+            //{
+            //    isPopupPrintVisible = true;
+            //    isPopupPrintDesktop = false;
+            //    PrintUrl = rootdomain + subApp + $"/PrintServer/PrintOrderV1?billid={h.BillID}&rcom={h.RComID}&refid=tax&device=d";
+            //}
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

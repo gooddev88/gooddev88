@@ -1,0 +1,73 @@
+﻿@page "/Login/LoginFromApp/{reqid}"
+@layout PublicLayout
+
+
+@if (isLoading) {
+    <div class="demo-container">
+        <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="Loading"
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public string reqid { get; set; }
+    LogInCrossAppReq reqInfo = new LogInCrossAppReq();
+    bool isLoading = true;
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+
+        //  await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => OnLogin());
+    }
+
+
+    async Task OnLogin() {
+
+        reqInfo = LogInService.GetCrossAppReq(reqid);
+        if (reqInfo == null) {
+            isLoading = false;
+            nav.NavigateTo($"Login", false);
+        } else {
+            login.LoginInfo = LogInService.Login(reqInfo.Username, "silent", "", "");
+
+          //  login.LoginInfo = LogInService.Login(reqInfo.Username, "silent", reqInfo.AppID, reqInfo.RComID);
+            //await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+            //((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(login.LoginInfo.CurrentUser);
+            await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+            ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(reqInfo.Username);
+            isLoading = false;
+            switch (reqInfo.ForwardToUrl) {
+                case "555":
+                    nav.NavigateTo("/");
+                    break;
+                case "621"://621 ออเดอร์
+                    nav.NavigateTo("Dashboard/StartBoard");
+                    break;
+                default:
+                    break;
+            }
+
+            //if (result_req.Result == "fail") {
+
+            //} else {
+            //    login.LoginInfo = LogInService.Login(reqInfo.Username, "silent", reqInfo.AppID, reqInfo.RComID);
+            //    if (login.LoginInfo.LoginResultInfo == "fail") {
+            //        navigation.NavigateTo($"Login", true);
+            //    } else {
+            //        ((AuthStateProvider)authStateProvider).MarkUserAsAuthenticated(reqInfo.Username);
+            //        navigation.NavigateTo(reqInfo.ForwardToUrl, false);
+            //    }
+            //}
+        }
+    }
+
+
+
+}

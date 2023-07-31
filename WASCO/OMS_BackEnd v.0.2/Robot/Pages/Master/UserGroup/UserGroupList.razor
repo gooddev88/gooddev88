@@ -1,0 +1,193 @@
+﻿@page "/Master/UserGroup/UserGroupList"
+
+@using Robot.Data.DA
+@using Robot.Data.DA.Master
+@using System.Threading.Tasks;
+@using Data.DA.Login
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Tools
+
+@inject IHostingEnvironment hostingEnvironment
+@inject MyUserGroupService usergroupService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<style>
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Dashboard/StartBoard">Main Menu</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Master/UserGroup/UserGroupList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            <div class="col-6" style="text-align:right;">
+                @if (isShowNew) {
+                    <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        สร้างกลุ่มผู้ใช้งานใหม่
+                    </Button>
+                }
+            </div>
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion>
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@SearchText">
+                                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                            </div>
+                        </div>
+                        <div class="col-md-3 ">
+                            <TelerikCheckBox Id="chkIsActive" @bind-Value="@ShowInActive" />
+                            <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+
+        <div class="row pt-2">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList
+                             ScrollMode="@GridScrollMode.Virtual"
+                             Height="600px" RowHeight="40" PageSize="30"
+                             Resizable=true
+                             Reorderable=true
+                             Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+                    <GridToolBarTemplate>
+                        <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBarTemplate>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_UserGroupInfo.UserGroupID)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_UserGroupInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                        <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(vw_UserGroupInfo.UserGroupID)" Title="รหัสกลุ่ม" Width="140px" />
+                        <GridColumn Field="@nameof(vw_UserGroupInfo.GroupName)" Title="ชื่อกลุ่ม" Width="200px" />
+                        <GridColumn Field="@nameof(vw_UserGroupInfo.Sort)" Title="จัดเรียง" DisplayFormat="{0:N0}" Width="150px" />
+                        <GridColumn Field=@nameof(vw_UserGroupInfo.CreatedDate) Title="วันทีสร้างเอกสาร" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                        <GridColumn Field=@nameof(vw_UserGroupInfo.CreatedBy) Title="สร้างโดย" Width="150px" DisplayFormat="{0:dd/MM/yyyy}" />
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    bool ShowInActive = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<vw_UserGroupInfo> DocList = new List<vw_UserGroupInfo>();
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        SetActiveControl();
+        DocList = MyUserGroupService.ListDoc(SearchText, login.LoginInfo, ShowInActive);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9003");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "9003")) {//9003 กลุ่มผู้ใช้งานและสิทธิ์
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9003")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(vw_UserGroupInfo select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(MyUserGroupService.sessionActiveId, select_data.UserGroupID);
+        usergroupService.DocSet = usergroupService.GetDocSet(select_data.UserGroupID, login.LoginInfo.CurrentRootCompany.CompanyID);
+        nav.NavigateTo($"Master/UserGroup/UserGroupDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc() {
+        var xlogin = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(MyUserGroupService.sessionActiveId);
+        usergroupService.DocSet = MyUserGroupService.NewTransaction(xlogin.CurrentRootCompany.CompanyID);
+        usergroupService.DocSet.Group.CreatedBy = xlogin.CurrentUser;
+        nav.NavigateTo($"Master/UserGroup/UserGroupDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    void OnRowRenderColor(GridRowRenderEventArgs args) {
+        vw_UserGroupInfo item = args.Item as vw_UserGroupInfo;
+        args.Class = item.IsActive == false ? "DisablesRowFormatting" : "";
+    }
+}

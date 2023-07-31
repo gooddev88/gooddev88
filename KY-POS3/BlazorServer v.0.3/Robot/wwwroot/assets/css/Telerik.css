@@ -1,0 +1,73 @@
+﻿
+
+/*begin button telerik loader*/
+.report-button-wrapper {
+    width: 100%;
+    text-align: center;
+}
+
+.loader-indicator {
+    margin-left: 5px;
+}
+/*end button telerik loader*/
+
+
+/*begin content telerik loader*/
+
+.lds-dual-ring {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+}
+
+    .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid #fff;
+        border-color: #fff transparent #fff transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+    }
+
+@@keyframes lds-dual-ring {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.demo-container {
+    position: relative;
+    height: 300px;
+    width: 75%;
+    margin: 0 auto;
+}
+
+.loader-container-heading {
+    padding-top: 25px;
+}
+
+.order-summary-row {
+    line-height: 2;
+}
+
+.kd-demo-heading {
+    text-transform: none;
+    width: 200px;
+    margin: 0 auto;
+    font-size: 17px;
+    color: #555;
+    padding-bottom: 0.5em;
+}
+
+.k-loader-container {
+    z-index: 1;
+}
+
+/*end content telerik loader*/

@@ -1,0 +1,336 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <UserSecretsId>abb9c610-5650-41f9-92f9-3eda9e394115</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\DataStore\**" />
+    <Compile Remove="Controllers\DeptFirst\**" />
+    <Compile Remove="Controllers\Today\**" />
+    <Compile Remove="Data\CimsDB\**" />
+    <Compile Remove="Data\DATASTOREDB\**" />
+    <Compile Remove="Data\DA\DataStore\**" />
+    <Compile Remove="Data\DA\DPMNews\**" />
+    <Compile Remove="Data\DA\DPM\**" />
+    <Compile Remove="Data\DA\FileStore\**" />
+    <Compile Remove="Data\DPMNEW\**" />
+    <Compile Remove="Data\FILEDB\**" />
+    <Compile Remove="Data\ML\ALERT\**" />
+    <Compile Remove="Data\ML\DeptFirst\**" />
+    <Compile Remove="Data\ML\Vaccine\**" />
+    <Compile Remove="Data\DA\ALERT\**" />
+    <Compile Remove="Data\DA\ASSETFIND\**" />
+    <Compile Remove="Data\DA\TICKER\**" />
+    <Compile Remove="Data\DA\Vaccine\**" />
+    <Compile Remove="Data\GADB\TT\C\**" />
+    <Compile Remove="Map\**" />
+    <Compile Remove="Pages\ApiDoc\**" />
+    <Compile Remove="Pages\ApiMaster\**" />
+    <Compile Remove="Pages\AssetFinder\**" />
+    <Compile Remove="Pages\DPM\**" />
+    <Compile Remove="Pages\Leave\**" />
+    <Compile Remove="Pages\Map\**" />
+    <Compile Remove="Pages\NewCate\**" />
+    <Compile Remove="Pages\ServerReport\**" />
+    <Compile Remove="Pages\User\**" />
+    <Compile Remove="PrintOut\Leave\**" />
+    <Compile Remove="Service\PrintService\**" />
+    <Compile Remove="TTXXX\**" />
+    <Compile Remove="TT\**" />
+    <Content Remove="Controllers\DataStore\**" />
+    <Content Remove="Controllers\DeptFirst\**" />
+    <Content Remove="Controllers\Today\**" />
+    <Content Remove="Data\CimsDB\**" />
+    <Content Remove="Data\DATASTOREDB\**" />
+    <Content Remove="Data\DA\DataStore\**" />
+    <Content Remove="Data\DA\DPMNews\**" />
+    <Content Remove="Data\DA\DPM\**" />
+    <Content Remove="Data\DA\FileStore\**" />
+    <Content Remove="Data\DPMNEW\**" />
+    <Content Remove="Data\FILEDB\**" />
+    <Content Remove="Data\ML\ALERT\**" />
+    <Content Remove="Data\ML\DeptFirst\**" />
+    <Content Remove="Data\ML\Vaccine\**" />
+    <Content Remove="Data\DA\ALERT\**" />
+    <Content Remove="Data\DA\ASSETFIND\**" />
+    <Content Remove="Data\DA\TICKER\**" />
+    <Content Remove="Data\DA\Vaccine\**" />
+    <Content Remove="Data\GADB\TT\C\**" />
+    <Content Remove="Map\**" />
+    <Content Remove="Pages\ApiDoc\**" />
+    <Content Remove="Pages\ApiMaster\**" />
+    <Content Remove="Pages\AssetFinder\**" />
+    <Content Remove="Pages\DPM\**" />
+    <Content Remove="Pages\Leave\**" />
+    <Content Remove="Pages\Map\**" />
+    <Content Remove="Pages\NewCate\**" />
+    <Content Remove="Pages\ServerReport\**" />
+    <Content Remove="Pages\User\**" />
+    <Content Remove="PrintOut\Leave\**" />
+    <Content Remove="Service\PrintService\**" />
+    <Content Remove="TTXXX\**" />
+    <Content Remove="TT\**" />
+    <EmbeddedResource Remove="Controllers\DataStore\**" />
+    <EmbeddedResource Remove="Controllers\DeptFirst\**" />
+    <EmbeddedResource Remove="Controllers\Today\**" />
+    <EmbeddedResource Remove="Data\CimsDB\**" />
+    <EmbeddedResource Remove="Data\DATASTOREDB\**" />
+    <EmbeddedResource Remove="Data\DA\DataStore\**" />
+    <EmbeddedResource Remove="Data\DA\DPMNews\**" />
+    <EmbeddedResource Remove="Data\DA\DPM\**" />
+    <EmbeddedResource Remove="Data\DA\FileStore\**" />
+    <EmbeddedResource Remove="Data\DPMNEW\**" />
+    <EmbeddedResource Remove="Data\FILEDB\**" />
+    <EmbeddedResource Remove="Data\ML\ALERT\**" />
+    <EmbeddedResource Remove="Data\ML\DeptFirst\**" />
+    <EmbeddedResource Remove="Data\ML\Vaccine\**" />
+    <EmbeddedResource Remove="Data\DA\ALERT\**" />
+    <EmbeddedResource Remove="Data\DA\ASSETFIND\**" />
+    <EmbeddedResource Remove="Data\DA\TICKER\**" />
+    <EmbeddedResource Remove="Data\DA\Vaccine\**" />
+    <EmbeddedResource Remove="Data\GADB\TT\C\**" />
+    <EmbeddedResource Remove="Map\**" />
+    <EmbeddedResource Remove="Pages\ApiDoc\**" />
+    <EmbeddedResource Remove="Pages\ApiMaster\**" />
+    <EmbeddedResource Remove="Pages\AssetFinder\**" />
+    <EmbeddedResource Remove="Pages\DPM\**" />
+    <EmbeddedResource Remove="Pages\Leave\**" />
+    <EmbeddedResource Remove="Pages\Map\**" />
+    <EmbeddedResource Remove="Pages\NewCate\**" />
+    <EmbeddedResource Remove="Pages\ServerReport\**" />
+    <EmbeddedResource Remove="Pages\User\**" />
+    <EmbeddedResource Remove="PrintOut\Leave\**" />
+    <EmbeddedResource Remove="Service\PrintService\**" />
+    <EmbeddedResource Remove="TTXXX\**" />
+    <EmbeddedResource Remove="TT\**" />
+    <None Remove="Controllers\DataStore\**" />
+    <None Remove="Controllers\DeptFirst\**" />
+    <None Remove="Controllers\Today\**" />
+    <None Remove="Data\CimsDB\**" />
+    <None Remove="Data\DATASTOREDB\**" />
+    <None Remove="Data\DA\DataStore\**" />
+    <None Remove="Data\DA\DPMNews\**" />
+    <None Remove="Data\DA\DPM\**" />
+    <None Remove="Data\DA\FileStore\**" />
+    <None Remove="Data\DPMNEW\**" />
+    <None Remove="Data\FILEDB\**" />
+    <None Remove="Data\ML\ALERT\**" />
+    <None Remove="Data\ML\DeptFirst\**" />
+    <None Remove="Data\ML\Vaccine\**" />
+    <None Remove="Data\DA\ALERT\**" />
+    <None Remove="Data\DA\ASSETFIND\**" />
+    <None Remove="Data\DA\TICKER\**" />
+    <None Remove="Data\DA\Vaccine\**" />
+    <None Remove="Data\GADB\TT\C\**" />
+    <None Remove="Map\**" />
+    <None Remove="Pages\ApiDoc\**" />
+    <None Remove="Pages\ApiMaster\**" />
+    <None Remove="Pages\AssetFinder\**" />
+    <None Remove="Pages\DPM\**" />
+    <None Remove="Pages\Leave\**" />
+    <None Remove="Pages\Map\**" />
+    <None Remove="Pages\NewCate\**" />
+    <None Remove="Pages\ServerReport\**" />
+    <None Remove="Pages\User\**" />
+    <None Remove="PrintOut\Leave\**" />
+    <None Remove="Service\PrintService\**" />
+    <None Remove="TTXXX\**" />
+    <None Remove="TT\**" />
+    <Content Remove="Pages\Alert.razor" />
+    <Content Remove="Pages\Dashboard\LeaveBoard.razor" />
+    <Content Remove="Pages\Dashboard\PersonBoard.razor" />
+    <Content Remove="Pages\Dashboard\PersonBoardDesktop.razor" />
+    <Content Remove="Pages\Login\LoginAuto.razor" />
+    <Content Remove="Pages\Login\LoginV2.razor" />
+    <Content Remove="Pages\Order\SO\ORDERAddItem.razor" />
+    <Content Remove="Pages\Order\SO\ORDERNewDoc.razor" />
+    <Content Remove="Pages\Order\SO\ORDERSelectDoctype.razor" />
+    <Content Remove="PrintOut\XPreview.razor" />
+    <Content Remove="Shared\Footer_POSSelectProduct.razor" />
+    <Content Remove="Shared\LayoutMobile %28copy%29.razor" />
+    <Content Remove="Shared\LayoutMobileGraph.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\AddressController.cs" />
+    <Compile Remove="Controllers\AlertController.cs" />
+    <Compile Remove="Controllers\Files\DownloadExportResultController.cs" />
+    <Compile Remove="Controllers\MASTER\CompanyController.cs" />
+    <Compile Remove="Controllers\MASTER\ItemsController.cs" />
+    <Compile Remove="Controllers\POSReportsController.cs" />
+    <Compile Remove="Controllers\RegisterController.cs" />
+    <Compile Remove="Controllers\ResourcesController.cs" />
+    <Compile Remove="Controllers\VaccineController.cs" />
+    <Compile Remove="Controllers\ValuesController.cs" />
+    <Compile Remove="Data\DA\DocSetService.cs" />
+    <Compile Remove="Data\DA\Document\DocumentGoService.cs" />
+    <Compile Remove="Data\DA\Master\CurrencyService.cs" />
+    <Compile Remove="Data\DA\OLoingService.cs" />
+    <Compile Remove="Data\GADB\TT\CompanyRoot.cs" />
+    <Compile Remove="Data\GADB\TT\DCustInArea.cs" />
+    <Compile Remove="Data\GADB\TT\GAEntitiesProcedures.cs" />
+    <Compile Remove="Data\GADB\TT\PrintService.cs" />
+    <Compile Remove="Helper\CircuitHandlerService.cs" />
+    <Compile Remove="Helper\Line\Class.cs" />
+    <Compile Remove="Helper\Line\LineNotify.cs" />
+    <Compile Remove="Pages\Order\SO\ORDERDetail.razor.cs" />
+    <Compile Remove="PrintOut\AReport.cs" />
+    <Compile Remove="PrintOut\AReport.Designer.cs" />
+    <Compile Remove="PrintOut\INVGA01.cs" />
+    <Compile Remove="PrintOut\INVGA01.Designer.cs" />
+    <Compile Remove="PrintOut\INVReport.cs" />
+    <Compile Remove="PrintOut\INVReport.Designer.cs" />
+    <Compile Remove="PrintOut\Quotation.cs" />
+    <Compile Remove="PrintOut\Quotation.Designer.cs" />
+    <Compile Remove="PrintOut\QuotationGA.cs" />
+    <Compile Remove="PrintOut\QuotationGA.Designer.cs" />
+    <Compile Remove="PrintOut\x.cs" />
+    <Compile Remove="PrintOut\x.Designer.cs" />
+    <Compile Remove="Startup.DevExpress.cs" />
+    <Compile Remove="Tools\CustomAuthStateProvider.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\AlertEdit.razor" />
+    <Content Remove="Shared\LayoutMobileLogin.razor" />
+ 
+    <Content Remove="Shared\LayoutMobilePosDetail.razor" />
+    <Content Remove="Shared\LayoutVaccine.razor" />
+    <Content Remove="wwwroot\css\MenuUseInKY.css" />
+    <Content Remove="wwwroot\Map\TestMap.html" />
+    <Content Remove="_Import.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="PrintOut\AReport.resx" />
+    <EmbeddedResource Remove="PrintOut\INVGA01.resx" />
+    <EmbeddedResource Remove="PrintOut\INVReport.resx" />
+    <EmbeddedResource Remove="PrintOut\Quotation.resx" />
+    <EmbeddedResource Remove="PrintOut\QuotationGA.resx" />
+    <EmbeddedResource Remove="PrintOut\x.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+    <PackageReference Include="Blazored.Modal" Version="6.0.1" />
+    <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="0.9.5.6" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="0.9.5.6" />
+    <PackageReference Include="BlazorPro.Spinkit" Version="1.2.0" />
+    <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.1.0" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="EPPlus" Version="6.0.6" />
+    <PackageReference Include="FisSst.BlazorMaps" Version="1.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.16.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+    <PackageReference Include="Telerik.UI.for.Blazor" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Pages\Login\_Imports.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Pages\Master\Item\ItemList.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Pages\Order\SO\ORDERPrintlList.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\assets\ImageStorage\KY\00000000-00-002.jpeg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\00000003-00-000.jpeg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\DEFAULTMENU.png" />
+    <None Include="wwwroot\assets\ImageStorage\KY\DISCAMT01.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\DISCPER01.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M001.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M003.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M007.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M008.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M009.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M010.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M011.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M012.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M013.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M015.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M016.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M017.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M018.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\M019.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O001.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O003.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\O006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\Z002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\Z004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\Z005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\Z006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\KY\Z014.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\00000000-00-002.jpeg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\00000003-00-000.jpeg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\DEFAULTMENU.png" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\DISCAMT01.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\DISCPER01.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M001.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M003.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M007.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M008.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M009.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M010.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M011.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M012.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M013.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M015.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M016.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M017.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M018.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\M019.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O001.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O003.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\O006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\Z002.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\Z004.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\Z005.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\Z006.jpg" />
+    <None Include="wwwroot\assets\ImageStorage\Thumb\KY\Z014.jpg" />
+  </ItemGroup>
+
+</Project>

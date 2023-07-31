@@ -1,0 +1,159 @@
+﻿
+.small {
+    font-size: small !important;
+}
+
+.x-small {
+    font-size: x-small !important;
+}
+
+/*Top Menu All Page*/
+.card-top-menu {
+    padding: 8px 10px 8px 10px;
+    background-color: #ffd32a;
+    border-radius: 0px 0px 15px 15px;
+}
+
+.fa-2x {
+    font-size: 1.7em !important;
+}
+
+/*Top Menu All Page*/
+
+/*posdetail*/
+
+.samll-black {
+    color: black;
+    font-size: small;
+}
+
+.samll-white {
+    color: white;
+    font-size: small;
+}
+
+.samll-gray {
+    color: gray;
+    font-size: small;
+}
+
+
+input[disabled] {
+    opacity: .4;
+    cursor: default !important;
+    pointer-events: none;
+}
+
+a[disabled] {
+    opacity: .4;
+    cursor: default !important;
+    pointer-events: none;
+}
+
+.text-name-item {
+    display: inline-flex;
+    font-size: smaller;
+    white-space: nowrap;
+}
+
+
+/*แถบเมนูด้านบนสุด*/
+
+.fix-top-first-menu {
+    position: fixed;
+    background-color: #ffd32a !important;
+    padding: 10px;
+    top: 0;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+    background-color: #fff;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1;
+}
+
+.fixtop-textspan-menu-logo {
+    position: absolute;
+    top: 25px;
+    left: 77px;
+}
+
+.font-SXL-yellow {
+    font-size: x-large;
+    color: #FFD600
+}
+
+.fix-top-menu {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+    background-color: #fff;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1;
+    background-color: black !important;
+    border-radius: 0.7rem !important;
+}
+
+
+/*จบ แถบเมนูด้านบนสุด*/
+
+/*แถบ card (ส่วนที่ 2) */
+.fix-info-desc {
+    position: absolute;
+    top: 33px;
+    left: 85px;
+}
+
+.fix-top-card-desc {
+    position: fixed;
+    top: 77px;
+    padding:10px;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+    background-color: #fff;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1;
+}
+/*จบ แถบ card (ส่วนที่ 2) */
+
+/*แถบ รายการสินค้าที่เพิ่ม (ส่วนที่ 3) หน้า posdetail */
+.fix-lineproduct-list {
+    padding-top: 12rem !important;
+    padding-bottom: 2rem !important;
+}
+/*แถบ รายการสินค้าที่เพิ่ม (ส่วนที่ 3) หน้า posdetail */
+
+.fix-bottom-detail {
+    position: fixed;
+    bottom: 2.9rem;
+    width: 100%;
+    height: auto;
+    display: flex;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    z-index: 1;
+}
+
+.fix-bottom-detail-botton {
+    background-color: #fff;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1;
+}
+
+/*end posdetail*/

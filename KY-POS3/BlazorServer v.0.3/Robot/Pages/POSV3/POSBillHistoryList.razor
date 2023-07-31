@@ -1,0 +1,271 @@
+﻿@page "/POSV3/POSBillHistoryList"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+@inject POSSaleConverterService pOSSaleConverterService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<style>
+    .btn-light {
+        border-color: transparent !important;
+        background-color: white !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+                  <div class="row pt-2">
+                      <div class="col-10 mx-auto">
+                          <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                          <CircleFade Color="orange" Size="100px" Center="true" />
+                          @*<Circle Color="orange" Size="165px" />*@
+                      </div>
+                  </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card" style="border-radius: 10px;">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-3 col-3 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <img src="/SALE/assets/img/back.png" style="max-width:3rem;" />
+                                </a>&nbsp;
+                            </div>
+                            <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-left">
+                                <strong style="font-size:2rem; color:crimson;">ประวัติการขาย</strong>
+                            </div>
+                            <div class="col-md-3 col-sm-3 col-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row pb-2">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <RadzenDatePicker @bind-Value=@DateFr DateFormat="dd/MM/yyyy" Style="width:100%" />
+                            </div>
+                            <div class="col-6 pl-0">
+                                <RadzenDatePicker @bind-Value=@DateTo DateFormat="dd/MM/yyyy" Style="width:100%" />
+                            </div>
+                        </div>
+
+                        <div class="row pt-2" style="padding-left: 15px; padding-right: 15px;">
+                            <div class="col-6 pl-0">
+                                <DxComboBox Data="@ListShipTo"
+                                            CssClass="w-100"
+                                            TextFieldName="@nameof(ShipToService.ShipTo.ShipToName)"
+                                            ValueFieldName="@nameof(ShipToService.ShipTo.ShipToID)"
+                                            FilteringMode="DataGridFilteringMode.Contains"
+                                            @bind-Value="@SelectShipTo"
+                                            SizeMode="SizeMode.Medium">
+                                </DxComboBox>
+                            </div>
+                            <div class="col-6 px-0">
+                                <div class="input-group">
+                                    <DxTextBox Id="txtSearch"
+                                               @bind-Text="@SearchText"
+                                               BindValueMode="BindValueMode.OnInput"
+                                               Enabled="true"
+                                               ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto"
+                                               SizeMode="@ControlSizeMode">
+                                    </DxTextBox>
+                                    <div class="input-group-append">
+                                        <a @onclick="@SearchAction" class="btn btn-success btn-sm">
+                                            <label style="color:white;">ค้นหา</label>
+                                        </a>&nbsp;
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (ListBillHistory.Count() != 0)
+        {
+            <div class="row">
+                <div class="col-12">
+                    <RadzenDataList WrapItems="true" AllowPaging="true" Data="@ListBillHistory" TItem="POSSaleConverterService.POS_SaleHeadModel">
+                        <Template Context="l">
+                            <div class="card w-100 m-0 px-2 py-2 mt-2">
+                                <div class="card-body py-0 px-2" style="width: 100%;">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <a class="btn w-100" style="height: auto;" @onclick="@(() => GoToPOSSale(l))">
+                                                <div class="row text-center">
+                                                    <div class="col-6 text-left">
+                                                        <span style="font-size: medium; color: #fa8231;">@l.BillID</span>
+                                                        <br />
+                                                        ยอดเงิน   <strong style="font-size:medium">@l.NetTotalAmtIncVat.ToString("n2") ฿</strong>
+                                                    </div>
+                                                    <div class="col-6 text-right">
+                                                        @switch (l.ShipToLocID)
+                                                        {
+                                                            case "":
+                                                                <img src="/SALE/assets/img/Sale-icon.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                            case "GRAB":
+                                                                <img src="/SALE/assets/img/grab.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                            case "SHOPEE":
+                                                                <img src="/SALE/assets/img/shopee_logo.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                            case "LINEMAN":
+                                                                <img src="/SALE/assets/img/lineman.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                            case "PANDA":
+                                                                <img src="/SALE/assets/img/padda.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                            case "ROBINHOOD":
+                                                                <img src="/SALE/assets/img/robinhood.png" alt="" style="width: 4rem;" />
+                                                                break;
+                                                            case "ONLINE":
+                                                                <img src="/SALE/assets/img/online.png" alt="" style="width: 3rem;" />
+                                                                break;
+
+                                                            default:
+                                                                <img src="/SALE/assets/img/frontstore.png" alt="" style="width: 3rem;" />
+                                                                break;
+                                                        }<br />
+                                                        <span style="font-size:x-small">@l.CreatedDate.ToString("dd/MM/yyyy H:mm")</span>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </Template>
+                    </RadzenDataList>
+                    <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" Count="count" PageSize="@pageSize" PageNumbersCount="10" PageChanged="@PageChanged" />
+
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row pt-5">
+                <div class="col-12 text-center">
+                    <img src="/SALE/assets/img/filesearch.png" style="width:9rem;" /><br />
+                    <span class="font-weight-bold" style="color:gray;"> ไม่พบประวัติบิล </span>
+                </div>
+            </div>
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+
+@code {
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string SearchText { get; set; } = "";
+    DateTime? DateFr = DateTime.Now.Date;
+    DateTime? DateTo = DateTime.Now.Date;
+    public string SelectShipTo { get; set; } = "";
+
+    string pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+    int pageSize = 50;
+    int count;
+
+    List<ShipToService.ShipTo> ListShipTo = new List<ShipToService.ShipTo>();
+    IEnumerable<POSSaleConverterService.POS_SaleHeadModel> ListBillHistory;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+
+    void SetVaue()
+    {
+        if (DateFr == null)
+        {
+            DateFr = DateTime.Now.Date;
+        }
+
+        if (DateTo == null)
+        {
+            DateTo = DateTime.Now.Date;
+        }
+    }
+
+    void LoadData()
+    {
+        var xlogin = login.LoginInfo;
+        ListShipTo = ShipToService.ListShipTo();
+        SetVaue();
+
+        ListBillHistory = posService.ListBill(SearchText, xlogin.CurrentRootCompany.RCompanyID, xlogin.CurrentCompany.CompanyID, SelectShipTo, 0, pageSize, Convert.ToDateTime(DateFr), Convert.ToDateTime(DateTo));
+        isLoading = false;
+    }
+
+    void PageChanged(PagerEventArgs args)
+    {
+        var xlogin = login.LoginInfo;
+        SetVaue();
+        ListBillHistory = posService.ListBill(SearchText, xlogin.CurrentRootCompany.RCompanyID, xlogin.CurrentCompany.CompanyID, SelectShipTo, args.Skip, args.Top, Convert.ToDateTime(DateFr), Convert.ToDateTime(DateTo));
+    }
+
+    async void SearchAction()
+    {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToPOSSale(POSSaleConverterService.POS_SaleHeadModel data)
+    {
+        posService.DocSet = await Task.Run(() => posService.GetDocSet(data.BillID, data.RComID));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleHome", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

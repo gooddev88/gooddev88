@@ -1,0 +1,62 @@
+﻿@page "/UploadFile"
+@using RobotWasm.Shared.Data.ML.Shared;
+
+ 
+@inject HttpClient Http
+
+<h1>@message</h1>
+
+<div class="input-group">
+	<div class="custom-file">
+		<InputFile class="custom-file-input" multiple OnChange="OnChange" accept="image/png, image/jpeg, image/gif" id="inputFile" />
+		<label class="custom-file-label" for="inputFile">Choose file</label>
+	</div>
+	<div class="input-group-append">
+		<button class="btn btn-success" @onclick="Upload" disabled="@isDisabled">Upload</button>
+	</div>
+</div>
+
+ 
+@foreach (var item in filesBase64) {
+	<img src="data:@item.contentType;base64,@item.base64data" />
+}
+<br>
+<hr />
+<img src="@imgShow" />
+@code {
+	List<ImageFile> filesBase64 = new List<ImageFile>();
+	string message = "InputFile";
+	bool isDisabled = false;
+	string imgShow = "";
+
+
+	 
+	protected override async Task OnInitializedAsync() {
+		imgShow = nav.BaseUri + @"api/FileLocal/DownFile";
+		await InvokeAsync(StateHasChanged);
+	}
+
+	async Task OnChange(InputFileChangeEventArgs e) {
+		var files = e.GetMultipleFiles(); // get the files selected by the users
+		foreach (var file in files) {
+			var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+			var buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+			using (var stream = resizedFile.OpenReadStream()) {
+				await stream.ReadAsync(buf); // copy the stream to the buffer
+			}
+			filesBase64.Add(new ImageFile { base64data = Convert.ToBase64String(buf), contentType = file.ContentType, fileName = file.Name }); // convert to a base64 string!!
+		}
+		message = "Click UPLOAD to continue";
+	}
+
+	async Task Upload() {
+		isDisabled = true;
+		using (var msg = await Http.PostAsJsonAsync<List<ImageFile>>("/api/FileLocal/UpFile", filesBase64, System.Threading.CancellationToken.None)) {
+			isDisabled = false;
+			if (msg.IsSuccessStatusCode) {
+				message = $"{filesBase64.Count} files uploaded";
+				filesBase64.Clear();
+			}
+		}
+	}
+}

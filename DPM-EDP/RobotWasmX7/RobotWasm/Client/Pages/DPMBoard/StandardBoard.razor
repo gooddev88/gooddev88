@@ -1,0 +1,51 @@
+﻿@page "/DPMBoard/StandardBoard"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+<style>
+
+</style>
+
+<div class="text-center pb-3 pt-3">
+    <h4>Standard Board</h4>
+</div>
+
+@if (!isLoading) {
+
+    <ScrollMenu type="standard"></ScrollMenu>
+    
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+
+    private bool isLoading = false;
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => LoadData());
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async Task LoadData() {
+
+    }
+
+}

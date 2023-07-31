@@ -1,0 +1,264 @@
+﻿@page "/Master/User/UserList"
+@page "/Master/User/UserList/{role}"
+@using Robot.Data.DA
+@using Robot.Data.DA.Master
+@using System.Threading.Tasks;
+@using Data.DA.Login
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Tools
+
+@inject IHostingEnvironment hostingEnvironment
+@inject MyUserService userService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject PageHistoryState pageHistory
+
+<style>
+
+    .custom-ellipsis {
+        overflow: hidden;
+        max-height: 60px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .RefillValuesRowFormatting {
+        background-color: red !important;
+        color: white !important;
+    }
+    .RefillValuesRowFormatting .fa-solid.fa-folder-open {
+            color: white !important; 
+}
+    .custom-row-colors .k-grid-table .k-master-row {
+        background-color: white;
+        color: black;
+    }
+
+        .custom-row-colors .k-grid-table .k-master-row:hover {
+            background-color: gray;
+            color: black;
+        }
+
+        .custom-row-colors .k-grid-table .k-master-row.k-alt {
+            background-color: white;
+            color: black;
+        }
+
+            .custom-row-colors .k-grid-table .k-master-row.k-alt:hover {
+                background-color: gray;
+                color: black;
+            }
+
+    
+
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Dashboard/StartBoard">Main Menu</BreadcrumbLink>
+                    </BreadcrumbItem> 
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="Master/User/UserList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            @if (isShowNew) {
+                <div class="col-6" style="text-align:right;">
+                    <Button style="color:darkcyan;" @onclick="@NewDoc">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        สร้างผู้ใช้งานใหม่
+                    </Button>
+                </div>
+            }
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is1">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="input-group">
+                                <TextEdit @bind-Text="@Filter.SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                                <div class="input-group-append">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 ">
+                            <TelerikCheckBox Id="chkIsActive" @bind-Value="@Filter.ShowIsActive" />
+                            <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+        <div class="row pt-3">
+            <div class="col-md-12">
+                <TelerikGrid Data=@DocList Class="custom-row-colors"
+                             ScrollMode="@GridScrollMode.Virtual"
+                             Height="600px" RowHeight="40" PageSize="30"
+                             Resizable=true
+                             Reorderable=true
+                             OnRowRender="@OnRowRenderColor"
+                             Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+                    <GridToolBarTemplate>
+                        <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBarTemplate>
+    <GridExport>
+        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_UserInfo.Username)" Title="เปิด" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_UserInfo; 
+                                            <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                        <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                    </button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(vw_UserInfo.Username)" Title="ชื่อผู้ใช้งาน" Width="130px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.FullName)" Title="ชื่อ-สกุล" Width="170px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.PositionID)" Title="ตำแหน่ง" Width="180px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.Email)" Title="อีเมล์" Width="130px" />
+                        <GridColumn Field="@nameof(vw_UserInfo.Tel)" Title="เบอร์โทรศัพท์" Width="130px" />
+                        <GridColumn Field=@nameof(vw_UserInfo.CreatedDate) Title="วันทีสร้างเอกสาร" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                    </GridColumns>
+                </TelerikGrid>
+                
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    [Parameter] public string role { get; set; } 
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    string  menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+
+    bool ExportAllPages { get; set; } = true;
+
+    IEnumerable<vw_UserInfo> DocList { get; set; }
+
+    MyUserService.I_FiterSet Filter = MyUserService.NewFilterSet();
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(()=>login.CheckLogin());
+        await Task.Run(LoadData);
+        //await LoadUserList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnParametersSetAsync() {
+
+    }
+
+    async void LoadData() {
+        SetDefaultFilter();
+        await SetActiveControl();
+        DocList = MyUserService.ListDoc(Filter, login.LoginInfo);
+        if (role!="X") {
+            DocList = DocList.Where(o => o.Username != "X").ToList();
+        }
+      
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //protected override void OnInitialized()
+    //{
+    //    SetDefaultFilter();
+    //   DocList = MyUserService.ListDoc(Filter, login.LoginInfo);
+    //        isLoading = false;
+    //}
+
+        void SetDefaultFilter() {
+        Filter.Rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LoginInfo.CurrentCompany.CompanyID;
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9002");
+        menuCaption = menu.Name;
+                            menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "9002")) {//9002 ผู้ใช้งานและสิทธิ์
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9002")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(vw_UserInfo select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(MyUserService.sessionActiveId, select_data.Username);
+        userService.DocSet = userService.GetDocSet(select_data.Username, login.LoginInfo.CurrentRootCompany.CompanyID,login.LoginInfo.CurrentUser);
+        nav.NavigateTo($"Master/User/UserDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc() {
+        var xlogin = login.LoginInfo;
+                await sessionStorage.RemoveItemAsync(MyUserService.sessionActiveId);
+        userService.DocSet = MyUserService.NewTransaction(  xlogin.CurrentRootCompany.CompanyID);
+        userService.DocSet.User.CreatedBy = xlogin.CurrentUser;
+
+        nav.NavigateTo($"Master/User/UserDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void OnRowRenderColor(GridRowRenderEventArgs args) {
+        vw_UserInfo item = args.Item as vw_UserInfo;
+        args.Class = item.IsActive == false ? "RefillValuesRowFormatting" : "";
+    }
+    void OnCellRenderHandler(GridCellRenderEventArgs args) {
+        args.Class = "custom-ellipsis";
+    }
+
+}

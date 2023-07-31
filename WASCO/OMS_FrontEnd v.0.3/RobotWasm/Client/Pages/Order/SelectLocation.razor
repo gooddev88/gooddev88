@@ -1,0 +1,131 @@
+﻿@page "/Order/SelectLocation"
+
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA; 
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    .card-top-menu {
+        padding: 8px 10px 8px 10px;
+        background-color: #3498db;
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    div.noSelect {
+        -moz-user-select: none; /* Mozilla browsers */
+        -khtml-user-select: none; /* WebKit browsers */
+        user-select: none; /* Standard syntax */
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-white" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block pt-1"><span style="font-size:large;">เลือกคลัง</span></div>
+        </div>
+    </a>
+</div>
+
+@*<div class="row pt-3">
+    <div class="col-12">
+        <div class="input-group">
+            <TelerikTextBox PlaceHolder="คำค้นหาคลัง" Class="box-sd-inputsearch form-control rounded" Value="@SearchText" ValueChanged="@OnTextChanged_ListLocation"></TelerikTextBox>
+        </div>
+    </div>
+</div>*@
+<div class="row pt-2">
+    <div class="col-lg-8 col-md-8 col-sm-12 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <TelerikListView Data="@ListLocation" Pageable="true" PageSize="20">
+                    <Template>
+                        <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectLocation(context))">
+                            <div class="row pt-2 noSelect">
+                        <div class="col-12">
+                                    <i class="fa-solid fa-circle-dot" style="font-size:1.7em;"></i>&nbsp;&nbsp;&nbsp;
+                                    <span style="font-size:small;">@context.LocID - @context.Name</span>
+                        </div>
+                    </div>
+                        </a>
+                    <hr class="my-3" />
+                    </Template>
+                </TelerikListView>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+    IEnumerable<LocationInfo> ListLocation = new List<LocationInfo>();
+    public string rcom { get; set; } = "";
+    public string com { get; set; } = "";
+    public string user { get; set; } = "";
+    string SearchText = "";
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    public async void OnTextChanged_ListLocation(object Search) {
+        SearchText = Search == null ? "" : Search.ToString();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+    }
+    async Task CheckIsRefresh() {
+        rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        com = login.LogInInfo.CurrentCompany.CompanyID;
+        user = login.LogInInfo.CurrentUser;
+        var userfullname = login.LogInInfo.CurrentUserInfo.FullName;
+        if (_soService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_SOID);
+            if (!string.IsNullOrEmpty(docid)) {
+                _soService.DocSet = await Task.Run(() => _soService.GetDocSet(docid, rcom, com));
+            } else {
+                _soService.DocSet = await Task.Run(() => SOFuncService.NewTransaction(rcom, com, "SO1", user, userfullname));
+            }
+        }
+    }
+
+    async void LoadData() {
+        rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        com = login.LogInInfo.CurrentCompany.CompanyID;
+        
+        ListLocation = await Task.Run(() => _companyService.ListLocactionsByUser(rcom, com, user));
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        //var menu_info = UserService.GetMenuInfo(login.LogInInfo, "5001");
+        //var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == menu_info.MenuID).FirstOrDefault();
+    }
+
+    async Task OnSelectLocation(LocationInfo select_data) {
+        _soService.DocSet.Head.ShipFrLocID = select_data.LocID;
+        nav.NavigateTo($"Order/OrderDetail");
+    }
+
+    void GoBack() {
+        nav.NavigateTo("Order/OrderDetail");
+    }
+}

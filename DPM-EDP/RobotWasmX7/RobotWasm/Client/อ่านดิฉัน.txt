@@ -1,0 +1,11 @@
+ตัวอย่าง Blazor เรียกใช้ javascript
+https://code-maze.com/how-to-call-javascript-code-from-net-blazor-webassembly/
+
+
+Hight Chart Wraper
+https://github.com/Allegiance-Consulting/blazor-highcharts
+
+
+BlazorMaps  Leaflet.js library.
+https://github.com/fis-sst/BlazorMaps
+https://github.com/Mehigh17/BlazorLeaflet

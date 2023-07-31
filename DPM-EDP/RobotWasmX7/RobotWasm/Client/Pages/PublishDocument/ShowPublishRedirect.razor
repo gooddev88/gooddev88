@@ -1,0 +1,11 @@
+﻿@page "/PublishDocument/ShowPublishRedirect/{cateid}"
+
+@code {
+    [Parameter] public string cateid { get; set; }
+
+
+    protected override async Task OnInitializedAsync() {
+        nav.NavigateTo($"PublishDocument/ShowPublishList/{cateid}");
+        await InvokeAsync(StateHasChanged);
+    }
+}

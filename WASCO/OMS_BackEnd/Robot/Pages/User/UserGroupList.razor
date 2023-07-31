@@ -1,0 +1,201 @@
+﻿
+@page "/User/UserGroupList"
+@using  Robot.Data.GADB.TT
+@using Robot.Data.DA
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.ML
+@using Robot.Data.DA.Login
+@using Robot.Data.DA.USER
+
+   
+@using Blazored.SessionStorage 
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using DevExtreme.AspNet.Data
+@using DevExtreme.AspNet.Data.ResponseModel
+
+ 
+@inject NavigationManager NavigationManager
+@inject ISessionStorageService SessionStorage
+@inject AuthenticationStateProvider AuthStateProvider
+
+
+@inject GAEntities db
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject UserGroupService UserGroupService
+@inject StateContainer StateContainer
+@inject LogInService login
+@inject NavigationManager navigation
+@inject SweetAlertService Swal 
+
+
+<style>
+</style>
+
+   <div class="row pt-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header" style="background-color: #218c74 !important">
+                    <div class="row">
+                        <div class="col-md-4 text-left">
+                            <button type="button" @onclick="@Back" class="btn">
+                                <span style="font-size: x-large; color: black">
+                                    <i class="fas fa-reply "></i>
+                                    <strong>
+                                    กลับ
+                                    </strong>
+                                </span>
+                            </button>
+                            
+                        </div>
+                        <div class="col-md-4 text-center pt-2">
+                            <span style="font-size: x-large; color: black">
+                                <i class="fas fa-user "></i> 
+                                <strong>
+                                    ข้อมูลกลุ่มผู้ใช้งาน
+                                </strong>
+                            </span>
+                        </div>
+                        <div class="col-md-4 text-right pt-2">
+                            <div class="btn-group" role="group" aria-label="Basic example">
+                                <button type="button" @onclick="@newUserGroup"
+                                        class="btn btn-default">
+                                    <span style="font-size: x-large; color: black">
+                                        <i class="fas fa-user-plus"></i> 
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                                <span>ค้นหา </span>
+                                <DxTextBox Id="txtSearch"
+                                           InputId="txtSearch"
+                                           @bind-Text="@Search"
+                                           BindValueMode="BindValueMode.OnInput"
+                                           SizeMode="@ControlSizeMode">
+                                </DxTextBox>
+
+
+                        </div>
+                        <div class="col-md-2 pt-4">
+                            <div class="btn-group" role="group" aria-label="Basic example">
+                                <button type="button" @onclick="@LoadData" class="btn btn-success">ค้นหา</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+   <div class="row pt-2">
+        <div class="col-md-12">
+            <div style="overflow-x: auto; width: 100%">
+                <DxDataGrid  
+                            ShowPager="true"
+                            SelectionMode="DevExpress.Blazor.DataGridSelectionMode.SingleSelectedDataRow"
+                            PageSize="70"
+                            KeyFieldName="UserGroupID"
+                            @ref="dxDataGrid"
+                            T="@vw_UserGroupInfo"
+                            CustomData="@LoadGridData"
+                            ShowFilterRow="@ShowFilterRow">
+                    <HeaderTemplate>
+                        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+                            <DxToolbarItem Tooltip="ตัวกรอง" Text="ตัวกรอง" BeginGroup="true" GroupName="FilterRow" Click="@OnShowFilterRow" IconCssClass="grid-toolbar-filter-row" Alignment="ToolbarItemAlignment.Left" />
+
+                        </DxToolbar>
+                    </HeaderTemplate>
+                    <Columns>
+
+                        <DxDataGridColumn Width="65px" AllowFilter="false" AllowGroup="false" AllowSort="false">
+                            <DisplayTemplate>
+                                @{
+                                    var data = context as vw_UserGroupInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:30px"></i></button>
+                                }
+                            </DisplayTemplate>
+                        </DxDataGridColumn>
+                        <DxDataGridColumn Width="120px" Field="@nameof(vw_UserGroupInfo.UserGroupID)" Caption="UserGroup" />
+                        <DxDataGridColumn Width="200px" Field="@nameof(vw_UserGroupInfo.GroupName)" Caption="GroupName" />
+                        <DxDataGridColumn Width="150px" Field="@nameof(vw_UserGroupInfo.Sort)" Caption="ลำดับ" />
+                        <DxDataGridColumn Width="130px" Field="@nameof(vw_UserGroupInfo.CreatedBy)" Caption="สร้างโดย" />
+                        <DxDataGridDateEditColumn Width="140px" Field="@nameof(vw_UserGroupInfo.CreatedDate)" DisplayFormat="dd/MM/yyyy hh:mm" Caption="วันที่สร้าง" />
+
+                    </Columns>
+                </DxDataGrid>
+            </div>
+        </div>
+    </div>
+
+
+@code{
+    UserGroupService.I_FiterSet FiterSet = new UserGroupService.I_FiterSet();
+    //List<vw_UserInfo> DataSource = new List<vw_UserInfo>();
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+
+    DxDataGrid<vw_UserGroupInfo> dxDataGrid;
+    protected async Task<LoadResult> LoadGridData(DataSourceLoadOptionsBase options, CancellationToken cancellationToken)
+    {
+        IQueryable<vw_UserGroupInfo> queryable = db.vw_UserGroupInfo.Where(o =>
+                            (  o.UserGroupID.Contains(Search)
+                            || o.GroupName.Contains(Search)
+                            || Search == ""
+                            )
+                            && o.IsActive==true
+                            ).OrderBy(c => c.UserGroupID).AsNoTracking();
+
+
+        return DataSourceLoader.Load(queryable, options);
+    }
+
+    bool ShowFilterRow = false;
+    string Search { get; set; } = "";
+    bool ShowDisable = false;
+
+    protected override void OnInitialized()
+    {
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    void OnShowFilterRow(ToolbarItemClickEventArgs e)
+    {
+        ShowFilterRow = !ShowFilterRow;
+    }
+
+    void LoadData()
+    {
+        //DataSource = UserService.ListDoc(FiterSet, Search);
+        dxDataGrid.Refresh();
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    void Edit(vw_UserGroupInfo head)
+    {
+        UserGroupService.DocSet = UserGroupService.GetDocSet(head.UserGroupID);
+        navigation.NavigateTo($"/USER/UserGroupDetail");
+    }
+
+    void newUserGroup()
+    {
+        UserGroupService.DocSet = UserGroupService.NewTransaction();
+        navigation.NavigateTo($"/USER/UserGroupDetail");
+    }
+
+    void Back()
+    {
+        //navigation.NavigateTo($"/Vaccine/VaccineAdmin", true);
+    }
+
+}

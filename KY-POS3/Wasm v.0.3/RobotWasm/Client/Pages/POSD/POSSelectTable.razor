@@ -1,0 +1,105 @@
+﻿@page "/POSD/POSSelectTable"
+
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<div class="row pt-1">
+    <div class="col-xl-8 col-md-10 col-sm-12 col-12 mx-auto rounded" style="padding: 8px 10px 8px 10px;background-color: #ffd32a;">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:larger;">เลือกโต๊ะ</span></div>
+        </div>
+    </a>
+    </div>
+</div>
+         
+<div class="row pt-1">
+    <div class="col-xl-8 col-md-10 col-sm-12 col-12 mx-auto px-0">
+
+        <div class="card">
+            <div class="card-body">
+                <TelerikListView Data=@Tables
+                                 Pageable="true"
+                                 PageSize="100">
+                    <HeaderTemplate>
+                    </HeaderTemplate>
+                    <Template>
+                        <a class="p-0 text-decoration-none text-dark" @onclick="@(() => GoToPOSSale(context))">
+                            <div class="row">
+                                <div class="col-md-2 col-md-2 col-sm-3 col-3 pt-1 text-start">
+                                    <img class="m-auto w-100" src="@context.Image" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                         style="object-fit: cover;height:auto; aspect-ratio: 12 / 12;" />
+                                </div>
+                                <div class="col-lg-10 col-md-10 col-sm-9 col-9 text-end pt-4">
+                                    <span style="font-size: 1.5rem;">@context.TableName &nbsp;</span>
+                                </div>
+                            </div>
+                        </a>
+                        <hr class="mb-2" />
+                    </Template>
+                </TelerikListView>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+
+@code {
+    bool isLoading = false;
+    List<POS_TableModel> Tables = new List<POS_TableModel>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POSD/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+        }
+    }
+
+    async void LoadData() {
+        string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+        string com = await _localStorage.GetItemAsync<string>(Globals.localStorageComID) ?? "";
+        Tables = await _tableInfoService.ListTable(rcom,com);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToPOSSale(POS_TableModel data) {
+        isLoading = true;
+        _posService.DocSet.Head.TableID = data.TableID;
+        _posService.DocSet.Head.TableName = data.TableName;
+        isLoading = false;
+        nav.NavigateTo($"POSD/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void GoBack() {
+        nav.NavigateTo("POSD/POSSaleDetail");
+    }
+}

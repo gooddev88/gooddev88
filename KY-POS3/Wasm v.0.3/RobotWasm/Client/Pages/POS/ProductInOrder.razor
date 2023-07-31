@@ -1,0 +1,167 @@
+﻿@page "/POS/ProductInOrder"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+    .k-input-spinner {
+        display: none;
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">รายละเอียดสินค้า</span></div>
+        </div>
+    </a>
+</div>
+
+@if (_posService.DocSet != null)
+{
+
+    <div class="row pt-2">
+        <div class="col-md-6 col-12 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <img class="m-auto" src="@_posService.DocSet.LineActive.ImageUrl" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                 style="width: 100%;object-fit: cover;height:auto; aspect-ratio: 13 / 9;" />
+                        </div>
+                        <div class="col-12 pt-3">
+                            <span style="font-size:large;">@_posService.DocSet.LineActive.ItemName</span>
+                        </div>
+                        <div class="col-12 py-4">
+                            <div class="text-center" style="font-size: medium;">
+                                @if (_posService.DocSet.LineActive.ItemTypeID != "DISCOUNT") {
+                                    <a class="btn p-0" style="color:#37b400;" @onclick="@(() => OnAddItem(_posService.DocSet.LineActive))">
+                                        <i class="fa-solid fa-circle-plus" style="font-size:2.7rem"></i>&nbsp;&nbsp;&nbsp;
+                                    </a>
+                                    <span class="fw-bold d-inline-block" style="font-size: x-large;"> @_posService.DocSet.LineActive.Qty.ToString("n0") </span>
+                                }&nbsp;&nbsp;&nbsp;
+                                <a class="btn text-danger p-0" @onclick="@(() => OnRemoveItem(_posService.DocSet.LineActive))">
+                                    <i class="fas fa-minus-circle" style="font-size:2.7rem"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-12 pt-2">
+                            <span style="font-size:large;">ราคา @_posService.DocSet.LineActive.PriceIncVat.ToString("n2") บาท</span>
+                        </div>
+                        <div class="col-12 pt-2">
+                            <span style="font-size:large;">รวมทั้งหมด @_posService.DocSet.LineActive.BaseTotalAmt.ToString("n2") บาท</span>
+                        </div>
+
+                        <div class="col-12 pt-2">
+                        <span>หมายเหตุ</span>
+                            <TelerikTextArea @bind-Value="@_posService.DocSet.LineActive.Remark"
+                                     AutoSize="true"                                
+                                     Class="w-100"
+                                         PlaceHolder="">
+                        </TelerikTextArea>
+                        </div>
+
+                        <div class="row pt-4">
+                            <div class="col-md-12">
+                                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                                           @onclick="@(() => OnOk())" Class="w-100"
+                                           ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                                    เพิ่มสินค้า ทั้งหมด @_posService.DocSet.LineActive.Qty.ToString("n0") ชิ้น
+                                </TelerikButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        if (_posService.DocSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.SessionActive_PosID);
+            string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+            if (!string.IsNullOrEmpty(docid)) {
+                _posService.DocSet = await Task.Run(() => _posService.GetDocSet(docid, rcom));
+            } else {
+                nav.NavigateTo("POS/POSSaleDetail");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+        }
+    }
+
+    async void LoadData() {
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnAddItem(POS_SaleLineModel data) {
+        _posService.DocSet.SelectItem = _posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        if (data.ItemTypeID == "DISCOUNT") {
+            return;
+        }
+        _posService.DocSet = POSFuncService.AddItem(_posService.DocSet, 777, 0);
+        _posService.DocSet.LineActive.Status = "OK";
+        _posService.DocSet.LineActive.ImageUrl = _posService.DocSet.SelectItem.ImageUrl;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnRemoveItem(POS_SaleLineModel data) {
+        _posService.DocSet.SelectItem = _posService.Menu.Where(o => o.ItemID == data.ItemID).FirstOrDefault();
+        if (_posService.DocSet.LineActive.Qty == 0) {
+            return;
+        } else {
+            _posService.DocSet = POSFuncService.AddItem(_posService.DocSet, -777, 0);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async void OnOk() {
+        if (_posService.DocSet.LineActive.Status == "Edit") {
+            _posService.DocSet.LineActive.Status = "OK";
+            nav.NavigateTo("POS/POSSaleDetail");
+        }else {
+            nav.NavigateTo("POS/POSSelectProduct");
+        }       
+    }
+
+    void GoBack() {
+        if (_posService.DocSet.LineActive.Status == "Edit") {
+            _posService.DocSet.LineActive.Status = "OK";
+            nav.NavigateTo("POS/POSSaleDetail");
+        } else {
+            nav.NavigateTo("POS/POSSelectProduct");
+        }
+    }
+
+}

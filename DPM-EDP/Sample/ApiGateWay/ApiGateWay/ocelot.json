@@ -1,0 +1,255 @@
+﻿{
+  "Routes": [
+
+
+    //Test route
+    {
+      "DownstreamPathTemplate": "/categories",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "categories_auth_scheme",
+        "AllowedScopes": []
+      },
+      "UpstreamPathTemplate": "/apigateway/categories",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/products",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "products_auth_scheme",
+        "AllowedScopes": []
+      },
+      "UpstreamPathTemplate": "/apigateway/products",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+
+
+    {
+      "DownstreamPathTemplate": "/WeatherForecast",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "products_auth_scheme",
+        "AllowedScopes": []
+      },
+      "UpstreamPathTemplate": "/w"
+    },
+
+
+    {
+      "DownstreamPathTemplate": "/sale/api/SyncData/ListMacRegister",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          //https://ky.kypos.cc/sale/api/SyncData/ListMacRegister?rcom=ky&com=sl
+          //https://ky.kypos.cc/sale/api/SyncData/ListMacRegister?rcom=ky&com=sl
+          "Host": "ky.kypos.cc",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/ListMacRegister"
+    },
+
+
+
+    //*****************************   DPM Portal *******************************************//
+
+
+    {
+      "DownstreamPathTemplate": "/api/cims/portal/dpm020",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/portal/dpm020"
+    },
+
+
+    //*****************************   Budget *******************************************//
+
+
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/departmentlist",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/departmentlist"
+    },
+    //-------------------------------------------------------//
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/OverallBudget",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/OverallBudget"
+    },
+    //-------------------------------------------------------//
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/BudgetTransfer",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/BudgetTransfer"
+
+    },
+    //-------------------------------------------------------//
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/BudgetExpense",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/BudgetExpense"
+    },
+    //-------------------------------------------------------//
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/Government",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/Government"
+    },
+    //-------------------------------------------------------//
+    {
+      "DownstreamPathTemplate": "/api/cims/budget/Organization",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/budget/Organization"
+    },
+
+
+    //*****************************   EOC *******************************************//
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/Help",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/help"
+    },
+    //-------------------------------------------------------//
+
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/WarningEvent",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/WarningEvent"
+    },
+    //-------------------------------------------------------//
+
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/WarningPublish",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/WarningPublish"
+    },
+    //-------------------------------------------------------//
+
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/Expense",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/Expense"
+    },
+    //-------------------------------------------------------//
+
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/Indicator",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/Indicator"
+    },
+    //-------------------------------------------------------//
+
+    {
+      "DownstreamPathTemplate": "/api/eoc/eoc/idp",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "edpapim.disaster.go.th",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/eoc/idp"
+    }
+  ],
+
+
+
+
+
+  
+
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:5001"
+
+  }
+}

@@ -1,0 +1,18 @@
+﻿@page "/Order/OrderRedirect/{menu}"
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    [Parameter] public string menu { get; set; } = "";
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync() {
+        nav.NavigateTo($"Order/OrderList/{menu}");
+        await InvokeAsync(StateHasChanged);
+    }
+ 
+}

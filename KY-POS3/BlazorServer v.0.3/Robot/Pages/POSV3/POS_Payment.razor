@@ -1,0 +1,331 @@
+﻿@page "/POSV3/POS_Payment"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.ML
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using CurrieTechnologies.Razor.SweetAlert2
+
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject SweetAlertService Swal
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<div class="row pt-2 px-2">
+    <div class="col-12">
+        <div class="card" style="border-radius: 10px;">
+            <div class="card-body p-3">
+                <div class="row">
+                    <div class="col-md-1 col-sm-2 col-2 text-left">
+                        <a ID="btnback" class="" @onclick="@Back">
+                            <img src="/SALE/assets/img/back.png" style="width:2rem;" />
+                        </a>&nbsp;
+                    </div>
+                    <div class="col-md-11 col-sm-10 col-10 pl-0 text-left">
+                        <strong style="font-size:2rem; color:crimson;">เลือกวิธีชำระ</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12 text-center">
+        <h3>ยอดชำระ &nbsp;@posService.DocSet.Head.NetTotalAfterRound.ToString("n2") ฿</h3>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12 text-center">
+        <h3>คงเหลือค้างชำระ &nbsp; @Convert.ToDecimal(posService.DocSet.Head.NetTotalAfterRound - posService.DocSet.Head.PayTotalAmt).ToString("n2") ฿</h3>
+    </div>
+</div>
+
+@if (posService.DocSet.Head.ShipToLocID == "")
+{
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <DxComboBox Data="@Tenders"
+                        CssClass="w-100"
+                        TextFieldName="@nameof(SelectOption.Value)"
+                        ValueFieldName="@nameof(SelectOption.Description)"
+                        FilteringMode="DataGridFilteringMode.Contains"
+                        @bind-Value="@SelectTenderType"
+                        SelectedItemChanged="@((SelectOption data) => SelectedItemChanged(data))"
+                        SizeMode="SizeMode.Large">
+            </DxComboBox>
+        </div>
+    </div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <DxTextBox CssClass="w-100"
+                       @bind-Text="@txtPayAmt"
+                       BindValueMode="BindValueMode.OnInput"
+                       SizeMode="SizeMode.Large">
+            </DxTextBox>
+        </div>
+    </div>
+
+    <div class="row pt-2 px-3">
+        <div class="col-12">
+            <a class="btn btn-success w-100 p-2 text-white"
+               @onclick="@AddPayMent">เพิ่ม</a>
+        </div>
+    </div>}
+
+<div class="row pt-2 pl-0 pr-1">
+    <div class="col-12 ">
+        @foreach (var l in posService.DocSet.Payment)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <span style="font-size:medium"> <b> @l.PaymentType</b></span>
+
+                        </div>
+                        <div class="col-6 text-right">
+
+                            <a class="btn" @onclick="@(() => DeleteSalePayment(l))">
+                                <i class="fas fa-minus-circle" style="font-size:25px"></i>
+                            </a>
+
+
+                        </div>
+                    </div>
+
+                    <div class="row ">
+                        <div class="col-6">
+                            <span style="font-size: small;">รับเงิน </span>
+                        </div>
+                        <div class="col-6 text-left">
+                            <span style="font-size:large">  @l.GetAmt.ToString("n2") ฿ </span>
+                        </div>
+                    </div>
+                    @if (l.PaymentType == "CASH")
+                    {
+                        <div class="row">
+                            <div class="col-6">
+                                <span style="font-size: small; ">เงินทอน </span>
+                            </div>
+                            <div class="col-6 text-left">
+                                <span style="font-size:large">  @l.ChangeAmt.ToString("n2") ฿ </span>
+                            </div>
+                        </div>}
+                </div>
+            </div>}
+    </div>
+</div>
+
+<DxPopup @bind-Visible="@isPopupPrintVisible"
+         ShowFooter="true"
+         CssClass="text-center"
+         HeaderText="Edit Contact">
+    <BodyTemplate>
+        @if (@isPopupPrintVisible)
+        {
+            <iframe src=@PrintUrl frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        }
+
+    </BodyTemplate>
+    <FooterContentTemplate>
+        @*<DxButton CssClass="popup-button" RenderStyle="ButtonRenderStyle.Primary" Text="OK" Click="@(() => isPopupPrintVisible = false)" />*@
+        <DxButton CssClass="popup-button" RenderStyle="ButtonRenderStyle.Secondary" SizeMode="SizeMode.Large" Text="ปิด" Click="@(() => isPopupPrintVisible = false)" />
+    </FooterContentTemplate>
+</DxPopup>
+
+@if (posService.DocSet.Head.INVID == "")
+{
+    <div class="row mx-0 fix-bottom-detail-botton pb-2">
+        <div class="col-12 text-center">
+            <div class="row">
+                <div class="col-4 mx-auto px-1">
+                    <a class="btn btn-info w-100 p-2 text-white"
+                       @onclick="@SaveBill">บันทึกบิล</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row mx-0 fix-bottom-detail-botton pb-2">
+        <div class="col-12 text-center">
+            <div class="row">
+                <div class="col-8 mx-auto px-1">
+                    <a class="btn btn-success p-2 text-white"
+                       @onclick="@OnNew">บิลใหม่</a>&nbsp;
+                    <a class="btn btn-secondary p-2 text-white"
+                       @onclick="@(async () => await OnPrintBill())">พิมพ์บิล</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code
+{ bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+
+    bool isPopupPrintVisible { get; set; } = false;
+    string PrintUrl { get; set; } = "";
+
+    List<SelectOption> Tenders = new List<SelectOption>();
+    IEnumerable<TableInfoService.POS_TableModel> Tables;
+    public string SelectTenderType { get; set; } = "CASH";
+    public string txtPayAmt { get; set; } = "0";
+
+    protected override async Task OnInitializedAsync()
+    {
+        //login = await Task.Run(login.GetLoginSessionLog);
+        await Task.Run(LoadData);
+        isLoading = false;
+    }
+    void LoadData()
+    {
+        Tenders = posService.ListTenderType();
+    }
+
+    void SelectedItemChanged(SelectOption data)
+    {
+
+        if (data == null)
+        {
+            return;
+
+        }
+        try
+        {
+            if (data.Value == "CASH")
+            {
+                txtPayAmt = "0.0";
+            }
+            else
+            {
+                txtPayAmt = (posService.DocSet.Head.NetTotalAfterRound - posService.DocSet.Head.PayTotalAmt).ToString("n2");
+            }
+        }
+        catch (Exception ex)
+        {
+        }
+        finally
+        {
+
+        }
+    }
+
+    void AddPayMent()
+    {
+        AddPayment();
+    }
+
+    private void AddPayment()
+    {
+        decimal CustPayAmt = 0;
+        decimal.TryParse(txtPayAmt, out CustPayAmt);
+        posService.AddPayment(posService.DocSet, SelectTenderType, CustPayAmt);
+        SelectTenderType = "CASH";
+        txtPayAmt = (posService.DocSet.Head.NetTotalAfterRound - posService.DocSet.Head.PayTotalAmt).ToString("n2");
+        InvokeAsync(StateHasChanged);
+    }
+
+    void DeleteSalePayment(POSSaleConverterService.POS_SalePaymentModel data)
+    {
+        posService.DocSet.Payment.RemoveAll(o => o.PaymentType == data.PaymentType);
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+    }
+
+    async void SaveBill()
+    {
+        var h = posService.DocSet.Head;
+        posService.DocSet = POSService.CalDocSet(posService.DocSet);
+        var diff = h.NetTotalAfterRound - posService.DocSet.Payment.Sum(o => o.PayAmt);
+
+        if (diff > 0)
+        {
+            await Swal.FireAsync("", "ชำระราคาสินค้าไม่ครบ", "error");
+            return;
+        }
+        if (diff < 0)
+        {
+            await Swal.FireAsync("", "ชำระราคาสินค้าเกินจำนวน", "error");
+            return;
+        }
+        if (posService.DocSet.Payment.Count == 0)
+        {
+            await Swal.FireAsync("", "ยังไม่ชำระเงิน", "error");
+            return;
+        }
+
+        try
+        {
+
+            //var rr = posService.SaveInvoice(posService.DocSet,login.LoginInfo.CurrentMacNo);
+            //posService.Save(posService.DocSet,true);
+            //if (rr.Result == "fail")
+            //{
+            //    await Swal.FireAsync("", rr.Message1, "error");
+            //}
+            //else
+            //{
+            //    await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            //}
+        }
+        catch
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async void OnNew()
+    {
+        posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo,"webv3",""));
+        posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+        posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+    }
+
+    public async Task OnPrintBill()
+    {
+        isLoading = true;
+        isLoading = false;
+        var h = posService.DocSet.Head;
+        if (string.IsNullOrEmpty(h.INVID))
+        {
+            await Swal.FireAsync("", "ไม่พบเลขใบเสร็จ", "error");
+        }
+
+        nav.NavigateTo($"XReportViewer/PrintInvoice/{h.BillID}");
+        //string subApp = "APP";
+        //string rootdomain = nav.BaseUri.ToString().Replace("SALE/", "");
+
+        //PrintUrl = rootdomain + subApp + $"/PrintServer/PrintOrderV1?billid={h.BillID}&rcom={h.RComID}&refid=bill&device=m";
+        //isPopupPrintVisible = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        await Task.Run(() => posService.SetSessionDocSet(posService.DocSet));
+
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    } }

@@ -1,0 +1,204 @@
+﻿@page "/POS/POSSaleNewDoc/{comid}/{pagecomefrom}"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.DA.LoginCrossApp
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@*@using Robot.Data.DA.LoginCrossApp*@
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" /> 
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div style="padding-top: 10%; margin:auto;">
+            <div class="row pt-3">
+                <div class="col-12 text-center">
+                    <h3>เลือกสาขาและวันที่ขาย</h3>
+                </div>
+            </div>
+
+            <div class="row pt-3" style="padding-bottom: 120px !important;">
+                <div class="col-10 mx-auto">
+                    <div class="card">
+                        <div class="card-header">
+
+                            <div class="row pt-3">
+                                <div class="col-md-12 pl-4 pt-1 ">
+                                    <div class="row">
+                                        <label class="col-3 pt-1 text-right">เลือกสาขา &nbsp;</label>
+                                        <TelerikComboBox @bind-Value="@SelectComID"
+                                                         Data="@ListCompany"
+                                                         TextField="@nameof(CompanyService.CompanyInfoList.Name)"
+                                                         ValueField="@nameof(CompanyService.CompanyInfoList.CompanyID)"
+                                                         Filterable="true"
+                                                         Width="100%">
+                                        </TelerikComboBox>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row pt-1">
+                                <div class="col-md-12 pl-4">
+                                    <div class="row">
+                                        <label class="col-3 pt-1 text-right">เลือกวันที่ &nbsp;</label>
+                                        <TelerikDatePicker @bind-Value="@SelectbillDate"
+                                                                           Format="dd/MM/yyyy">
+                                                            </TelerikDatePicker>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="row pt-2 pb-3">
+                                <div class="col-md-12 pl-4 pt-1">
+                                    <div class="row text-center pt-1">
+
+                                        <div class="col-12   ">
+                                            <div class="btn-group" role="group" aria-label="Basic example">
+                                                <a class="btn btn-danger text-white" style="width:120px" @onclick="@GoBack">
+                                                    <span>กลับเมนู</span>
+                                                </a>
+                                                <a class="btn btn-success text-white" style="width:120px" @onclick="@OnSave">
+                                                    <span>เข้าระบบขาย</span>
+                                                </a>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+    [Parameter]
+    public string comid { get; set; } = "";
+    [Parameter]
+    public string pagecomefrom { get; set; } = "";
+    bool isLoading = true;
+    DateTime? SelectbillDate = DateTime.Now.Date;
+
+    public string SelectComID { get; set; } = "";
+
+
+    List<CompanyService.CompanyInfoList> ListCompany = new List<CompanyService.CompanyInfoList>();
+    LogInCrossAppReq LogInCrossAppReq = new LogInCrossAppReq();
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo == null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    async void LoadData() {
+        ListCompany = CompanyService.ListCompanyInfoUIC(login.LoginInfo, "BRANCH", false);
+        SelectComID = ListCompany.FirstOrDefault().CompanyID;
+        isLoading = false;
+        if (comid != "x999") {
+            var selectComInfo = ListCompany.Where(o => o.CompanyID.ToLower() == comid.ToLower()).FirstOrDefault();
+            await Task.Run(() => GotoSalePage(selectComInfo));
+        }
+        isLoading = false;
+    }
+
+    async void OnSave() {
+
+        if (SelectbillDate == null) {
+            await Swal.FireAsync("", "กรุณาเลือกวันที่ขาย", "error");
+            return;
+        }
+        if (string.IsNullOrEmpty(SelectComID)) {
+            await Swal.FireAsync("", "กรุณาเลือกสาขา", "error");
+            return;
+        }
+        isLoading = true;
+        var selectComInfo = ListCompany.Where(o => o.CompanyID == SelectComID).FirstOrDefault();
+        await Task.Run(() => GotoSalePage(selectComInfo));
+
+
+    }
+    async void GotoSalePage(CompanyService.CompanyInfoList selectComInfo) {
+        isLoading = true;
+        login.LoginInfo.CurrentCompany = CompanyService.GetComInfoByComID(selectComInfo.RCompanyID, selectComInfo.CompanyID);
+
+        if (string.IsNullOrEmpty(login.LoginInfo.CurrentCompany.ShortCode)) {
+            await Swal.FireAsync("", "ตั้งชื่อย่อ สาขาก่อนเปิดบิลขาย", "error");
+            return;
+        }
+        login.LoginInfo.CurrentTransactionDate = Convert.ToDateTime(SelectbillDate);
+         await sessionStorage.RemoveItemAsync(POSService.sessionActiveId);
+        posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo, "webv2", ""));
+        posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+        posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+        var head = posService.DocSet.Head;
+    
+
+        isLoading = false;
+        ///await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"POS/POSSaleDetail/{pagecomefrom}", false);
+         
+
+    }
+
+
+    void GoBack() {
+        string forwardurl = "";
+        switch (pagecomefrom) {
+            case "web1":
+                var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+                string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+                nav.NavigateTo(rootappurl);
+                break;
+            case "web2":
+                nav.NavigateTo($"Menu/MainMenu", false);
+                InvokeAsync(StateHasChanged);
+                break;
+        }
+    }
+
+}

@@ -1,0 +1,11 @@
+﻿.telerik-pop {
+    z-index: 44444;
+}
+.swal2-container {
+    z-index: 20000 !important;
+}
+
+.k-checkbox {
+    border-color: gray !important;
+    background-color: #ffffff;
+}

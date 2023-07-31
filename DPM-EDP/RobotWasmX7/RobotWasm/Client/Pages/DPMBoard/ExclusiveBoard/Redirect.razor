@@ -1,0 +1,9 @@
+﻿@page "/DPMBoard/ExclusiveBoard/Redirect/{typeid}"
+@inject BoardService boardService
+@code {
+    [Parameter] public string typeid { get; set; }
+    protected override async Task OnInitializedAsync() {
+                boardService.Select_TableauID = typeid;
+        nav.NavigateTo($"DPMBoard/ExclusiveBoard/TableauBoardMainPageShow/{typeid}");
+    }
+}

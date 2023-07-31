@@ -1,0 +1,192 @@
+﻿@page "/DPMBoard/ExclusiveBoard/ExclusiveBoard"
+@page "/DPMBoard/ExclusiveBoard/ExclusiveBoard/{search}"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Helper.DeviceHelper
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@inject IJSRuntime JSRuntime
+<style>
+    .bdr-50 {
+        border-radius: 50%;
+    }
+
+    .btn:hover {
+        background-color: #594ae2;
+        color: white !important;
+    }
+</style>
+
+@if (!isLoading) {
+    <div class="row">
+        <div class="col-md-12 text-center">
+
+            <h4 Class="text-start font-weight-light">
+                <i class="fab fa-free-code-camp fa-2x"></i>&nbsp;Exclusive Board
+            </h4>
+        </div>
+    </div>
+
+        @if (isShowAddBoard) {
+        <div class="row pb-2">
+            <div class="col-md-12 text-end">
+                <TelerikButton Icon="plus" OnClick="@(() => AddNewBoard())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">เพิ่มบอร์ด</TelerikButton>
+            </div>
+        </div>
+    }
+
+    @if (boards != null) {
+        foreach (var b in boards.Where(o => o.board_type == "exclusive" && o.IsSelect)) {
+            <div class="row pt-2">
+                <div class="col-md-12">
+                    <div class="card card-r">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <a @onclick="()=>GetBoardLink(b)" class="text-decoration-none" style="color:black">
+                                        <div class="row">
+                                            <div class="col-1 text-center">
+                                                <i class="fa-solid fa-chart-column fa-2x"></i>
+                                            </div>
+                                            <div class="col-11">
+                                                <span style="font-size:medium;">@b.board_name</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-4 text-end">
+                                    @if (isShowEditBoard) {
+                                        <a class="btn text-decoration-none" @onclick="@(() => EditBoard(b))">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        }
+    }
+
+
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string search { get; set; }
+
+    private bool isLoading = false;
+    public List<vw_board_in_user_select>? boards;
+    public BrowserInfo browserInfo { get; set; }
+    protected BrowserDetectJsInterop deviceModule { get; private set; }
+    private bool isShowAddBoard = true;
+    private bool isShowEditBoard = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            deviceModule = new BrowserDetectJsInterop(JSRuntime);
+            browserInfo = await deviceModule.BrowserInfo();
+            firstRender = false;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+
+
+        await Task.Run(() => LoadData());
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public string GetImage(string boardId) {
+        return $"img/A01.svg";
+    }
+    async public Task GetBoardLink(vw_board_in_user_select data) {
+        _boardService.Temp_TableauUrl = await Task.Run(() => _boardService.GetBoardUrltableau(data.board_id));
+        _boardService.Temp_SelectBoard = data;
+
+        //bool iOS = false;
+        //if (browserInfo != null) {
+        //    if (browserInfo.OSName.ToLower().Contains("ios")) {
+        //        iOS = true;
+        //    }
+        //}
+        //if (iOS) {
+        //    nav.NavigateTo( _boardService.Temp_TableauUrl );
+        //} else {
+        //    string url = $"DPMBoard/ExclusiveBoard/TableauBoardShow";
+        //    nav.NavigateTo(url);
+        //}
+        string url = $"DPMBoard/ExclusiveBoard/TableauBoardShow";
+        nav.NavigateTo(url);
+
+    }
+
+    async Task LoadData() {
+        try {
+            isLoading = true;
+
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            boards = await Task.Run(() => _boardService.ListBoardInUser(user));
+
+            // search ExclusiveBoard
+            search = search == null ? "" : search;
+            search = search.ToLower();
+            if (!string.IsNullOrEmpty(search)) {
+            boards = boards.Where(o => /*o.board_id.ToLower().Contains(search)*/
+                                            o.board_name.ToLower().Contains(search)
+                                            || o.board_description.ToLower().Contains(search)
+                                            ).ToList();
+            }
+
+            isLoading = false;
+            await CheckPermission();
+        } catch (Exception ex) {
+            var x = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "401");
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "401").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsCreate)) {
+            isShowAddBoard = false;
+        }
+
+        if (!Convert.ToBoolean(Permissionmenu.IsEdit)) {
+            isShowEditBoard = false;
+        }
+    }
+
+    async Task AddNewBoard() {
+        await sessionStorage.RemoveItemAsync(Globals.ActiveID_BoadrID);
+        _boardMasterService.DocSet = BoardMasterService.NewTransaction("exclusive");
+        string url = $"DPMBoard/ExclusiveBoard/ExclusiveBoardDetail";
+        nav.NavigateTo(url);
+    }
+
+    async Task EditBoard(vw_board_in_user_select h) {
+        _boardMasterService.DocSet = await _boardMasterService.GetDocSet(h.board_id);
+        await sessionStorage.SetItemAsync(Globals.ActiveID_BoadrID, h.board_id);
+        string url = $"DPMBoard/ExclusiveBoard/ExclusiveBoardDetail";
+        nav.NavigateTo(url);
+    }
+
+}

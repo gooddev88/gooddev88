@@ -1,0 +1,685 @@
+﻿@page "/Dashboard/LeaveBoard"
+@using Robot.Data.ML
+@using Robot.Data.ML.DPMLeaveModel
+@using Robot.Data.DA.Document
+@using System.IO
+@using static Robot.Data.ML.I_Result
+@using Telerik.DataSource;
+
+@inject MyUserService userService
+
+<style>
+    .file-input-zone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: black;
+        cursor: crosshair;
+        background: no-repeat;
+        position: relative;
+        font-weight: bold;
+        width: 100px !important;
+        height: 20px;
+        background-size: 33px 30px;
+        background-image: url('/assets/img/cloud-upload.svg');
+    }
+
+        .file-input-zone input[type=file] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: crosshair;
+        }
+
+    .small {
+        font-size: small;
+    }
+
+    .fix-div {
+        font-size: 1.2rem;
+        height: 60px;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <Breadcrumb Mode="BreadcrumbMode.Auto">
+            @foreach (var b in login.LoginInfo.UserInBoard)
+            {
+                <BreadcrumbItem>
+                    <BreadcrumbLink To=@b.BoardUrl> @b.BoardName</BreadcrumbLink>
+                </BreadcrumbItem>
+            }
+        </Breadcrumb>
+
+
+
+
+
+        <div class="row pt-2">
+            <div class="col-md-11 mx-auto">
+                <div class="card card-r">
+                    <div class="card-body pb-0">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <SpinLoader IsLoading="isUploading">
+                                    <LoadingTemplate>
+
+                                        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+                                            <br /><br />
+                                            <div class="row pt-2">
+                                                <div class="col-10 mx-auto">
+                                                    <label style="color:blue; font-size:x-small;">... Loading ...</label><br /><br /><br /><br />
+                                                    <CircleFade Color="blue" Size="100px" Center="true" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </LoadingTemplate>
+                                    <ContentTemplate>
+                                        <div class="row pt-1 pb-3">
+                                            <div class="col-12 mx-0">
+                                                <a @onclick="@DownLoadImage">
+                                                    <img src=@ImageUrl class="img-circle" onerror="this.onerror=null; this.src='/assets/img/pear.png'">
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="row pb-3">
+                                            <div class="col-4">
+                                                <div class="file-input-zone">
+                                                    <InputFile class="upload" OnChange="OnInputFileChanged" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf">
+                                                    </InputFile>
+                                                </div>
+                                            </div>
+                                            <div class="col-8 text-end">
+                                                <div class="btn-group" role="group" aria-label="Basic example">
+
+                                                    <a class="text-decoration-none" @onclick="@(() => OnRefreshLeaveCumu())">
+                                                        <i class="fas fa-sync" style="color:crimson"></i>&nbsp;<span></span>
+                                                    </a> &ensp;&ensp;
+                                           @*         <a class="text-decoration-none" @onclick="@(() => EditUser())">
+                                                        <i class="fas fa-pen" style="color:crimson"></i>&nbsp;<span></span>
+                                                    </a>*@
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ContentTemplate>
+                                </SpinLoader>
+                            </div>
+                            <div class="col-md-10">
+
+                                <div class="row p-0 p-sm-3 pt-2">
+                                    <div class="col-12 col-sm-5 col-md-12 col-xl-6">
+
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="pe-3">รหัสพนักงาน:</td>
+                                                    <td>@login.LoginInfo.CurrentUserInfo.Username</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pe-3">เพศ:</td>
+                                                    <td>@lblGender</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pe-3">ส่วนงาน:</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(login.LoginInfo.CurrentUserInfo.SubDepartmentID))
+                                                        {
+                                                            <label style="color:blue;">@login.LoginInfo.CurrentUserInfo.SubDepartmentID</label>
+                                                        }
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-12 col-sm-7 col-md-12 col-xl-6">
+
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="pe-3">ชื่อ:</td>
+                                                    <td>@login.LoginInfo.CurrentUserInfo.FullName</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pe-3">หน่วยงาน:</td>
+                                                    <td>@login.LoginInfo.CurrentUserInfo.DepartmentID</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pe-3">ตำแหน่ง:</td>
+                                                    <td>@login.LoginInfo.CurrentUserInfo.PositionID</td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+        <div class="row pt-3">
+            <div class="col-md-11 mx-auto">
+                <div class="row">
+                    <h5 class="card-title"> <i class="far fa-calendar"></i> &nbsp; วันลาตามปีงบประมาณ @FiscalYear </h5>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-md-11 mx-auto">
+                <div class="row">
+                    @foreach (var l in ListSumHRLeave)
+                    {
+                        <div class="col-md-3 col-sm-3 px-1 py-1">
+                            <a @onclick="@(() => OnNew(l.LeaveType))">
+                                <div class="card card-r">
+                                    <div class="card-body">
+                                        <div class="fix-div">@l.LeaveTypeDesc</div>
+                                        <div class="row">
+                                            <div class="col-md-12 text-end">
+                                                <p class="card-text">
+                                                    <span style="color:@l.LabelColor">
+                                                        @if (l.HasLimitLeaveDay == "NO")
+                                                        {
+                                                            <small>@l.PrefixNumber</small>  <span style="font-size:2.5rem;"> <strong>@l.LeaveDay</strong></span> <small>วัน </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span style="font-size:2.5rem;"> <strong>  @l.LeaveDay.ToString("n0")  <span> / </span>  @l.QuotaInDay.ToString("n0")</strong></span>
+                                                        }
+                                                    </span>
+                                                    @*  @if (l.HasLimitLeaveDay == "YES") {
+                                                @l.LeaveDayRemain.ToString("n0")  <span> / </span>  @l.QuotaInDay.ToString("n0");
+
+                                                } else {
+                                                <small>เหลือ </small>  @l.LeaveDayRemain   <small>วัน </small>
+                                                }*@
+
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row pt-4">
+            <div class="col-md-11 mx-auto">
+                <h5 class="card-title"><i class="far fa-thumbs-up"></i> ใบลารออนุมัติ </h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-11 mx-auto" style="font-size:small;">
+                <TelerikGrid Data=@LeaveApprovePending
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="10"
+                             Navigable="true">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.DocType)" Title="เอกสาร" Editable="false" Width="130px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+
+                                    if (data.DocType == "ใบยกเลิกลา")
+                                    {
+                                        <span class="badge rounded-pill bg-danger">เอกสารยกเลิก</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@data.DocType</span>
+                                    }
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.LeaveType) Title="ประเภทการลา" Width="90px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.DateLeave) Title="ช่วงวันที่ลา" Width="200px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.Day) Title="จำนวนวัน" Width="110px" />
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Approved)" Title="การอนุมัติ" Width="250px" />
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Reason)" Title="เหตุผลการลา" Width="230px" />
+                        <GridCommandColumn Width="120px">
+                            <GridCommandButton OnClick="@((args)=> OnEdit(args.Item as I_LeaveGridDisplay))" Icon="edit">แก้ไข</GridCommandButton>
+                        </GridCommandColumn>
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+        <div class="row pt-4">
+            <div class="col-md-11 mx-auto">
+                <h5 class="card-title"><i class="fas fa-history"></i>&nbsp; ประวัติการลา </h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-11 mx-auto" style="font-size:small;">
+                <TelerikGrid Data=@LeaveHistoryList
+                             Pageable="true"
+                             Class="small"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="10"
+                             Navigable="true">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.DocType)" Title="เอกสาร" Editable="false" Width="130px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+
+                                    if (data.DocType == "ใบยกเลิกลา")
+                                    {
+                                        <span class="badge rounded-pill bg-danger">เอกสารยกเลิก</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@data.DocType</span>
+                                    }
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.LeaveType) Title="ประเภทการลา" Width="90px" />
+                        <GridColumn Field=@nameof(I_LeaveGridDisplay.DateLeave) Title="ช่วงวันที่ลา" Width="180px" />
+                        @*<GridColumn Field="@nameof(I_LeaveGridDisplay.StatusL1)" Title="สถานะ ระดับ1" Editable="false" Width="110px">
+                        <Template>
+                        @{
+                        var data = context as I_LeaveGridDisplay;
+                        @switch (data.StatusL1.ToUpper()) {
+                        case "PENDING":
+                        <span class="badge rounded-pill bg-warning text-dark" style="width:80px">รออนุมัติ</span>
+                        break;
+                        case "APPROVE_LEVEL1":
+                        <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติระดับ 1</span>
+                        break;
+                        case "APPROVE":
+                        <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติ</span>
+                        break;
+                        case "REJECT":
+                        <span class="badge rounded-pill bg-danger" style="width:80px">ไม่อนุมัติ</span>
+                        break;
+                        case "CANCEL":
+                        <span class="badge rounded-pill bg-danger" style="width:80px">ยกเลิก</span>
+                        break;
+                        default:
+                        <span class="badge rounded-pill bg-warning text-dark" style="width:80px">รออนุมัติ</span>
+                        break;
+                        }
+                        }
+                        </Template>
+                        </GridColumn>*@
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Status)" Title="สถานะ" Editable="false" Width="110px">
+                            <Template>
+                                @{
+                                    var data = context as I_LeaveGridDisplay;
+                                    @switch (data.Status.ToUpper())
+                                    {
+                                        case "PENDING":
+                                            <span class="badge rounded-pill bg-warning text-dark" style="width:80px">รออนุมัติ</span>
+                                            break;
+                                        case "APPROVED_LEVEL1":
+                                            <span class="badge rounded-pill bg-info" style="width:80px">อนุมัติระดับ 1</span>
+                                            break;
+                                        case "APPROVED_LEVEL2":
+                                            <span class="badge rounded-pill bg-info" style="width:80px">อนุมัติระดับ 2</span>
+                                            break;
+                                        case "APPROVED":
+                                            <span class="badge rounded-pill bg-success" style="width:80px">อนุมัติ</span>
+                                            break;
+                                        case "REJECTED":
+                                            <span class="badge rounded-pill bg-danger" style="width:80px">ไม่อนุมัติ</span>
+                                            break;
+                                        case "CANCEL":
+                                            <span class="badge rounded-pill bg-danger" style="width:80px">ยกเลิก</span>
+                                            break;
+                                        default:
+                                            <span class="badge rounded-pill bg-warning text-dark" style="width:80px">n/a</span>
+                                            break;
+                                    }
+                                }
+                            </Template>
+                        </GridColumn>
+                        @*<GridColumn Field="@nameof(I_LeaveGridDisplay.ApprovedL1)" Title="ผู้อนุมัติ ระดับ1" Width="200px" />*@
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Approved)" Title="ผู้อนุมัติ" Width="200px" />
+                        <GridColumn Field="@nameof(I_LeaveGridDisplay.Reason)" Title="เหตุผลการลา" Width="230px" />
+                        <GridCommandColumn Width="110px">
+                            <GridCommandButton OnClick="@((args)=> OnEdit(args.Item as I_LeaveGridDisplay))" Icon="folder-open">ดูข้อมูล</GridCommandButton>
+                        </GridCommandColumn>
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+    bool isUploading = false;
+    bool isShowNew = true;
+    public string ImageUrl { get; set; } = "/assets/img/avatar-profile.png";
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    public string lblGender { get; set; } = "";
+    public string lblPosition { get; set; } = "";
+    public string lblDepartment { get; set; } = "";
+
+    List<SP_HRLeaveSummary> ListSumHRLeave = new List<SP_HRLeaveSummary>();
+    public List<I_LeaveHeadDisplay> LeaveHistoryList = new List<I_LeaveHeadDisplay>();
+    List<SelectOption> cboYear = new List<SelectOption>();
+    public string FiscalYear { get; set; }
+
+    public List<I_LeaveHeadDisplay> LeaveApprovePending = new List<I_LeaveHeadDisplay>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        FiscalYear = LeaveType2Service.GetYearFiscalYear(DateTime.Now.Date).ToString();
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData()
+    {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string user = login.LoginInfo.CurrentUser;
+        var x_LeaveApprovePending = LeaveType2Service.ListLeaveApprovePending(user, Convert.ToInt32(FiscalYear));
+        LeaveApprovePending = LeaveType2Service.CreateDisplayList(x_LeaveApprovePending);
+
+        var x_LeaveHistoryList = LeaveType2Service.ListLeaveHistory(rcom, user, Convert.ToInt32(FiscalYear));
+        LeaveHistoryList = LeaveType2Service.CreateDisplayList(x_LeaveHistoryList);
+        ListSumHRLeave = LeaveType2Service.ListLeaveSummary(rcom, user, Convert.ToInt32(FiscalYear));
+        isLoading = false;
+        BindData();
+        SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    private void SetActiveControl()
+    {
+        CheckPermission();
+    }
+    private void CheckPermission()
+    {
+
+    }
+
+
+    public void BindData()
+    {
+        lblGender = MasterTypeService.GetType("GENDER", login.LoginInfo.CurrentUserInfo.Gender).Description1;
+        Task.Run(() => loadProfile());
+    }
+
+    async void OnEdit(I_LeaveGridDisplay data)
+    {
+        if (data.IsLockCreateCancelDoc || data.DocType == "ใบยกเลิกลา")
+        {
+            await Swal.FireAsync("Error", "เอกสารยกเลิก", "error");
+            return;
+        }
+        isLoading = true;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        await sessionStorage.SetItemAsync(LeaveType2Service.sessionActiveId, data.LeaveID);
+        leaveService.DocSet = leaveService.GetDocSet(rcom, data.LeaveID);
+        nav.NavigateTo($"Leave/LeaveDetailType2/3", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnNew(string leave_type)
+    {
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var com = login.LoginInfo.CurrentUserInfo.DefaultCompany;
+        var user = login.LoginInfo.CurrentUserInfo;
+        await sessionStorage.RemoveItemAsync(LeaveType2Service.sessionActiveId);
+
+     
+
+        leaveService.DocSet = LeaveType2Service.NewTransaction(rcom);
+         
+
+        string fullname =  leaveService.DocSet .Head.FullName;
+        leaveService.DocSet.Head.UserName = user.Username;
+        leaveService.DocSet.Head.FullName = fullname;
+        leaveService.DocSet.Head.LeaveType = leave_type;
+
+        leaveService.DocSet.Head.InYear = Convert.ToInt32(FiscalYear);
+        leaveService.DocSet.Head.CreatedBy = login.LoginInfo.CurrentUser;
+        nav.NavigateTo($"Leave/LeaveDetailType2/0", false);
+    }
+
+    #region profile management
+
+    async Task loadProfile()
+    {
+        isUploading = true;
+        var user = login.LoginInfo.CurrentUser;
+        var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+
+        //var h = leaveService.DocSet.Leave;
+        ImageUrl = FileGo.GetThumbUrl(rcom, "", FileGo.Type_PersonProfile, user);
+        if (string.IsNullOrEmpty(ImageUrl))
+        {
+            ImageUrl = "/assets/img/avatar-profile.png";
+        }
+        isUploading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task OnDeleteProfile()
+    {
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        string com = login.LoginInfo.CurrentCompany.CompanyID;
+        try
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Warning",
+                    Text = $"ต้องการลบรูปใช่หรือไม่",
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No"
+                });
+            if (string.IsNullOrEmpty(result.Value))
+            {
+                return;
+            }
+
+            string user = login.LoginInfo.CurrentUser;
+            var h = leaveService.DocSet.empinfo;
+
+            isUploading = true;
+            var rr = await Task.Run(() => fileGo.DeleteFile(rcom, com, FileGo.Type_PersonProfile, h.Username, user));
+            if (rr.Result == "ok")
+            {
+                await loadProfile();
+            }
+            else
+            {
+                await Swal.FireAsync("Error", rr.Message1, "error");
+            }
+
+        }
+        catch
+        {
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    async Task DownLoadImage()
+    {
+        try
+        {
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //string com = login.LoginInfo.CurrentCompany.CompanyID;
+            string file_url = FileGo.GetFileUrl(rcom, "", FileGo.Type_PersonProfile, user);
+            if (!string.IsNullOrEmpty(file_url))
+            {
+                nav.NavigateTo(file_url, true);
+            }
+        }
+        catch
+        {
+
+        }
+    }
+
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        isUploading = true;
+        var files = e.GetMultipleFiles(maximumFileCount: 1); // get the files selected by the users
+                                                             //var rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+                                                             //var com = login.LoginInfo.CurrentCompany.CompanyID;
+                                                             //var docid = itemService.DocSet.Info.ItemID;
+        string user = login.LoginInfo.CurrentUser;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        //   string com = login.LoginInfo.CurrentCompany.CompanyID;
+        if (string.IsNullOrEmpty(user))
+        {
+            await Swal.FireAsync("Error", "Save before upload", "error");
+            return;
+        }
+
+        try
+        {
+            upload_file = new List<FilesInfo>();
+            foreach (var file in e.GetMultipleFiles(1))
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: (1024 * 1024 * 15));
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                //var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                //imgUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+
+                var nfile = FileGo.NewFilesInfo(FileGo.Type_PersonProfile, rcom, "", user);
+                nfile.data = Convert.ToBase64String(ms.ToArray());
+                // nfile.data = buf;
+                nfile.file_type = file.ContentType;
+                nfile.fileName = file.Name;
+                upload_file.Add(nfile);
+
+            }
+            await Upload();
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", ex.Message, "error");
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    async Task Upload()
+    {
+        try
+        {
+            //var h = leaveService.DocSet.info;
+            string user = login.LoginInfo.CurrentUser;
+            string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+            //   string com = login.LoginInfo.CurrentCompany.CompanyID;
+            isUploading = true;
+            var login_filego = FileGo.GetFileGoLogin();
+            string dataEndpointUri = $"{login_filego.RootUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+            if (query.StatusCode != "OK")
+            {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            }
+            else
+            {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail")
+                {
+                    upload_file.Clear();
+                    await Swal.FireAsync("Error", update_result.Message1, "error");
+                    //ShowMessage(false, update_result.Message1);
+                }
+                else
+                {
+                    //ShowMessage(true, "Upload Success");
+                    var xfile_ref = FileGo.Convert2XFilesRef(upload_file, login.LoginInfo.CurrentUser);
+                    var rr = FileGo.SaveXFileRef(xfile_ref);
+                    var rrr = await Task.Run(() => fileGo.DeleteOldFileAfterSave(rcom, "", FileGo.Type_PersonProfile, user, user));
+                    await loadProfile();
+                }
+            }
+        }
+        catch
+        {
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+    void OnRefreshLeaveCumu()
+    {
+        string user = login.LoginInfo.CurrentUser;
+        string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+        var r = LeaveType2Service.RefreshLeaveCummu(Convert.ToInt32(FiscalYear), user, rcom);
+        if (r.Result == "fail")
+        {
+            Swal.FireAsync("Error", "Refresh error", "error");
+        }
+    }
+    #endregion
+
+    async void EditUser()
+    {
+        string user = login.LoginInfo.CurrentUser;
+        isLoading = true;
+        await sessionStorage.SetItemAsync(MyUserService.sessionActiveId, user);
+        userService.DocSet = userService.GetDocSet(user, login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser);
+        nav.NavigateTo($"Master/User/UserDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+}

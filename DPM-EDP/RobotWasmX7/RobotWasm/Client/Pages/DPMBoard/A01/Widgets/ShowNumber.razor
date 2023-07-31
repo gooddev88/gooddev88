@@ -1,0 +1,70 @@
+﻿@using RobotWasm.Shared.Data.ML.DPMBaord.Accident
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using static RobotWasm.Shared.Data.ML.DPMBaord.Accident.AccidentParam
+
+<style>
+    .loader-container {
+        text-align: center;
+        display: inline-table;
+        padding-top: 10px;
+        position: absolute;
+        left: 50%;
+    }
+</style>
+
+@if (Data != null) {
+    <div class="row">
+        <div class="col-12">
+            <i class="fa-solid fa-list-ol fa-lg"></i>
+            <h2 class="text-center">
+                @if (Title == "NumberEvent") {
+                    @Data.most_event.ToString("n0")
+                }
+                @if (Title == "NumberInjure") {
+                    @Data.most_injured.ToString("n0")
+                }
+                @if (Title == "NumberDead") {
+                    @Data.most_death.ToString("n0")
+                }
+                @if (Title == "NumberDeadRate") {
+                    @Data.death_Rate.ToString("n0")
+                }
+            </h2>
+        </div>
+    </div>
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator Kanit" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+    [Parameter] public string? Title { get; set; } = "";
+    [Parameter] public string? Name { get; set; } = "";
+    [Parameter] public AccidentCountSetResult Data { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        switch (Title) {
+            case "NumberEvent":
+                Name = "อุบัติเหตุ";
+                break;
+            case "NumberInjure":
+                Name = "บาดเจ็บ";
+                break;
+            case "NumberDead":
+                Name = "ตาย";
+                break;
+            case "NumberDeadRate":
+                Name = "อัตราการตาย";
+                break;
+            default:
+                Name = "N/A";
+                break;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

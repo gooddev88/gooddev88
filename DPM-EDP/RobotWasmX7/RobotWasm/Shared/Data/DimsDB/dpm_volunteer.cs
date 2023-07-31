@@ -1,0 +1,45 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RobotWasm.Shared.Data.DimsDB {
+    public partial class dpm_volunteer {
+        public string code { get; set; }
+        public string name { get; set; }
+        public string type { get; set; }
+        public string address { get; set; }
+        public string province_id { get; set; }
+        public string province_name { get; set; }
+        public string amphur_id { get; set; }
+        public string amphur_name { get; set; }
+        public string district_id { get; set; }
+        public string district_name { get; set; }
+        public string tel { get; set; }
+        public string fax { get; set; }
+        public string email { get; set; }
+        public string latitude { get; set; }
+        public string longitude { get; set; }
+        public string vol_id { get; set; }
+        public string center_id { get; set; }
+        public DateTime? register_date { get; set; }
+        public string vol_id_card { get; set; }
+        public string prefix { get; set; }
+        public string vol_firstname { get; set; }
+        public string vol_lastname { get; set; }
+        public DateTime? vol_birth_date { get; set; }
+        public string contact_address { get; set; }
+        public string contact_moo { get; set; }
+        public string contact_soi { get; set; }
+        public string contact_road { get; set; }
+        public string contact_province_id { get; set; }
+        public string province_name1 { get; set; }
+        public string contact_amphur_id { get; set; }
+        public string amphur_name1 { get; set; }
+        public string contact_district_id { get; set; }
+        public string district_name1 { get; set; }
+        public string contact_tel { get; set; }
+        public int id { get; set; }
+    }
+}

@@ -1,0 +1,295 @@
+﻿@page "/Stock/StockBalSale"
+@using RobotWasm.Client.Data.DA.Master
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Param;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+
+<style>
+
+    .k-input-spinner {
+        display: none;
+    }
+
+
+    .custom-row-colors .k-grid-table .k-master-row {
+        border-bottom: 1px solid #000000;
+    }
+
+    .custom-ellipsis {
+        overflow: hidden;
+        max-height: 60px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .RefillValuesRowFormatting {
+        background-color: red !important;
+        color: white !important;
+    }
+
+        .RefillValuesRowFormatting .fa-solid.fa-folder-open {
+            color: white !important;
+        }
+
+    .custom-row-colors .k-grid-table .k-master-row {
+        background-color: white;
+        color: black;
+    }
+
+        .custom-row-colors .k-grid-table .k-master-row:hover {
+            background-color: gray;
+            color: black;
+        }
+
+        .custom-row-colors .k-grid-table .k-master-row.k-alt {
+            background-color: white;
+            color: black;
+        }
+
+            .custom-row-colors .k-grid-table .k-master-row.k-alt:hover {
+                background-color: gray;
+                color: black;
+            }
+
+    .swal2-container {
+        z-index: 20000 !important;
+    }
+</style>
+
+
+
+
+
+
+<div class="row pt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4>
+                            <a @onclick="Back">
+                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                            </a>
+                        </h4>
+                    </div>
+
+                </div>
+                 
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+
+                    <div class="col-12 pt-4">
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <span>คลัง</span>
+                                <TelerikDropDownList @bind-Value="@Filter.LocID"
+                                                     Data="@ListLoc"
+                                                     Filterable=true
+                                                     FilterOperator="@FilterOperator"
+                                                     FilterDebounceDelay="@DebounceDelay"
+                                                     TextField="@nameof(LocationInfo.NameDisplay)"
+                                                     ValueField="@nameof(LocationInfo.LocID)"
+                                                     Width="100%">
+                                </TelerikDropDownList>
+
+                            </div>
+
+                            <div class="col-md-2">
+                                <span>ยี่ห้อ</span>
+                                <TelerikDropDownList Data="@ListBrand"
+                                @bind-Value="@Filter.Brand"
+                                                     Filterable=true
+                                                     FilterOperator="@FilterOperator"
+                                                     FilterDebounceDelay="@DebounceDelay"
+                                                     TextField="@nameof(MasterTypeLine.Description1)"
+                                                     ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                     Width="100%">
+                                </TelerikDropDownList>
+                            </div>
+                            <div class="col-md-3 pt-4">
+                                <TelerikCheckBox Id="isShowNoZero" @bind-Value="@Filter.ShowNotZero" />
+                                <label for="isShowNoZero">แสดงที่คงเหลือเท่านั้น</label>
+                            </div>
+
+                            <div class="col-md-4 pt-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-3"  >
+    <div class="col-md-12">
+
+        <iframe src=@PrintUrl style="width:100%;height:700px" frameborder="0" class="holds-the-iframe"></iframe>
+
+    </div>
+</div>
+
+
+<div class="demo-container">
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+
+
+    bool isLoading = false;
+    private StringFilterOperator FilterOperator { get; set; } = StringFilterOperator.Contains;
+    string PrintUrl { get; set; } = "";
+    private int DebounceDelay { get; set; } = 150;
+
+
+
+    string menuCaption = "สต๊อกคงเหลือ";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    StockBalParam Filter = StockBalanceService.NewItemBalFilterSet();
+
+    vw_ItemInfoWithPhotoAndStock select_Item_ShowMovement = new vw_ItemInfoWithPhotoAndStock();
+    //List<MasterTypeLine> ListService_Cate = new List<MasterTypeLine>();
+    bool ExportAllPages { get; set; } = true;
+    public IEnumerable<LocationInfo> ListLoc;
+    public LocationInfo SelectLoc { get; set; }
+
+    List<vw_ItemInfoWithPhotoAndStock> DocList = new List<vw_ItemInfoWithPhotoAndStock>();
+    List<vw_STKMove> ItemMoveList = new List<vw_STKMove>();
+    List<CompanyInfo> ListCostCenter = new List<CompanyInfo>();
+    //List<MasterTypeLine> ListType = new List<MasterTypeLine>();
+    List<vw_MasterTypeLine> ListBrand = new List<vw_MasterTypeLine>();
+
+
+
+
+    public WindowState State { get; set; } = WindowState.Default;
+
+
+
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => LoadDropDown());
+        Filter = await Task.Run(() => _stockBalanceService.GetSessionItemBalFiterSet());
+        if (Filter == null) {
+            Filter = StockBalanceService.NewItemBalFilterSet();
+        } 
+        await Task.Run(()=>LoadData(true));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() {
+
+
+    }
+
+    async Task LoadDropDown() {
+        var rcom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        var com = login.LogInInfo.CurrentCompany.CompanyID;
+        ListBrand = await _masterTypeService.ListViewMasterType("", "ITEM BRAND", true);
+        var loc_access = login.LogInInfo.UserInLoc.Select(o => o.LocID).ToList();
+        ListLoc = await _stockBalanceService.ListLocID(rcom, com, loc_access);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    void SetDefaultFilter() {
+        Filter.RCom = login.LogInInfo.CurrentRootCompany.CompanyID;
+        Filter.Com = login.LogInInfo.CurrentCompany.CompanyID;
+        Filter.LocID = Filter.LocID == null ? "" : Filter.LocID;
+        Filter.Type = Filter.Type == null ? "" : Filter.Type;
+
+        _stockBalanceService.SetSessionItemBalFiterSet(Filter);
+    }
+
+    async void LoadData(bool isFistLoad) {
+        try {
+
+          
+            if (Filter == null) {
+                return;
+            }
+            if (string.IsNullOrEmpty(Filter.Brand) || string.IsNullOrEmpty(Filter.LocID)) {
+                if (!isFistLoad) {
+                    await Swal.FireAsync("Warning", "กรุณาเลือก คลัง และ ยี่ห้อ", "warning");
+                }
+          
+                return;
+            }
+         isLoading = true;
+            await InvokeAsync(StateHasChanged);
+            SetDefaultFilter();
+            //DocList = await _stockBalanceService.ListStockBalSale(Filter, login.LogInInfo);
+
+            var print_api = await _stockBalanceService.PrintStockBalSale(Filter, login.LogInInfo);
+            if (print_api.Result == "ok") {
+                PrintUrl = print_api.Message2;
+            }
+            await SetActiveControl();
+        } catch (Exception ex) {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            await Swal.FireAsync("Warning", ex.Message, "error");
+        } finally {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+
+    }
+
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+
+        if (!login.CanOpen(login.LogInInfo, "621")) {//621 สต๊อกคงเหลือ
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LogInInfo, "621")) {//621 สต๊อกคงเหลือ
+
+        }
+    } 
+
+    async void SearchAction() { 
+        await Task.Run(()=>LoadData(false)); 
+    }
+     
+    public void Back() {
+        //nav.NavigateTo($"Menu/MenuMaster/STOCK");
+        nav.NavigateTo("Dashboard/FirstBoard");
+    }
+
+    void OnRowRenderColor(GridRowRenderEventArgs args) {
+        vw_ItemInfoWithPhotoAndStock item = args.Item as vw_ItemInfoWithPhotoAndStock;
+        args.Class = item.IsActive == false ? "RefillValuesRowFormatting" : "";
+    }
+    void OnCellRenderHandler(GridCellRenderEventArgs args) {
+        args.Class = "custom-ellipsis";
+    }
+}
+

@@ -1,0 +1,180 @@
+﻿@page "/ApiMaster/ApiMasterList"
+
+@using Robot.Data.CIMSDB;
+@using Robot.Data.DA.Cims
+@inject ApiMasterService apimasterService
+ 
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-6">
+                <Breadcrumb Mode="BreadcrumbMode.Auto">
+                    <BreadcrumbItem>
+                        <BreadcrumbLink To="Menu/MenuMaster/APIMASTER"> @menuGroupCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem Active>
+                        <BreadcrumbLink To="ApiMaster/ApiMasterList">@menuCaption</BreadcrumbLink>
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </div>
+            @if (isShowNew) {
+                <div class="col-6" style="text-align:right;">
+                    <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                        <i class="fas fa-plus-circle"></i>&nbsp;
+                        **เอกสารใหม่**
+                    </Button>
+                </div>
+            }
+        </div>
+
+        @* --ค้นหา--*@
+        <Accordion Class="pt-3">
+            <Collapse Visible="@collapse1Visible">
+                <CollapseHeader>
+                    <Heading Size="HeadingSize.Is5">
+                        <Button Clicked="@(()=>collapse1Visible = !collapse1Visible)">แสดงการค้นหา</Button>
+                    </Heading>
+                </CollapseHeader>
+                <CollapseBody>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="input-group">
+                                <TextEdit @bind-Text="@SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                                <div class="input-group-append">
+                                    <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CollapseBody>
+            </Collapse>
+        </Accordion>
+
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+
+                <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="20"
+                             Navigable="true">
+                    <GridToolBar>
+                        <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBar>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                      <GridColumn Field="@nameof(api_master.api_id)" Title="Edit" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as api_master;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field=@nameof(api_master.api_id) Title="Api Code" Width="150px" />
+                        <GridColumn Field=@nameof(api_master.api_name) Title="Api Name" Width="300px" />
+                        <GridColumn Field=@nameof(api_master.api_desc) Title="Api Description" Width="350px" />
+                        <GridColumn Field=@nameof(api_master.cate) Title="Api Cate" Width="160px" />
+                        <GridColumn Field=@nameof(api_master.source_cate) Title="Api Source" Width="160px" />
+
+
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool ExportAllPages { get; set; } = true;
+    public string SearchText { get; set; } = "";
+
+    bool ShowFilterRow = false;
+    IEnumerable<api_master> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        await SetActiveControl();
+        DocList = apimasterService.Listapi_master(SearchText);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetDefaultFilter() {
+
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "1001");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "1001")) {
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "1001")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(api_master select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(ApiMasterService.sessionActiveId, select_data.api_id);
+        apimasterService.DocSet = apimasterService.GetDocSet(select_data.api_id);
+        nav.NavigateTo($"ApiMaster/ApiMasterDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc() {
+        var xlogin = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(ApiMasterService.sessionActiveId);
+        apimasterService.DocSet = ApiMasterService.NewTransaction();
+
+        nav.NavigateTo($"ApiMaster/ApiMasterDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+}

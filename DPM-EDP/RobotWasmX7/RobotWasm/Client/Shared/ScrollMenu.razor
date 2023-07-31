@@ -1,0 +1,137 @@
+﻿@page "/Shared/ScrollMenu/{type}"
+
+@using RobotWasm.Client.Helper.DeviceHelper
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using Blazorise
+@inject BoardService boardService
+@inject IJSRuntime js
+<style>
+
+    .top-menu {
+        position: initial;
+        top: 70px;
+        width: 100%;
+        height: auto;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 1;
+    }
+
+    @@media only screen and (min-width: 290px) {
+        div.top-menu {
+            justify-content: flex-start !important;
+        }
+    }
+
+    @@media only screen and (min-width: 700px) {
+        div.top-menu {
+            justify-content: center !important;
+        }
+    }
+
+    .samll {
+        font-size: small;
+    }
+
+    .nav-item {
+        width: 8rem;
+    }
+
+</style>
+<div class="text-center pb-3">
+    <span class="caption1">Executive Data Framework Portal</span>
+    <span class="caption2">กรมป้องกันและบรรเทาสาธารณภัย</span>
+</div>
+@if (menu != null) {
+    <div class="top-menu justify-content-center">
+        <nav class="navbar navbar-expand navbar bg-tranparent justify-content-center pt-0">
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    @foreach (var m in menu.Where(o => o.board_type == type).OrderBy(o => o.sort)) {
+                        <Tooltip Text="@m.description" Placement="TooltipPlacement.Bottom">
+                            <li class="nav-item">
+                                <NavLink class="nav-link px-2 text-center" @onclick="() => GotoBoard(m.board_id)">
+                                    <img src="@m.img_path" class="rounded-circle" alt="" width="70" height="70">
+                                     @if (select_boardid==m.board_id) {
+                                        <p class="text-dark samll mt-1 mb-0"><strong style="font-size:large"> @m.description</strong></p>
+                                    }else{
+                                        <p class="text-dark samll mt-1 mb-0">@m.description</p>
+                                    }
+                                </NavLink>
+                            </li>
+                        </Tooltip>
+                    }
+                </ul>
+            </div>
+        </nav>
+    </div>
+}
+
+@code {
+
+    [Parameter] public string type { get; set; }
+     public string select_boardid = "";
+    public bool isLoading { get; set; } = false;
+    public List<vw_board_master>? menu;
+
+    protected override async Task OnInitializedAsync() {
+        await LoadBoard();
+           select_boardid = boardService.Select_TableauID;
+        //await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+    public BrowserInfo browserInfo { get; set; }
+    protected BrowserDetectJsInterop deviceModule { get; private set; }
+    //async void LoadData() {
+    //    await LoadBoard();
+    //}
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            deviceModule = new BrowserDetectJsInterop(js);
+            browserInfo = await deviceModule.BrowserInfo();
+            firstRender = false;
+        }
+    }
+    async Task LoadBoard() {
+        try {
+            var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+            var res = await Http.GetAsync($"api/Board/GetMasterBoardMenu"); 
+            menu = JsonSerializer.Deserialize<List<vw_board_master>>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+        } catch (Exception ex) {
+            var x = ex.Message;
+        } finally {
+        }
+    }
+
+    async public Task GotoBoard(string board_id) {
+        _boardService.Temp_TableauUrl = await Task.Run(() => _boardService.GetBoardUrltableau(board_id));
+        string url = $"DPMBoard/ExclusiveBoard/Redirect/{board_id}";
+   
+        //bool iOS = false;
+        //if (browserInfo != null) {
+        //    if (browserInfo.OSName.ToLower().Contains("ios")) {
+        //        iOS = true;
+        //    }
+        //}
+        //if (iOS) {
+        //    nav.NavigateTo(_boardService.Temp_TableauUrl);
+        //    await InvokeAsync(StateHasChanged);
+        //} else {
+        //    string url = $"DPMBoard/ExclusiveBoard/Redirect/{board_id}";
+        //    nav.NavigateTo(url);
+        //    await InvokeAsync(StateHasChanged);
+        //}
+        nav.NavigateTo(url);
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+
+    //protected override void OnInitialized() {
+    //    LoadData();
+    //}
+}

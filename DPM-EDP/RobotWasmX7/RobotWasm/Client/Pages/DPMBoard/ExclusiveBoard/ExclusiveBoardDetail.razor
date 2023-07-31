@@ -1,0 +1,269 @@
+﻿@page "/DPMBoard/ExclusiveBoard/ExclusiveBoardDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.FileGo
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.DPMBaord.ExclusiveBoard.I_Board_MasterSet
+@using Blazorise
+
+<style>
+
+    .k-button-solid-error, .k-button-solid-error:hover, .k-button-solid-error.k-hover {
+        border-color: #FF396F;
+        background-color: #FF396F;
+    }
+
+    .k-checkbox {
+        box-shadow: 0 0 0 2px rgb(0 0 0 / 6%);
+    }
+
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+
+</style>
+
+@if (!isLoading) {
+
+    @if (_boardMasterService.DocSet != null)
+    {
+            <div class="row pt-1">
+        <div class="col-md-8 col-12 mx-auto">
+            <div class="row">
+                <div class="col-12 text-start">
+                    <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@Back" Class="w-100" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                <span style="font-size: large;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+            </TelerikButton>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-8 col-12 mx-auto">
+            <span>รหัสบอร์ด</span>
+            <TelerikTextBox PlaceHolder="" @bind-Value="@boardid" Enabled="@enabled_boardid" />
+        </div>
+        <div class="col-md-8 col-12 mx-auto">
+            <span>ชื่อบอร์ด</span>
+            <TelerikTextBox PlaceHolder="" @bind-Value="@_boardMasterService.DocSet.head.name" />
+        </div>
+                <div class="col-md-8 col-12 mx-auto">
+            <span>รายละเอียดบอร์ด</span>
+                        <TelerikTextArea @bind-Value="@_boardMasterService.DocSet.head.description"
+                         AutoSize="true"
+                         Class="w-100"
+                         PlaceHolder="">
+            </TelerikTextArea>
+        </div>
+
+                        <div class="col-md-8 col-12 mx-auto">
+            <span>Board Url</span>
+            <TelerikTextArea @bind-Value="@_boardMasterService.DocSet.head.board_url"
+                         AutoSize="true"
+                         Class="w-100"
+                         PlaceHolder="">
+            </TelerikTextArea>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-md-8 col-12 mx-auto text-center">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+            </TelerikButton>
+            @if (!string.IsNullOrEmpty(_boardMasterService.DocSet.head.board_id))
+            {
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                           @if (isShowDeleteBoard) {
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnDelete" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                    <i class="fa-solid fa-trash"></i>&nbsp; ลบบอร์ด
+                </TelerikButton>
+            } 
+            }
+        </div>
+    </div>
+    }
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+
+    private bool isLoading = false;
+    bool collapse1Visible = true;
+
+    string menuCaption = "";
+    public bool enabled_boardid { get; set; } = true;
+    public string boardid { get; set; } = "";
+    private bool isShowDeleteBoard = true;
+
+    string Username = "";
+    public string Size { get; set; } = ThemeConstants.CheckBox.Size.Medium;
+
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh() {
+        try {
+            if (_boardMasterService.DocSet == null) {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_BoadrID);
+                if (!string.IsNullOrEmpty(docid)) {
+                    _boardMasterService.DocSet = await _boardMasterService.GetDocSet(docid);
+                } else {
+                    _boardMasterService.DocSet = BoardMasterService.NewTransaction("exclusive");
+                }
+            }
+        } catch (Exception ex) {
+            var xx = ex.Message;
+        }
+
+    }
+
+    protected async Task LoadData() {
+        Username = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        BindData();
+        await CheckPermission();
+    }
+
+    async Task CheckPermission() {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "401");
+        menuCaption = menu.menu_name;
+        var Permissionmenu = login.LogInInfo.UserInMenu.Where(o => o.MenuID == "401").FirstOrDefault();
+        if (!Convert.ToBoolean(Permissionmenu.IsDelete)) {
+            isShowDeleteBoard = false;
+        }
+    }
+
+    public async void BindData() {
+        var h = _boardMasterService.DocSet.head;
+        if (!string.IsNullOrEmpty(h.board_id)) {
+            boardid = h.board_id;
+            enabled_boardid = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    bool ValidData() {
+        var h = _boardMasterService.DocSet.head;
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (boardid == "") {
+            Errmsg = "ระบุ รหัสบอร์ด";
+            isvalid = false;
+        }
+
+        if (h.name == "") {
+            Errmsg = "ระบุ ชื่อบอร์ด";
+            isvalid = false;
+        }
+
+        if (h.description == "") {
+            Errmsg = "ระบุ รายละเอียดบอร์ด";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    protected bool PrepairDataSave() {
+        var h = _boardMasterService.DocSet.head;
+
+        bool isnew = h.board_id == "" ? true : false;
+
+        if (isnew) {
+            h.board_id = boardid;
+        } 
+
+        return isnew;
+    }
+
+    public async void OnSave() {
+        if (!ValidData()) {
+            return;
+        }
+
+        var h = _boardMasterService.DocSet.head;
+        var isnew = PrepairDataSave();
+        string strPayload = JsonSerializer.Serialize(_boardMasterService.DocSet);
+        string url = $"api/BoardMaster/SaveBoardMaster?action={isnew}";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok") {
+        } else {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail") {
+                await Swal.FireAsync("", r.Message1, "error");
+            } else {
+                //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                //_boardMasterService.DocSet = await _boardMasterService.GetDocSet(h.board_id);
+                //await sessionStorage.SetItemAsync(Globals.ActiveID_BoadrID, h.board_id);
+                //await Task.Run(LoadData);
+                if (isnew)
+                {
+                    var rs = await _logTranService.CreateTransLog(h.board_id,login.LogInInfo.CurrentUser, "ข้อมูลสำหรับผู้บริหาร", "เพิ่ม ข้อมูลสำหรับผู้บริหาร");
+                }else
+                {
+                    var rs = await _logTranService.CreateTransLog(h.board_id,login.LogInInfo.CurrentUser, "ข้อมูลสำหรับผู้บริหาร", "แก้ไข ข้อมูลสำหรับผู้บริหาร");
+                }
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "success",
+                        Text = $"บันทึกสำเร็จ",
+                        ShowCancelButton = false,
+                        Icon = "success",
+                        ConfirmButtonText = "ตกลง"
+                    });
+                if (string.IsNullOrEmpty(result.Value))
+                {
+                    return;
+                }
+                nav.NavigateTo($"DPMBoard/ExclusiveBoard/ExclusiveBoard", false);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    async void OnDelete() {
+        var h = _boardMasterService.DocSet.head;
+        var rs = await _boardMasterService.DeleteDoc(h.board_id, Username);
+        var r = await _logTranService.CreateTransLog(h.board_id,login.LogInInfo.CurrentUser, "ข้อมูลสำหรับผู้บริหาร", "ลบ ข้อมูลสำหรับผู้บริหาร");
+        if (rs.Result == "ok") {
+            nav.NavigateTo($"DPMBoard/ExclusiveBoard/ExclusiveBoard", false);
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+    }
+
+    async void Back() {
+        nav.NavigateTo($"DPMBoard/ExclusiveBoard/ExclusiveBoard", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

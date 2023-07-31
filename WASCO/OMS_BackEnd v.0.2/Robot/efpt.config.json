@@ -1,0 +1,377 @@
+﻿{
+   "CodeGenerationMode": 2,
+   "ContextClassName": "ZGGNewsEntities",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "ZTTYYWXXx",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "Robot.Data.DPMNEW",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[a_amphoe]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[a_community]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[a_mm]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[a_province]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[a_tambol]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Addr_Amphoe]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Addr_Country]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Addr_District]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Addr_Province]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BankInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BookBankInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CalenWeekName]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CompanyInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Config]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CreditTerm]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CurrencyInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CustomerBranch]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CustomerInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[DashBoard]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[DocPrint]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[DocPrintInCom]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[DocTypeInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ExchangeRate]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[IDGenerator]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ItemBarcode]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ItemInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Link]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LocationInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LogInCrossAppReq]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LoginLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LoginSessionLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[mail_sender]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MasterTypeHead]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MasterTypeLine]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[OINVHead]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[OINVLine]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[OPaymentType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ORCPayLine]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[OSOHead]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[OSOLine]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TaxInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ThaiPostAddress]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TransactionLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UploadLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserGroupInBoard]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserGroupInCompany]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserGroupInDocStep]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserGroupInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserGroupPermission]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInBoard]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInCompany]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInDocStep]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInGroup]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserInRCom]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserLogInHistory]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserMenu]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserPermission]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[V_Query]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[XFileLocation]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[XFilesRef]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[vw_CompanyInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_CustomerInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_DocTypeInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_EmpInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_ItemInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_ListDate]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_LocationInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_OINVHead]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_OINVLine]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_OSOHead]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_PermissionGroupInMenu]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_PermissionInBoard]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_PermissionInCompany]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_PermissionInMenu]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_ThaiPostAddress]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UIC]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UIM]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserGroupInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserInBoard]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserInfo]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserInfoMini]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserInGroup]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_UserInRCom]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_XFilesRef]",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": "TEDDY.OMS",
+   "UncountableWords": null,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": true,
+   "UseDateOnlyTimeOnly": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false,
+   "UseT4": false
+}

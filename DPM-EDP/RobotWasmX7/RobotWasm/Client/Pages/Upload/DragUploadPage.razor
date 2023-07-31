@@ -1,0 +1,175 @@
+﻿@page "/upload/DragUploadPage"
+@using RobotWasm.Client.Data.DA.Xfiles.Model
+
+@*@inject ISnackbar Snackbar*@
+@inject HttpClient Http
+<PageTitle>Drag Upload And Resize</PageTitle>
+
+
+
+
+@*<MudPaper @ondragenter="@SetDragClass" Style="position:relative;"
+          @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass"
+          Outlined="true"
+          Class="@DragClass">
+    @if (!Clearing) {
+        <InputFile OnChange="OnInputFileChanged" multiple class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity:0;" accept="image/png, image/jpeg, image/gif,application/pdf" />
+    }
+    <MudText Typo="Typo.h6">Drag and drop files here or click</MudText>
+    @foreach (var file in upload_file) {
+        <MudChip Color="Color.Dark" Text="@file.fileName" />
+    }
+
+    <MudOverlay Visible="isUploading" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+    </MudOverlay>
+</MudPaper>
+
+
+
+
+ToolBar DisableGutters="true" Class="gap-4">
+    <MudButton OnClick="Upload" Disabled="@(!upload_file.Any())" Color="Color.Primary" Variant="Variant.Filled">Upload</MudButton>
+    <MudButton OnClick="Clear" Disabled="@(!upload_file.Any())" Color="Color.Error" Variant="Variant.Filled">Clear</MudButton>
+    <MudButton OnClick="HardReload" Color="Color.Error" Variant="Variant.Filled">Hard Reload</MudButton>
+</MudToolBar>
+<MudImage Src="@b64image_test" Alt="Mony the dog" Elevation="25" Class="rounded-lg" />
+@*<MudImage Src="https://localhost:7159/api/xfiles/XFilesService/GetThumb/214231bd-2fb3-483a-b031-cd71a2553357" Alt="Mony the dog" Elevation="25" Class="rounded-lg" />*@
+@*<MudButton OnClick="DownLoadFile" Color="Color.Error" Variant="Variant.Filled">Download File or Image</MudButton>*@
+
+
+@code {
+
+
+    private bool isUploading = false;
+    List<FilesInfo> upload_file = new List<FilesInfo>();
+    private bool Clearing = false;
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string DragClass = DefaultDragClass;
+
+    string b64image_test ;
+
+    async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        ClearDragClass();
+        var files = e.GetMultipleFiles(maximumFileCount: 100); // get the files selected by the users
+        var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        try {
+            foreach (var file in files) {
+                byte[] buf;
+
+                if (file.ContentType.StartsWith("image")) {//เป็นรูปภาพให้ Resize ก่อนอัพโหลด  image/png
+                    var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                    buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+                    using (var stream = resizedFile.OpenReadStream(maxAllowedSize: 99999999)) {
+                        await stream.ReadAsync(buf); // copy the stream to the buffer
+                    }
+                      
+                    b64image_test=   $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
+                      await InvokeAsync(StateHasChanged);
+                } else { //เป็น file ธรรมดาให้ขึ้น server เลย
+                    using (var stream = file.OpenReadStream(maxAllowedSize: 99999999)) {//99mb
+                        buf = new byte[file.Size]; // allocate a buffer to fill with the file's data
+                        await stream.ReadAsync(buf); // copy the stream to the buffer
+                    }
+                }
+                string file_id = Guid.NewGuid().ToString().ToLower();
+                upload_file.Add(new FilesInfo {
+                        data = Convert.ToBase64String(buf),
+
+                        file_type = file.ContentType,
+                        fileName = file.Name,
+                        app_id = "FileGo",
+                        com_id = "",
+                        rcom_id = "",
+                        doc_cate = "",
+                        file_id = file_id,
+                        doc_id = "",
+                        doc_linenum = 0,
+                        doc_type = "",
+                        owner_id = user,
+                        remark = ""
+                    }
+                                ); // convert to a base64 string!!
+            }
+        } catch (Exception ex) {
+            var ee = ex.Message;
+        }
+    }
+    private async Task Clear() {
+        Clearing = true;
+        upload_file.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+        Clearing = false;
+    }
+    private async Task HardReload() {
+        await jsRuntime.InvokeVoidAsync("hardReload");
+    }
+    private async Task DownLoadFile() {
+        try {
+            string file_id = "86e33a81-5d79-4553-b5a1-39a2113bfe65";
+            string dataEndpointUri = $"{Globals.ApiFileGoBaseUrl}/api/xfiles/XFilesService/GetFileInfoByte/{file_id}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<xfiles>(dataEndpointUri));
+            if (query.StatusCode != "OK") {
+                ShowMessage(false, query.StatusCode);
+            } else {
+                var info = (xfiles)query.Result;
+                var fileStream = new MemoryStream(info.data);
+                //string file_url = $"{Globals.ApiFilesBaseUrl}/api/xfiles/XFilesService/GetFile/{file_id}";
+                await jsRuntime.InvokeVoidAsync("downloadFileFromStream", info.origin_filename+info.origin_file_ext, fileStream);
+            }
+        }catch(Exception ex) {
+            var xx = ex.Message;
+        }
+    }
+
+    async Task Upload() {
+        try {
+            isUploading = true;
+            string dataEndpointUri = $"{Globals.ApiFileGoBaseUrl}/api/xfiles/XFilesService/UploadFileToDB";
+            I_BasicResult update_result = new I_BasicResult();
+            var query = await Task.Run(() => _clientService.Post<I_BasicResult>(dataEndpointUri, upload_file));
+            if (query.StatusCode != "OK") {
+                update_result.Result = "fail";
+                update_result.Message1 = query.StatusCode;
+            } else {
+                update_result = (I_BasicResult)query.Result;
+                if (update_result.Result == "fail") {
+                    ShowMessage(false, update_result.Message1);
+                } else {
+                    ShowMessage(true, "Upload Success");
+                    upload_file.Clear();
+                }
+            }
+        } catch {
+        } finally {
+            isUploading = false;
+        }
+    }
+    async void ShowMessage(bool issucess, string msg) {
+        //if (issucess) {
+        //    Snackbar.Add(msg, Severity.Success, config => { });
+
+        //} else {
+        //    Snackbar.Add(msg, Severity.Error, config => { });
+        //}
+    }
+    private void SetDragClass() {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+    private void ClearDragClass() {
+        DragClass = DefaultDragClass;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+}

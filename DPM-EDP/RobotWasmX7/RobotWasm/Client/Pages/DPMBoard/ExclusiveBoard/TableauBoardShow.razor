@@ -1,0 +1,93 @@
+﻿@page "/DPMBoard/ExclusiveBoard/TableauBoardShow"
+
+
+
+<div class="row">
+    <div class="col-md-12 text-center">
+
+        <h4 Class="text-start font-weight-light">
+            <a @onclick="Back">
+                <i class="fas fa-angle-double-left"></i> @board_description
+            </a>
+        </h4>
+
+        @*        <a class="btn text-muted bdr-50" @onclick="@(() => RefreshData())">
+        <i class="fa-solid fa-rotate"></i>
+        </a>*@
+
+    </div>
+</div>
+
+<style>
+    .embed-container {
+        position: relative;
+        padding-bottom: 70.75%;
+        height: 0;
+        overflow: hidden;
+    }
+
+        .embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+</style>
+
+
+
+@if (!isLoading) {
+
+
+
+    <div class="embed-container">
+        @*<iframe src="@board_url" frameborder="0" allowfullscreen=""
+    scrolling="auto"
+    webkitallowfullscreen="true" mozallowfullscreen="true" oallowfullscreen="true"
+    msallowfullscreen="true"></iframe>
+    *@
+        <object data="@board_url"
+            style="width:100%;height:100vh;"
+            type="text/html">
+        </object>
+
+    </div>
+
+
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+@code {
+    //  [Parameter] public string board_url { get; set; }
+    string board_url = "";
+    string board_description = "";
+    private bool isLoading = false;
+
+
+
+    protected override async Task OnInitializedAsync() {
+        if (_boardService.Temp_TableauUrl != null) {
+            board_url = _boardService.Temp_TableauUrl; 
+        }else {
+            nav.NavigateTo("DPMBoard/ExclusiveBoard/ExclusiveBoard");
+        }
+        if (_boardService.Temp_SelectBoard!=null) {
+            if (_boardService.Temp_SelectBoard.board_description!=null) {
+                board_description = _boardService.Temp_SelectBoard.board_description;
+            }else {
+                nav.NavigateTo("DPMBoard/ExclusiveBoard/ExclusiveBoard");
+            }
+        }else {
+            nav.NavigateTo("DPMBoard/ExclusiveBoard/ExclusiveBoard");
+        }
+         
+        await InvokeAsync(StateHasChanged);
+    }
+    private void Back() {
+        nav.NavigateTo("DPMBoard/ExclusiveBoard/ExclusiveBoard");
+    }
+}

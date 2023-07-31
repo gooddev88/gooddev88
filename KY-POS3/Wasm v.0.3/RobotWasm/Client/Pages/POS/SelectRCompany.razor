@@ -1,0 +1,98 @@
+﻿@page "/POS/SelectRCompany"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Login;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+
+</style>
+
+<div class="row card-top-menu">
+    <div class="text-center">
+        <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">เลือกบริษัท</span></div>
+    </div>
+</div>
+
+<div class="row pt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body pb-0">
+                @foreach (var l in ListRCompany) {
+                    <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectRCom(l))">
+                    <div class="row pt-1">
+                        <div class="col-2">
+                            <img class="me-3" src="/img/menulogo.png" alt="" width="48" height="48">
+                        </div>
+                        <div class="col-10 text-start pt-2">
+                            <span style="font-size:large;">@l.CompanyID</span>
+                        </div>
+                    </div>
+                    </a>
+                    <hr class="my-2" />
+
+                    @*<div class="row pt-1">
+                        <div class="col-12">
+                            <a class="p-0 text-decoration-none text-dark" @onclick="@(async () => await OnSelectRCom(l))">
+                                <div class="d-inline"><span style="font-size:large;">@l.Name</span></div>
+                                <div class="d-inline float-end"><i class="fa-solid fa-angle-right" style="font-size: 1.5em;"></i></div>
+                            </a>
+                        </div>
+                    </div>
+                    <hr class="my-3" />*@
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+@code {
+    bool isLoading = false;
+
+    List<CompanyInfoList> ListRCompany = new List<CompanyInfoList>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        ListRCompany = await _companyService.ListCompanyInfo("COMPANY", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnSelectRCom(CompanyInfoList select_data) {
+        await _localStorage.RemoveItemAsync(Globals.localStorageRcomID);
+        await _localStorage.SetItemAsync(Globals.localStorageRcomID, select_data.CompanyID);
+        var user = await _localStorage.GetItemAsync < string>(Globals.AuthUsername);
+        //login.LogInInfo.CurrentRootCompany = await Task.Run(() => _companyService.GetComInfoByRComID(select_data.CompanyID));
+     // var ListCompany = await Task.Run(() => _companyService.ListCompanyInfoUIC(login.LogInInfo, "BRANCH", false));
+
+        LoginRequest n = new LoginRequest { UserName = user, Password = "silent", Rcom = select_data.CompanyID, Apps = "", RememberMe = true };
+login.LogInInfo= await Task.Run(() => login.DoLogin(n));
+        if (login.LogInInfo.UserInCompany.Count > 0) {
+            nav.NavigateTo($"POS/SelectCompany", false);
+            StateHasChanged();
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } else {
+            await Swal.FireAsync("Warning", "ไม่พบสาขาใน บริษัท " + select_data.Name + " กรุณาไปเพิ่มสาขาก่อน", "info");
+            isLoading = false;
+        }
+    }
+
+}

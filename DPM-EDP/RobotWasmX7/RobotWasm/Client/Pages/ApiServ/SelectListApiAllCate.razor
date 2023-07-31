@@ -1,0 +1,171 @@
+﻿@page "/ApiServ/SelectListApiAllCate"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .k-grid-header .k-header:first-child {
+        text-align: center;
+    }
+
+    .k-grid th:first-child, .k-grid td:first-child {
+        text-align: center;
+    }
+</style>
+
+@if (!isLoading)
+{
+
+    <div class="row pt-3">
+        <div class="col-md-12 text-center">
+            <h4 class="fw-bold">เลือกชุดข้อมูล Api ที่ต้องการเปลี่ยนหมวดหมู่</h4>
+        </div>
+    </div>
+
+    <div class="row pt-1">
+        <div class="col-4">
+            <span>เลือกหมวดหมู่ที่ต้องการ</span>
+
+            <TelerikDropDownList Data="@cboCate"
+                             @bind-Value="@selectCate"
+                             TextField="@nameof(api_cate.cate_name)"
+                             ValueField="@nameof(api_cate.cate_id)"
+                             DefaultText=""
+                             Width="100%">
+                <DropDownListSettings>
+                    <DropDownListPopupSettings Height="auto"></DropDownListPopupSettings>
+                </DropDownListSettings>
+            </TelerikDropDownList>
+        </div>
+        <div class="col-3 pt-4">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@(async () => await btnAddCate())" Class="px-5"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">บันทึก</TelerikButton>&nbsp;&nbsp;
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@(async () => await btnClose())" Class="px-4"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">ปิด</TelerikButton>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-md-12">
+            <TelerikGrid Data=@DocList
+                     Pageable="false"
+                     Class="small"
+                     Groupable="false"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true" 
+                     SelectionMode="@selectionMode"
+                     @bind-SelectedItems="@SelectedItems"
+                     Navigable="true">
+                <GridColumns>
+                    <GridCheckboxColumn SelectAll="@ShowSelectAll" CheckBoxOnlySelection="true"></GridCheckboxColumn>
+                    <GridColumn Field=@nameof(LISTSELECT_APIMasterALLCate.api_id) Title="รหัสชุดข้อมูล" Width="180px" />
+                    <GridColumn Field=@nameof(LISTSELECT_APIMasterALLCate.api_desc) Title="ชื่อชุดข้อมูล" Width="300px" />
+                    <GridColumn Field="@nameof(LISTSELECT_APIMasterALLCate.cate_name)" Title="หมวดหมู่เดิม" Width="200px" />
+                </GridColumns>
+            </TelerikGrid>
+        </div>
+    </div>
+
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+    private bool isLoading = false;
+    private bool isShowNew = true;
+    bool collapse1Visible = true;
+    string selectCate = "";
+
+    List<LISTSELECT_APIMasterALLCate> DocList = new List<LISTSELECT_APIMasterALLCate>();
+    IEnumerable<LISTSELECT_APIMasterALLCate> SelectedItems = new List<LISTSELECT_APIMasterALLCate>();
+    Telerik.Blazor.GridSelectionMode selectionMode { get; set; } = Telerik.Blazor.GridSelectionMode.Multiple;
+    bool ShowSelectAll => selectionMode == Telerik.Blazor.GridSelectionMode.Multiple;
+    public List<api_cate> cboCate = new List<api_cate>();
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await LoadDropDown();
+        await Task.Run(() => LoadData());
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckPermission()
+    {
+
+    }
+
+    async Task LoadDropDown()
+    {
+        cboCate = await Task.Run(() => _apiCateService.ListApiCate());
+    }
+
+    async Task LoadData()
+    {
+        await CheckPermission();
+        DocList = await _apiMasterService.ListAPIMasterALLCate();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task btnAddCate()
+    {
+        if (string.IsNullOrEmpty(selectCate))
+        {
+            await Swal.FireAsync("Error", "!! กรุณาเลือกหมวดหมู่", "error");
+            return;
+        }
+
+        isLoading = true;
+
+        var listapi_cate = SelectedItems;
+        var list_apiid = listapi_cate.Select(o => o.api_id).ToList();
+
+        var rs = await _apiMasterService.UpdateCateApiByListApi(list_apiid, selectCate);
+        if (rs.Result != "ok")
+        {
+            isLoading = false;
+            await Swal.FireAsync("Error", rs.Message1, "error");
+            return;
+        }
+        else
+        {
+            await Task.Run(LoadData);
+            isLoading = false;
+            await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+            selectCate = "";
+            SelectedItems= new List<LISTSELECT_APIMasterALLCate>();
+            await InvokeAsync(StateHasChanged);
+        }
+        //await InvokeAsync(StateHasChanged);
+        //nav.NavigateTo($"ApiServ/SelectListApiAllCate", false);
+    }
+
+    async Task btnClose()
+    {
+        nav.NavigateTo($"ApiServ/ApiMasterList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

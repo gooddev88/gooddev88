@@ -1,0 +1,315 @@
+﻿@using CurrieTechnologies.Razor.SweetAlert2
+@using Blazored.SessionStorage
+@using Blazorise.Localization
+@using Robot.Data.GADB.TT
+@using Robot.Data.FILEDB.TT
+@using Robot.Data
+@using Robot.Pages.Login
+@using Blazored.LocalStorage
+@using Robot.Pages
+
+@inherits LayoutComponentBase
+@inject NavigationManager nav
+@inject LogInService login
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+
+
+<style>
+    .container-lg {
+        max-width: 1600px;
+    }
+
+    .bg-dark {
+        background-color: MediumSlateBlue !important;
+    }
+
+    .darkcyan-white {
+        background-color: MediumSlateBlue !important;
+        color: white !important;
+    }
+</style>
+
+<ReconnectDialog> </ReconnectDialog>
+
+<AuthorizeView>
+    <Authorized>
+
+        <Layout Sider Class="b-docs">
+            <LayoutSider>
+                <LayoutSiderContent>
+                    <Bar @ref="@sideBar" Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark"
+                         Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Hide">
+                        <BarBrand>
+                            <BarItem>
+                                <BarLink To="Dashboard/StartBoard">
+                                    <BarIcon IconName="customIcon" Display="Display.InlineBlock" /> &nbsp;
+                                    KY POS
+                                </BarLink>
+                            </BarItem>
+                        </BarBrand>
+                        <BarMenu>
+                            <BarStart>
+
+                                <BarItem>
+                                    <BarLink @onclick="@GoHome" Title="Home" Class="darkcyan-white">
+                                        <Icon Name="IconName.Home" Margin="Margin.Is2.FromEnd" />Home
+                                    </BarLink>
+
+                                </BarItem>
+                                @foreach (var menu in UserInMenu.Where(o => o.TypeID == "MENUGROUP")) {
+                                    <BarItem>
+                                        <BarDropdown @bind-Visible="@menu.IsToggleGroupmenu" Class="darkcyan-white">
+                                            <BarDropdownToggle>
+                                                <i class="@menu.Icon"></i>&nbsp;
+                                                @menu.MenuDesc1
+                                            </BarDropdownToggle>
+                                            @foreach (var lm in UserInMenu.Where(o => o.GroupID == menu.GroupID && o.TypeID != "MENUGROUP")) {
+                                                <BarDropdownMenu Class="darkcyan-white">
+                                                    <BarDropdownItem To="@lm.Url">
+                                                        @lm.MenuDesc1
+                                                    </BarDropdownItem>
+                                                </BarDropdownMenu>
+                                            }
+                                        </BarDropdown>
+                                    </BarItem>
+                                }
+                                <BarItem>
+                                    <BarDropdown Class="darkcyan-white">
+                                        <BarDropdownToggle>
+                                            <BarIcon IconName="IconName.Unlock" />
+                                            Log out
+                                        </BarDropdownToggle>
+                                        <BarDropdownMenu Class="darkcyan-white">
+                                            <BarDropdownItem @onclick="@ChangeRcom">Switch Company</BarDropdownItem>
+                                            <BarDropdownItem @onclick="@LogOut">Log out</BarDropdownItem>
+                                        </BarDropdownMenu>
+                                    </BarDropdown>
+                                </BarItem>
+
+                            </BarStart>
+                        </BarMenu>
+                    </Bar>
+                </LayoutSiderContent>
+            </LayoutSider>
+
+            <Layout>
+                <LayoutHeader ElementId="docs-layout-header">
+                    <Bar Class="b-top-bar" @ref="@topBar" @bind-Visible="@topBarVisible"
+                         Breakpoint="Breakpoint.Desktop" Background="Background.Dark" ThemeContrast="ThemeContrast.Dark">
+                        <BarToggler Bar="@sideBar" Border="Border.Is0" />
+                        <BarBrand Display="Display.None.InlineBlock.OnDesktop">
+                            <BarItem>
+                                <BarLink To="Login/ChangeRCom">
+                                    <span style="color: white;">@CompanyName</span>
+                                </BarLink>
+                            </BarItem>
+                        </BarBrand>
+
+                        @*   <BarMenu>
+                        <BarEnd>
+                        <Dropdown>
+                        <DropdownToggle Color="Color.Default" Class="text-white">
+                        <i class="fas fa-user-circle fa-2x"></i>&nbsp;
+                        @Username
+                        </DropdownToggle>
+                        <DropdownMenu>
+                        <DropdownItem @onclick="@ChangeRcom">Switch Company</DropdownItem>
+                        <DropdownItem @onclick="@LogOut">Login Out</DropdownItem>
+                        </DropdownMenu>
+                        </Dropdown>
+                        </BarEnd>
+                        </BarMenu>*@
+                    </Bar>
+                </LayoutHeader>
+                <LayoutContent Padding="Padding.Is0.OnX.Is4.OnY.Is2.OnWidescreen" Class="mt-1">
+                    <Container Breakpoint="Breakpoint.Widescreen">
+                        <TelerikRootComponent>
+                            @Body
+                        </TelerikRootComponent>
+                    </Container>
+                </LayoutContent>
+            </Layout>
+        </Layout>
+    </Authorized>
+    <NotAuthorized>
+        <AuthzRedirect></AuthzRedirect>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    public string Username { get; set; }
+    public string CompanyName { get; set; }
+
+    public string color { get; set; } = "darkcyan";
+
+    public List<vw_PermissionInMenu> UserInMenu { get; set; } = new List<vw_PermissionInMenu>();
+
+    private Bar sideBar;
+
+    private Bar topBar;
+
+    private bool topBarVisible;
+
+    private bool sideBarFormMenuVisible;
+
+    private bool disposed;
+
+    RenderFragment customIcon = @<Image Source="/sale/assets/img/applogo.png" Style=" width:40px;" />;
+
+    protected override async Task OnInitializedAsync() {
+        if (login.LoginInfo == null) {
+            login.LoginInfo = await Task.Run(login.GetLoginSessionLog);
+        }
+        if (login.LoginInfo != null) {
+          //  UserInMenu = login.LoginInfo.UserInMenuDisplay.Where(o => o.App == "KYPOS_V2").ToList();
+            UserInMenu = login.LoginInfo.UserInMenuDisplay.Where(o => o.App == "KYPOS_V2" || o.GroupID == "BACKEND").ToList();
+           
+        }
+        //await Task.Run(()=>login.CheckLogin());
+
+        await Task.Run(LoadData);
+
+        nav.LocationChanged += OnLocationChanged;
+        await SelectCulture("en-US");
+        await base.OnInitializedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        BindData();
+    }
+
+    void BindData() {
+        if (login.LoginInfo != null) {
+            Username = login.LoginInfo.CurrentUser;
+            CompanyName = login.LoginInfo.CurrentCompany?.Name1;
+        }
+    }
+
+    private Task SelectCulture(string name) {
+        LocalizationService.ChangeLanguage(name);
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeEnabledChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.Enabled = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeGradientChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsGradient = value;
+
+        //if ( Theme.GradientOptions == null )
+        //    Theme.GradientOptions = new GradientOptions();
+
+        //Theme.GradientOptions.BlendPercentage = 80;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeRoundedChanged(bool value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.IsRounded = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    Task OnThemeColorChanged(string value) {
+        if (Theme == null)
+            return Task.CompletedTask;
+
+        Theme.ColorOptions ??= new();
+
+        Theme.BackgroundOptions ??= new();
+
+        Theme.TextColorOptions ??= new();
+
+        Theme.ColorOptions.Primary = value;
+        Theme.BackgroundOptions.Primary = value;
+        Theme.TextColorOptions.Primary = value;
+
+        Theme.InputOptions ??= new();
+
+        //Theme.InputOptions.Color = value;
+        Theme.InputOptions.CheckColor = value;
+        Theme.InputOptions.SliderColor = value;
+
+        Theme.SpinKitOptions ??= new();
+
+        Theme.SpinKitOptions.Color = value;
+
+        Theme.ThemeHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    [Inject] protected ITextLocalizerService LocalizationService { get; set; }
+
+    [CascadingParameter] protected Theme Theme { get; set; }
+    void LogOut(string id) {
+        nav.NavigateTo("Logout", false);
+    }
+
+
+    #region Methods Theme
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e) {
+        //await JSRuntime.InvokeVoidAsync( "blazoriseDocs.navigation.scrollToTop" );
+    }
+
+    protected virtual void Dispose(bool disposing) {
+        if (!disposed) {
+            if (disposing) {
+                nav.LocationChanged -= OnLocationChanged;
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose() {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    #endregion
+
+    async private Task LogOut() {
+        var authenticationState = await AuthenticationStateTask;
+        ((AuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        ((AuthStateProvider)authStateProvider).ClearRememberLogin();
+        nav.NavigateTo("Login", true);
+    }
+
+    async private Task ChangeRcom() {
+
+        nav.NavigateTo("Login/ChangeRCom", true);
+    }
+
+    async Task GoHome() {
+        string forwardurl = "";
+        var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+        string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+        nav.NavigateTo(rootappurl);
+    }
+}
+
+

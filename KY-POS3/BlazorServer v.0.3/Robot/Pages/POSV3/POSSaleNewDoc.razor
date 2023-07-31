@@ -1,0 +1,182 @@
+﻿@page "/POSV3/POSSaleNewDoc"
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using Robot.Data.DA.POSSY
+@*@using Robot.Data.DA.LoginCrossApp*@
+
+@inject SweetAlertService Swal
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject CompanyService comService
+@inject POSService posService
+@inject SweetAlertService Swal
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div style="padding-top: 10%; margin:auto;">
+            <div class="row pt-3">
+                <div class="col-12 text-center">
+                    <h3>เลือกสาขาและวันที่ขาย</h3>
+                </div>
+            </div>
+
+            <div class="row pt-3" style="padding-bottom: 120px !important;">
+                <div class="col-10 mx-auto">
+                    <div class="card">
+                        <div class="card-header bg-white">
+
+                            <div class="row pt-3">
+                                <div class="col-md-12 pl-4 pt-1 ">
+                                    <div class="row">
+                                        <label class="col-3 pt-1 text-right">เลือกสาขา &nbsp;</label>
+                                        <DxComboBox Data="@ListCompany"
+                                                    TextFieldName="@nameof(CompanyService.CompanyInfoList.Name)"
+                                                    ValueFieldName="@nameof(CompanyService.CompanyInfoList.CompanyID)"
+                                                    FilteringMode="DataGridFilteringMode.Contains"
+                                                    @bind-Value="@SelectComID"
+                                                    CssClass="col-9"
+                                                    SizeMode="@ControlSizeMode">
+                                        </DxComboBox>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row pt-1">
+                                <div class="col-md-12 pl-4">
+                                    <div class="row">
+                                        <label class="col-3 pt-1 text-right">เลือกวันที่ &nbsp;</label>
+                                        <DxDateEdit Id="dtInvDate"
+                                                    InputId="dtInvDate"
+                                                    TimeSectionVisible="false"
+                                                    CssClass="col-9"
+                                                    ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto"
+                                                    DisplayFormat="dd/MM/yyyy"
+                                                    Format="dd/MM/yyyy"
+                                                    @bind-Date="@SelectbillDate"
+                                                    SizeMode="@ControlSizeMode">
+                                        </DxDateEdit>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="row pt-2 pb-3">
+                                <div class="col-md-12 pl-4 pt-1">
+                                    <div class="row text-center pt-1">
+
+                                        <div class="col-12   ">
+                                            <div class="btn-group" role="group" aria-label="Basic example">
+                                                <a class="btn btn-danger text-white" style="width:120px" @onclick="@GoBack">
+                                                    <span>กลับเมนู</span>
+                                                </a>
+                                                <a class="btn btn-success text-white" style="width:120px" @onclick="@OnSave">
+                                                    <span>เข้าระบบขาย</span>
+                                                </a>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+@code {
+
+    bool isLoading = true;
+    DateTime? SelectbillDate = DateTime.Now.Date;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string SelectComID { get; set; } = "";
+
+
+    List<CompanyService.CompanyInfoList> ListCompany = new List<CompanyService.CompanyInfoList>();
+    LogInCrossAppReq LogInCrossAppReq = new LogInCrossAppReq();
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        if (login.LoginInfo== null) {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null) {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+    }
+
+    void LoadData() {
+        ListCompany = CompanyService.ListCompanyInfoUIC(login.LoginInfo, "BRANCH", false);
+        SelectComID = ListCompany.FirstOrDefault().CompanyID;
+        isLoading = false;
+    }
+    async void OnSave() {
+
+        if (SelectbillDate == null) {
+            await Swal.FireAsync("", "กรุณาเลือกวันที่ขาย", "error");
+            return;
+        }
+        if (string.IsNullOrEmpty(SelectComID)) {
+            await Swal.FireAsync("", "กรุณาเลือกสาขา", "error");
+            return;
+        }
+        isLoading = true;
+        var selectComInfo = ListCompany.Where(o => o.CompanyID == SelectComID).FirstOrDefault();
+        await Task.Run(() => GotoSalePage(selectComInfo));
+
+
+    }
+    async void GotoSalePage(CompanyService.CompanyInfoList selectComInfo) {
+        isLoading = true;
+        login.LoginInfo.CurrentCompany = CompanyService.GetComInfoByComID(selectComInfo.RCompanyID, selectComInfo.CompanyID);
+
+        if (string.IsNullOrEmpty(login.LoginInfo.CurrentCompany.ShortCode)) {
+            await Swal.FireAsync("", "ตั้งชื่อย่อ สาขาก่อนเปิดบิลขาย", "error");
+            return;
+        }
+        login.LoginInfo.CurrentTransactionDate = Convert.ToDateTime(SelectbillDate);
+        //posService.DocSet = await Task.Run(() => posService.NewTransaction(login.LoginInfo));
+        //posService.DocSet.Head.BillDate = login.LoginInfo.CurrentTransactionDate;
+        //posService.DocSet.Head.ComID = login.LoginInfo.CurrentCompany.CompanyID;
+        //await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        isLoading = false;
+        nav.NavigateTo($"POSV3/POSSaleHome", false);
+    }
+
+
+    void GoBack() {
+        nav.NavigateTo("Menu/MainMenu", false);
+    }
+
+}

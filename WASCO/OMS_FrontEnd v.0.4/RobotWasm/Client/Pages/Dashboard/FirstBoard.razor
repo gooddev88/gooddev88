@@ -1,0 +1,261 @@
+﻿@page "/Dashboard/FirstBoard"
+@using System.Text.Json
+@using System.Text
+@using BrowserInterop.Geolocation;
+@using RobotWasm.Shared.Data.ML.Master.Company
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+@using RobotWasm.Client.Helper.DeviceHelper
+
+
+<style>
+
+    .container {
+        /*padding: 1rem;*/
+    }
+
+    .image {
+        border: 1px solid #ddd;
+        border-radius: 1.5rem;
+        padding: 5px;
+        display: block;
+        width: 100%;
+    }
+
+    /*    .overlay{
+                position:absolute;
+                top:0;
+                bottom:0;
+                left:0;
+                right:auto;
+                width:100%;
+                height:100%;
+                opacity:0;
+                transition: .5s ease;
+                background-color:rgba(255,255,255,0.9);
+            }*/
+
+    .caption {
+        font-size: 1rem;
+        font-weight: bold;
+        /* position: absolute; */
+        /* top: 60%; */
+        /* left: 50%; */
+        /* transform: translate(50%,-50%); */
+        text-align: center;
+    }
+
+    /*    .thumbnail:hover{
+                transform: translate(-4px);
+            }
+
+            .img-container:hover .overlay {
+                opacity: 1;
+            }*/
+</style>
+
+ 
+
+<div class="row pt-3">
+    <div class="col-md-8">
+        @if (login.LogInInfo != null) {
+            <span>สวัสดี <b style="font-size:large;">@UserLogin_FullName</b></span>
+        }
+    </div>
+    <div class="col-md-4 text-end">
+        <span style="font-size:small;color:gray">V.0.1.1</span>
+    </div>
+</div>
+
+@*<div class="container">*@
+<div class="row pt-2">
+    <div class="col-md-3 col-sm-4 col-6">
+        <a class="btn p-0 text-decoration-none thumbnail" @onclick="@OnSelectBrandProduct">
+            <div class="img-container">
+                <img src="/img/Home/Open-Order.png" class="image" />
+                <div class="overlay pt-1">
+                    <p class="caption">เปิดออเดอร์</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3 col-sm-4 col-6">
+        <a class="btn p-0 text-decoration-none thumbnail" @onclick="@OnOrderList">
+            <div class="img-container">
+                <img src="/img/Home/History-Order.png" class="image" />
+                <div class="overlay pt-1">
+                    <p class="caption">ประวัติออเดอร์</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3 col-sm-4 col-6" >
+        <div class="btn p-0 text-decoration-none thumbnail" @onclick="@OnItemBalList">
+            <div class="img-container">
+                <img src="/img/Home/Stock-Balance1.png" class="image" />
+                <div class="overlay pt-1">
+                    <p class="caption">สต๊อกคงเหลือ</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <div class="col-md-3 col-sm-4 col-6">
+        <div class="btn p-0 text-decoration-none thumbnail" @onclick="@OnSelectProList">
+            <div class="img-container">
+                <img src="/img/Home/Stock-Balance1.png" class="image" />
+                <div class="overlay pt-1">
+                    <p class="caption">สต๊อกคงเหลือตามโปรโมชั่น</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+</div>
+
+
+
+
+
+@*</div>*@
+
+<div>
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+</div>
+
+
+@code {
+    string UserLogin_FullName = "";
+    bool isLoading = true;
+
+
+    protected override async Task OnInitializedAsync() {
+
+
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        isLoading = false;
+       
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            await CallJavaScriptOnLoad();
+        }
+    }
+
+    private async Task CallJavaScriptOnLoad() {
+        await jsRuntime.InvokeVoidAsync("getLocation");
+    }
+    //[JSInvokable]
+    //public async Task OnLocationReceived(double latitude, double longitude)
+    //{
+    //    // Do something with the latitude and longitude
+    //}
+
+    //private async Task GetLocation()
+    //{
+    //    await JSRuntime.InvokeVoidAsync("getLocation");
+    //}
+
+    async void LoadData() {
+        try {
+            UserLogin_FullName = login.LogInInfo.CurrentUserInfo?.FullName;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception) { 
+        }
+      
+    }
+
+
+   
+
+
+    
+
+    async void OnOrderList() {
+        nav.NavigateTo("Order/OrderList");
+        await InvokeAsync(StateHasChanged);
+    }
+  
+    async void OnSelectBrandProduct() {
+        var lockx = await Task.Run(()=> CheckLockOrder());
+        if (lockx) {
+          
+                await Swal.FireAsync("Warning", "การเปิดออเดอร์ถูกล๊อกไว้", "info");
+                return;
+            
+        }
+        nav.NavigateTo("Order/SelectBrandProduct");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnItemBalList() {
+        nav.NavigateTo("Stock/StockBalSale");
+        await InvokeAsync(StateHasChanged);
+    }
+    async void OnSelectProList() {
+        nav.NavigateTo("Stock/StockPromotionSale");
+        await InvokeAsync(StateHasChanged);
+    }
+    #region gps
+    public async Task GetGeolocation() {
+        //currentPosition = (await geolocationWrapper.GetCurrentPosition(new PositionOptions()
+        //    {
+        //        EnableHighAccuracy = true,
+        //        MaximumAgeTimeSpan = TimeSpan.FromHours(1),
+        //        TimeoutTimeSpan = TimeSpan.FromMinutes(1)
+        //    })).Location;
+    }
+
+    //public async Task WatchPosition()
+    //{
+    //    geopositionWatcher = await geolocationWrapper.WatchPosition(async (p) => {
+    //        positioHistory.Add(p.Location);
+    //        StateHasChanged();
+    //    }
+    //    );
+    //}
+
+    //public async Task StopWatch()
+    //{
+    //    await geopositionWatcher.DisposeAsync();
+    //    geopositionWatcher = null;
+    //}
+
+    //public async ValueTask DisposeAsync()
+    //{
+    //    await StopWatch();
+    //}
+    #endregion
+
+    async Task<bool> CheckLockOrder() {
+        bool isLockOrder = false;
+        var islock_order = await Task.Run(() => _soService.LockCorder(2));
+        if (!string.IsNullOrEmpty(islock_order.Message2)) {
+            if (islock_order.Message2.ToLower() == "yes") {
+                isLockOrder = true;
+            } else {
+                isLockOrder = false;
+            }
+        }
+        return isLockOrder;
+    }
+}

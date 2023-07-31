@@ -1,0 +1,76 @@
+﻿
+
+/*body {
+    font-family: "Sarabun", sans-serif !important;
+}*/
+@import url("https://fonts.googleapis.com/css2?family=Sarabun&display=swap");
+
+.Sarabun {
+    font-family: "Sarabun", sans-serif !important;
+}
+
+.box_shadow {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+
+.pb-600 {
+    padding-bottom: 600px;
+}
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 700px) {
+    div.col-11.pt-150 {
+        padding-top: 50px;
+    }
+
+    div.col-11.size-sm {
+        font-size: 16px;
+        padding-left: 105px;
+        padding-top: 10px;
+    }
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 700px) {
+    div.col-sm-9.pt-150 {
+        padding-top: 100px;
+    }
+
+    div.col-sm-9.size-sm {
+        font-size: 25px;
+        padding-left: 20px;
+    }
+}
+
+@media only screen and (min-width: 960px) {
+    div.col-md-8.pt-150 {
+        padding-top: 150px;
+    }
+
+    div.col-md-8.size-sm {
+        font-size: 25px;
+        padding-left: 20px;
+    }
+
+    div.col-lg-6.pt-150 {
+        padding-top: 150px;
+    }
+
+    div.col-lg-4.size-sm {
+        font-size: 25px;
+        padding-left: 20px;
+    }
+ }
+
+@media only screen and (min-width: 1440px) {
+    div.col-xl-5.pt-150 {
+        padding-top: 150px;
+    }
+
+    div.col-xl-5.size-sm {
+        font-size: 25px;
+        padding-left: 20px;
+    }
+}
+

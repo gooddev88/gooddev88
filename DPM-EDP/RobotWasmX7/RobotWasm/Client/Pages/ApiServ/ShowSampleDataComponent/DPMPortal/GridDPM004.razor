@@ -1,0 +1,227 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.DpmPortal
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+    .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay {
+        position: fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom: 0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DPM0004</h4>
+        <h5>ข้อมูลศูนย์พักพิงรายจังหวัด</h5>
+    </div>
+</div>
+<hr />
+
+<TelerikLoaderContainer Visible="@isLoading">
+    <Template>
+        <div class="lds-dual-ring"></div>
+    </Template>
+</TelerikLoaderContainer>
+
+<div class="row">
+
+    <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+    </div>
+</div>
+<div class="row pt-2">
+    <div class="col-md-12">
+                 @if (!isShowErrorAPI) {
+        <TelerikGrid Data="@ndata"
+                     Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+            <GridToolBar>
+                <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                <GridSearchBox />
+            </GridToolBar>
+            <GridExport>
+                <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+            </GridExport>
+            <GridColumns>
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.SHELTERID))" Title="SHELTERID" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.SHELTERNAME))" Title="SHELTERNAME" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.PROVINCECODE))" Title="PROVINCECODE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.TAMBONCODE))" Title="TAMBONCODE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.POSTALCODE))" Title="POSTALCODE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.LONGITUDE))" Title="LONGITUDE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.LATITUDE))" Title="LATITUDE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.OFFICER))" Title="OFFICER" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.TEL))" Title="TEL" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.SHELTERTYPE))" Title="SHELTERTYPE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.AREA))" Title="AREA" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.TOILETAMOUNT))" Title="TOILETAMOUNT" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.DISTANCEFROMTOILET))" Title="DISTANCEFROMTOILET" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.HAVEWATER))" Title="HAVEWATER" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.WATERTYPE))" Title="WATERTYPE" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.WATERPERDAYFORCONSUMTION))" Title="WATERPERDAYFORCONSUMTION" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.WATERPERDAYFORSHELTER))" Title="WATERPERDAYFORSHELTER" />
+                <GridColumn Field="@(nameof(DPM004DataSet.DataRow.PERSONAMOUNT))" Title="PERSONAMOUNT" />
+            </GridColumns>
+        </TelerikGrid>
+                                   } else {
+            <div class="text-center" style="color:slategray">
+                <i class="fa-solid fa-circle-exclamation fa-4x"></i>
+                <br />
+                <h3>No data or api error.</h3>
+            </div>
+        }
+    </div>
+</div>
+
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool isShowErrorAPI = false;
+    bool ExportAllPages { get; set; } = true;
+    public List<string>
+    ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public DPM004DataSet.DocSet data_set { get; set; }
+    public List<DPM004DataSet.DataRow>
+        ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.rows.Where(o =>
+            (
+            o.SHELTERID.ToLower().Contains(search)
+            || o.SHELTERNAME.ToLower().Contains(search)
+            || o.PROVINCECODE.ToLower().Contains(search)
+            || o.TAMBONCODE.ToLower().Contains(search)
+            || o.POSTALCODE.ToLower().Contains(search)
+            || o.OFFICER.ToLower().Contains(search)
+            || o.TEL.ToLower().Contains(search)
+            || search == ""
+            )
+            ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=dpm004");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<DPM004DataSet.DocSet>
+                (url));
+            if (query.StatusCode != "OK") {
+                isShowErrorAPI = true;
+                isLoading = false;
+                return;
+            }
+            data_set = (DPM004DataSet.DocSet)query.Result;
+            ndata = data_set.rows;
+            #region show unshow api
+            isShowErrorAPI = false;
+            if (ndata == null)
+            {
+                isShowErrorAPI = true;
+            }
+            else
+            {
+                if (ndata.Count == 0)
+                {
+                    isShowErrorAPI = true;
+                }
+            }
+            #endregion
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+                }

@@ -1,0 +1,57 @@
+﻿@using Blazored.LocalStorage
+@using Blazored.SessionStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+
+@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.JSInterop
+@using Robot
+@using Robot.Service.Api
+@using Robot.Service.FileGo
+@using Robot.Service.FileGo.Model
+@using Robot.Shared
+@using Robot.Data
+@using Robot.Data.GADB.TT
+@using Robot.Data.DA
+@using Robot.Data.DA.POSSY 
+@using Robot.Data.ML
+@using Robot.Data.DA.LoginCrossApp
+@using BlazorPro.Spinkit
+@using Robot.Tools;
+  @using static Robot.Data.DA.POSSY.POSService
+@using Robot.PrintOut
+@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Blazorise
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Robot.Data.DA.MiscService
+@using System.Threading.Tasks;
+ 
+
+@inject AuthenticationStateProvider authStateProvider
+@inject IHostingEnvironment hostingEnvironment
+
+@inject LogInService login
+@inject POSItemService postemService
+@inject ItemService itemService
+@inject POSService posService
+@inject IJSRuntime JsRuntime
+@inject SweetAlertService Swal
+@inject NavigationManager nav
+@inject ILocalStorageService localStorage
+@inject ISessionStorageService sessionStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+@inject ProtectedLocalStorage protectedLocalStore
+@inject PageHistoryState pageHistory
+@inject ClientService clientService
+@inject FileGo fileGo 
+
+ 
+  

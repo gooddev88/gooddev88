@@ -1,0 +1,78 @@
+﻿@inject IJSRuntime jSRuntime;
+@using RobotWasm.Client.Helper.Mice
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@using Telerik.Blazor
+
+<style>
+    .telerik-chart {
+        width: 100%;
+        height: 100%;
+    }
+
+</style>
+ 
+<h6>@widgetDesc</h6>
+<TelerikRootComponent> 
+<TelerikChart Width="100%" Height="100%"> 
+    <ChartLegend Position="ChartLegendPosition.Bottom"></ChartLegend> 
+    <ChartSeriesItems>
+        <ChartSeries Type="ChartSeriesType.Pie"
+                     Data="@xData"
+                     Field="@nameof(MyChartDataModel.ItemValue)"
+                     CategoryField="@nameof(MyChartDataModel.Category)"
+                     ExplodeField="@nameof(MyChartDataModel.Explode)">
+            <ChartSeriesTooltip Visible="true" Context="item">
+                <Template>
+                    @item.Category @item.Percentage.ToString("P")
+                    
+                </Template>
+            </ChartSeriesTooltip>
+               
+            <ChartSeriesLabels Visible="true"></ChartSeriesLabels>
+        </ChartSeries>
+    </ChartSeriesItems>
+</TelerikChart>
+</TelerikRootComponent>
+<div class="row text-end">
+    <div class="col-12">
+        <small style="color:gray">wg104</small>
+    </div>
+</div>
+@code {
+    [Parameter] public string BoardID { get; set; }
+
+
+    bool isLoading = false;
+    public string widgetDesc { get; set; }
+    public custom_widget_master this_widget = new custom_widget_master();
+    public List<MyChartDataModel> xData = new List<MyChartDataModel>();
+
+    public class MyChartDataModel {
+        public string Category { get; set; }
+        public double ItemValue { get; set; }
+        public string Color { get; set; }  
+        public bool Explode { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg104"));
+        widgetDesc =/*this_widget.widget_id+" "+ */this_widget.widget_desc;
+        List<WG104Data> query = await Task.Run(() => _g10Service.GetWG104Data(BoardID));
+        int i = 0;
+        foreach (var q in query) {
+            MyChartDataModel n = new MyChartDataModel();
+            n.Category = q.injured_status;
+            n.ItemValue = q.percent; 
+            n.Explode = false;
+            n.Color = MyColor.RandomHtmlColor();
+            xData.Add(n);
+            i++;
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+    }
+ }
+
+

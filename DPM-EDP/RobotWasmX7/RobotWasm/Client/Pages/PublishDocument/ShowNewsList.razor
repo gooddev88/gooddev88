@@ -1,0 +1,106 @@
+﻿@page "/PublishDocument/ShowNewsList"
+
+@using RobotWasm.Client.Pages.PublishDocument
+@using RobotWasm.Client.Data.DA.UserGroup
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+<style>
+</style>
+
+<TopMenu></TopMenu>
+
+<div class="row pt-3">
+    <div class="col-12 text-center">
+        <h3>ข่าวสาร/ประกาศ</h3>
+    </div>
+</div>
+
+@if (!isLoading) {
+
+    <div class="row pt-2">
+        <div class="col-12">
+
+            @foreach (var l in DocList) {
+                <div class="row pt-2">
+                    <div class="col-2 text-end pe-0">
+                        <img src="img/megaphone.png" class="rounded-circle" alt="" style="width:45px;height:auto;">
+                    </div>
+                    <div class="col-md-8 col-sm-10 col-10">
+                        <div class="row pb-3 pt-2">
+                            <div class="col-12">
+                                <b>@l.title</b>
+                                @if (l.is_active == 1) {
+                                    <p>
+                                        @l.desc&nbsp;
+                                        <a class="btn-link" @onclick="@(() => { l.is_active = 0;})">
+                                            ซ่อน
+                                        </a>
+                                    </p>
+                                } else {
+                                    @if (@l.desc.Length > 49) {
+                                        <p style="word-break: break-word;">
+                                            @l.desc.Substring(0, 50)&nbsp;
+                                            <a class="btn-link" @onclick="@(() => { l.is_active = 1;})">
+                                                อ่านเพิ่มเติม
+                                            </a>
+                                        </p>
+                                    } else {
+                                        <p>
+                                            @l.desc  &nbsp;
+                                        </p>
+                                    }
+
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+
+    private bool isShowAll = false;
+
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    List<news_info> DocList = new List<news_info>();
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadData() {
+        DocList = await Task.Run(() => _newsService.ListDoc(SearchText));
+        foreach (var d in DocList) {
+            d.is_active = 0;
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+}

@@ -1,0 +1,256 @@
+﻿@page "/PublishDocument/DocumentList"
+
+@using RobotWasm.Client.Data.DA.Document
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.DocHead
+@using RobotWasm.Shared.Data.ML.Shared
+
+
+@if (!isLoading)
+{
+
+    <div class="row pb-3">
+        <div class="col-6">
+            <h3>@menuCaption</h3>
+        </div>
+        <div class="col-6 text-end">
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@NewDoc" Class=""
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Tertiary)">
+                <i class="fa-solid fa-circle-plus"></i>&nbsp; เพิ่มเอกสารเผยแพร่
+            </TelerikButton>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-2 col-12 pt-1">
+            <span>วันที่สร้างตั้งแต่</span>
+            <TelerikDatePicker @bind-Value="@Filter.DateFrom"
+                           Format="dd/MM/yyyy">
+            </TelerikDatePicker>
+        </div>
+        <div class="col-md-2 col-12 pt-1">
+            <span>จนถึงวันที่</span>
+            <TelerikDatePicker @bind-Value="@Filter.DateTo"
+                           Format="dd/MM/yyyy">
+            </TelerikDatePicker>
+        </div>
+        <div class="col-md-2 col-12 pt-1">
+            <span>หมวดหมู่</span>
+            <TelerikComboBox @bind-Value="@Filter.Cate"
+                         Data="@CboCateDocment"
+                         ScrollMode="@DropDownScrollMode.Virtual"
+                         ValueField="@(nameof(publishdoc_cate.cate_id))"
+                         TextField="@(nameof(publishdoc_cate.cate_name))"
+                         Width="100%" PageSize="50" ItemHeight="35"
+                         Filterable="true"
+                         FilterOperator="@StringFilterOperator.Contains">
+                <ComboBoxSettings>
+                    @*<ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>*@
+                </ComboBoxSettings>
+                <HeaderTemplate>
+                    <div class="fw-bold py-2">&nbsp;&nbsp; หมวดหมู่</div>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <span>@($"{context.cate_name}")</span>
+                </ItemTemplate>
+            </TelerikComboBox>
+        </div>
+        <div class="col-md-3 col-12 pt-4">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm" placeholder="คำค้นหา" @bind-value="@Filter.SearchText">
+                <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-12">
+            <TelerikGrid Data=@DocList
+                     Pageable="true"
+                     Groupable="false"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true"
+                     PageSize="30"
+                     Navigable="true">
+                <GridToolBar>
+                    <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                </GridToolBar>
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field="@nameof(vw_doc_head.doc_id)" Title="แก้ไข" Editable="false" Width="80px">
+                        <Template>
+                            @{
+                                var data = context as vw_doc_head;
+                            <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa-solid fa-pen-to-square" style="font-size:20px"></i></button>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(vw_doc_head.cate_name)" Title="หมวดหมู่" Width="160px" />
+                <GridColumn Field="@nameof(vw_doc_head.doc_desc)" Title="หัวข้อเอกสารเผยแพร่" Width="180px" />
+                <GridColumn Field="@nameof(vw_doc_head.doc_remark)" Title="คำอธิบาย/เนื้อหา" Width="200px" />
+                <GridColumn Field=@nameof(vw_doc_head.created_date) Title="วันที่สร้าง" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                @*<GridColumn Field=@nameof(vw_doc_head.created_by) Title="สร้างโดย" Width="150px" />*@
+                <GridColumn Field=@nameof(vw_doc_head.publish_date) Title="วันที่เผยแพร่" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                <GridColumn Field="@nameof(vw_doc_head.is_publish)" Title="สถานะ" Editable="false" Width="120px">
+                    <Template>
+                        @{
+                                var data = context as vw_doc_head;
+                                if (data.is_publish == 1)
+                                {
+                                <div class="text-center">
+                                    <span style="font-size:small; background-color: #37b400 !important;" class="badge rounded-pill bg-success">เผยแพร่</span>
+                                </div>
+                                }
+                                else
+                                {
+                                <div class="text-center">
+                                    <span style="font-size:small;" class="badge bg-warning text-dark">ไม่เผยแพร่</span>
+                                </div>
+                                }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Title="ลบ" Editable="false" Width="75px">
+                    <Template>
+                        @{
+                                var data = context as vw_doc_head;
+                            <div class="text-center">
+                                <button class="btn btn-sm" @onclick="@(() => DeleteLine(data))"><i class="fa-solid fa-trash" style="font-size:20px"></i>  </button>
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </TelerikGrid>
+    </div>
+</div>
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+
+    I_DocHeadFiterSet Filter = PublishDocumentService.NewFilterSet();
+    List<vw_doc_head> DocList = new List<vw_doc_head>();
+    List<publishdoc_cate> CboCateDocment = new List<publishdoc_cate>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Filter == null)
+        {
+            Filter = PublishDocumentService.NewFilterSet();
+        }
+        var search_datefrom = await sessionStorage.GetItemAsync<string>(Globals.DateFrom_PublishDocument);
+        if (search_datefrom != null)
+        {
+            Filter.DateFrom = Convert.ToDateTime(search_datefrom).Date;
+        }
+
+        var search_dateto = await sessionStorage.GetItemAsync<string>(Globals.DateTo_PublishDocument);
+        if (search_dateto != null)
+        {
+            Filter.DateTo = Convert.ToDateTime(search_dateto).Date;
+        }
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        CboCateDocment = await _docCateService.ListDocCate();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadDropDown()
+    {
+
+    }
+
+    async void LoadData()
+    {
+        SetActiveControl();
+        DocList = await _docmentService.ListDoc(Filter);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl()
+    {
+        await CheckPermission();
+    }
+    async Task CheckPermission()
+    {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "435");
+        menuCaption = menu.menu_name;
+        menuGroupCaption = UserService.GetMenuGroup(login.LogInInfo, menu.group_id).menu_name;
+    }
+
+    async void Edit(vw_doc_head select_data)
+    {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(Globals.ActiveID_Document, select_data.doc_id);
+        _docmentService.DocSet = await Task.Run(() => _docmentService.GetDocSet(select_data.doc_id));
+        nav.NavigateTo($"PublishDocument/DocumentDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void NewDoc()
+    {
+        await sessionStorage.RemoveItemAsync(Globals.ActiveID_Document);
+        _docmentService.DocSet = PublishDocumentService.NewTransaction();
+        nav.NavigateTo($"PublishDocument/DocumentDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction()
+    {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(Globals.DateFrom_PublishDocument, Filter.DateFrom);
+        await sessionStorage.SetItemAsync(Globals.DateTo_PublishDocument, Filter.DateTo);
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void DeleteLine(vw_doc_head data)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Warning",
+                Text = $"ยืนยันการลบเอกสาร",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "No"
+            });
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var rs = await _docmentService.DeleteDoc(data.doc_id, login.LogInInfo.CurrentUser);
+        isLoading = true;
+        if (rs.Result == "ok")
+        {
+            await Task.Run(LoadData);
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            await Swal.FireAsync("", rs.Message1, "error");
+        }
+    }
+
+}

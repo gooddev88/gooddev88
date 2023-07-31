@@ -1,0 +1,220 @@
+﻿@page "/Menu/MenuDevTest"
+ 
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+@using Robot.Data.DA.LoginCrossApp
+@using Microsoft.AspNetCore.Hosting;
+@using Blazored.LocalStorage
+@using Robot.PrintOut
+
+
+@inject IHostingEnvironment hostingEnvironment
+@inject ItemService itemService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject ILocalStorageService localStorage
+@inject POSService posService
+@inject PageHistoryState pageHistory
+
+<style>
+    .fix-center {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                    @*<Circle Color="orange" Size="165px" />*@
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row pb-1 pt-5">
+            <div class="col-md-1 col-sm-3 col-3 text-left">
+                <a ID="btnback" class="btn w-100 text-white" @onclick="@Back">
+                    <i class="fas fa-chevron-left fa-2x"></i>
+                </a>
+            </div>
+            <div class="col-md-10 col-sm-6 col-6 pt-1 text-center mx-0">
+                <strong style="font-size:xx-large;" class="text-white">เมนูทดสอบระบบ</strong>
+            </div>
+        </div>
+
+        <div class="row px-3 pt-4">
+            <div class="col-12">
+                <div class="row pt-2">
+
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@GoToReport">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/testapp.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.4rem;">รายงานเอามาฝากไว้ก่อน</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                        <a href="XReportViewer/a">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/testapp.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.4rem;">ทดสอบพิมพ์</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@PrintOldReport">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/market-pos.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.4rem;">ทดสอบรายงาน Migate จากระบบเก่า</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                 @*   <div class="col-md-6 col-sm-6 col-6 pt-2 p-1">
+                        <a @onclick="@ExportReport">
+                            <div class="card card-box-shadow">
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <img src="/SALE/assets/img/testapp.png" style="width: 5rem;" /><br /><br />
+                                            <strong style="color: black; font-size: 1.4rem;">ทดสอบส่งรายงานออกเป็นภาพ</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>*@
+
+                </div>
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool firstRender = true;
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    protected override void OnInitialized()
+    {
+        string uri = nav.Uri;
+        pageHistory.AddPageToHistory(uri);
+        isLoading = true;
+        LoadData();
+    }
+
+    void LoadData()
+    {
+        SetActiveControl();
+        isLoading = false;
+    }
+
+    void SetActiveControl()
+    {
+
+    }
+
+    void GoToReport()
+    {
+        nav.NavigateTo("LINE/ReportSalesSummary");
+    }
+
+
+    void PrintOldReport()
+    {
+        nav.NavigateTo("XReportViewer/old");
+    }
+
+
+    //async void ExportReport()
+    //{
+    //    string export_path = GetWebRootPath("TempFile");
+    //    R401.XReportRender i = new R401.XReportRender();
+    //    string rcom = login.LoginInfo.CurrentRootCompany.CompanyID;
+    //    i.doc = await Task.Run(() => posService.GetDocSet("BANZ640914-003", rcom));
+    //    i.comInf = CompanyService.GetCompanyInfo(rcom, i.doc.Head.RComID);
+    //    i.Username = login.LoginInfo.CurrentUser;
+
+    //    i.files = XFilesService.GetFileFromDocInfo(i.comInf.CompanyID, "COMPANY", "COMPANY_PHOTO_PROFILE");
+
+    //    var report = new PrintOut.R401(i);
+
+    //    // Create a document from the report.
+    //    report.CreateDocument();
+    //    // imageExportFile specifies the exported file's name and path. The user's Downloads folder is used as the default path.
+    //    //string imageExportFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads\" + report.Name + ".image";
+    //    string imageExportFile = export_path + @"\BANZ640914-003.jpeg";
+    //    // Specify export options and export the document.
+    //    // Uncomment the lines below to specify export options in an ImageExportOptions class instance.
+    //    // ImageExportOptions ImageExportOptions = new ImageExportOptions();
+    //    // ImageExportOptions.ExportMode = ImageExportMode.SingleFile;
+    //    // report.PrintingSystem.ExportToImage(imageExportFile, ImageExportOptions);
+
+    //    // Comment the lines below if you specified export options in an ImageExportOptions class instance above.
+    //    report.PrintingSystem.ExportOptions.Image.ExportMode = ImageExportMode.SingleFile;
+    //    report.PrintingSystem.ExportToImage(imageExportFile);
+
+
+    //}
+    private string GetWebRootPath(string subfolder)
+    {
+        string webRootPath = hostingEnvironment.WebRootPath;
+        string contentRootPath = hostingEnvironment.ContentRootPath;
+
+        string path = webRootPath + @"\" + subfolder;
+        return path;
+    }
+
+    void Back()
+    {
+        nav.NavigateTo("Menu/MainMenu");
+    }
+
+}

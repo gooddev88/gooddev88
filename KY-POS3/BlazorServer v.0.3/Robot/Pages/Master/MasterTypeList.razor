@@ -1,0 +1,183 @@
+﻿@page "/Master/MasterTypeList"
+@page "/Master/MasterTypeList/{pagecomefrom}"
+@inject MasterTypeService mastertypeService
+@layout MainBoardLayout
+<style>
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div class="row pt-3">
+            <div class="col-md-12 col-sm-12 col-12">
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4>
+                                            <a @onclick="Back">
+                                                <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                                            </a>
+                                        </h4>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                            <div class="col-md-4 col-12">
+                                <div class="input-group">
+                                    <TextEdit @bind-Text="@SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                                    <div class="input-group-append">
+                                        <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                    </div>
+                                </div>
+                            </div>
+
+                                </div>
+
+
+                            </div>
+                        </div>
+
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-12">
+
+                <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="30"
+                             Navigable="true">
+                    <GridToolBar>
+                        <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBar>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(MasterTypeHead.MasterTypeID)" Title="แก้ไข" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as MasterTypeHead;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Width="400px" Field="@nameof(MasterTypeHead.Name)" Title="ชื่อตัวเลือก" />
+                        <GridColumn Width="100px" Field="@nameof(MasterTypeHead.UseFor)" Title="ระดับใช้งาน" />
+                        <GridColumn Width="100%" Field="@nameof(MasterTypeHead.Remark)" Title="หมายเหตุ" />
+                    </GridColumns>
+                </TelerikGrid>
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+        [Parameter]
+    public string pagecomefrom { get; set; }
+    bool isLoading = true;
+    bool isShowNew = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool collapse1Visible = true;
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    bool ShowFilterRow = false;
+
+    IEnumerable<MasterTypeHead> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized() {
+
+    }
+
+    async void LoadData() {
+
+        DocList = MasterTypeService.ListDoc(SearchText);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9911");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "9911")) {//9911 ตั้งค่าตัวเลือก
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9911")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(MasterTypeHead select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(MasterTypeService.sessionActiveId, select_data.MasterTypeID);
+        mastertypeService.DocSet = mastertypeService.GetDocSet(select_data.MasterTypeID, login.LoginInfo.CurrentRootCompany.CompanyID, "");
+        mastertypeService.PreviousPageUrl = nav.Uri;
+        nav.NavigateTo($"Master/MasterTypeDetail", false);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //    async void Back() {
+
+    //    string forwardurl = "";
+    //    switch (pagecomefrom) {
+    //        case "web1":
+    //            var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+    //            string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+    //            nav.NavigateTo(rootappurl);
+    //            break;
+    //        case "web2":
+    //            var url = pageHistory.GetGoBackPage();
+    //            nav.NavigateTo(url);
+    //            await InvokeAsync(StateHasChanged);
+    //            break;
+
+    //    }
+    //}
+
+    public void Back() {
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+}

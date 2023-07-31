@@ -1,0 +1,19 @@
+ok 1.หน้า order อยากให้เปลี่ยนชื่อลูกค้าได้ แต่รหัสเดิม
+ok 2.หน้าปรับปรุงสินค้าต้องการให้ dropdonw แสดงเลขครัง
+ok 3.เช็คเรื่องสินค้าไม่แสดงรูป
+ok 4.อัพโหลด โปรโมชั่นให้เหลือแค่ Item
+ok 5.ในกรณีที่มีราคา 2 ยังสามารถลดได้อีก
+ok 6.กลับจากหน้า สินค้าให้กลับมาหน้าสินค้าใหม่
+ok 7.หน้าเลือกสินค้าให้มีปุ่มกลับไปที่หน้า Promotion
+ok 8.ทำ PDF แสดง Stockสินค้าพร้อมรูปภาพ
+ok 9.ปลด Lock ให้ขายราคา 0 บาทได้
+ok 10.ปรับ Step การ Click หน้าขาย
+
+
+
+--update รูปภาพ
+	 update i set i.PhotoID=x.file_id
+   FROM [WC_OMS].[dbo].[ItemInfo] i
+   inner join  [WC_XFiles].[dbo].[xfiles_ref] x on i.[RCompanyID]=x.rcom_id and i.CompanyID=x.com_id and i.ItemID=x.doc_id
+   where x.is_active=1
+   and  owner_id='oms'

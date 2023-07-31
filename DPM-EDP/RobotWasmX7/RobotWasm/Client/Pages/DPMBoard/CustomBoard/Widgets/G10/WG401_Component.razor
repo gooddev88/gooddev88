@@ -1,0 +1,130 @@
+﻿@using RobotWasm.Client.Data.ML.HighChart
+@using RobotWasm.Client.Pages.DPMBoard.CustomBoard.Widgets.ThMap
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.BoardParam
+@using System.Globalization
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData.Widget.G10
+@inject IJSRuntime jSRuntime;
+
+
+
+<h6>@widgetDesc</h6>
+
+<div class="row">
+    <div class="col-6">
+        <ThMap401 OnClick="ClickHandler"></ThMap401>
+    </div>
+    <div class="col-6 text-center">
+        @if (xData == null) {
+            <p>ไม่มีข้อมูล</p>
+        } else {
+            @if (xData.Count == 0) {
+                <p>ไม่มีข้อมูล</p>
+            }
+        }
+
+        <div id="div_wg401"></div>
+
+    </div>
+</div>
+@if (isLoading) {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+<div class="row text-end">
+    <div class="col-12">
+        <small style="color:gray">wg401</small>
+    </div>
+</div>
+
+ 
+@code {
+
+    [Parameter] public string BoardID { get; set; }
+    private bool isLoading = false;
+
+    string province_select = "กรุงเทพมหานคร";
+
+    public custom_widget_master this_widget = new custom_widget_master();
+    public string widgetDesc { get; set; }
+    List<WG401Data> xData = new List<WG401Data>();
+    private IJSObjectReference _jsModule;
+
+    protected override async Task OnInitializedAsync() {
+
+        this_widget = await Task.Run(() => _customBoardService.GetWidgetInfo("wg401"));
+        widgetDesc = /*this_widget.widget_id + " " + */this_widget.widget_desc;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+
+            try {
+                _jsModule = await jSRuntime.InvokeAsync<IJSObjectReference>("import", "./chart/g10/wg401.js");
+                if (BoardID != null) {
+                    await CreateChart();
+                }
+            } catch (Exception) {
+
+            }
+        }
+    }
+
+
+    async Task ClickHandler(string newMessage) {
+        province_select = newMessage; 
+        await CreateChart();
+        isLoading = false;
+    }
+
+
+    private async Task CreateChart() {
+        try {
+
+            isLoading = true;
+            xData = await Task.Run(() => _g10Service.GetWG401Data(province_select));
+            isLoading = false;
+            if (xData.Count == 0) {
+                return;
+            }
+
+            var Series = new List<SeriesElement>();
+            var bar = new SeriesElement();
+            // bar.Color = SeriesElement.RandomColor();
+            bar.Data = new List<object>();
+            bar.Name = "จำนวน เครื่องจักร";
+            //bar.ColorByPoint = true;
+            bar.innerSize = "75%";
+            foreach (var d in xData) {
+                var datum = new Datum();
+                if (d.status == "พร้อมใช้งาน") {
+                    datum.Color = "#008000";
+                } else if (d.status == "ไม่พร้อมใช้งาน") {
+                    datum.Color = "#000000";
+                }else{
+                    datum.Color = "#000000";
+                } 
+                datum.Name = d.status;
+                datum.Y = d.count_result; 
+                bar.Data.Add(datum);
+            }
+            Series.Add(bar);
+            //var x = new XAxis(AxisType.Category);
+
+            var txt = new Title { text = "" };
+            var chart = new ChartData();
+            chart.title = txt;
+            chart.series = Series;
+            await _jsModule.InvokeVoidAsync("wg401", chart);
+
+            await InvokeAsync(StateHasChanged);
+
+        } catch (Exception) {
+
+
+        }
+
+    }
+}
+
+

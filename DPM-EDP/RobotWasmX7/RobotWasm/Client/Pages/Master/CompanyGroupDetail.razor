@@ -1,0 +1,289 @@
+﻿@page "/Master/CompanyGroupDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+@if (!isLoading)
+{
+
+
+        <div class="row pt-1">
+            <div class="col-md-8 col-12 mx-auto">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@Back" Class="w-100" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    <span style="font-size: large;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+                </TelerikButton>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>รหัสหน่วยงาน</span>
+                <TelerikTextBox PlaceHolder="เอกสารใหม่" @bind-Value="@_companyGroupService.DocSet.head.company_groupid" Enabled="false" />
+            </div>
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>ชื่อหน่วยงาน</span>
+                <TelerikTextBox @bind-Value="@_companyGroupService.DocSet.head.name1" />
+            </div>
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>ชื่อย่อหน่วยงาน</span>
+                <TelerikTextBox @bind-Value="@_companyGroupService.DocSet.head.name2" />
+            </div>
+
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-8 col-12 mx-auto text-end">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                    <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+                </TelerikButton>&nbsp;&nbsp;&nbsp;&nbsp;
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@btnToList"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                <i class="fa-solid fa-circle-xmark"></i>&nbsp; ปิด
+            </TelerikButton>
+            </div>
+        </div>
+    
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh()
+    {
+        try
+        {
+            if (_companyGroupService.DocSet == null)
+            {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_COMGROUPID);
+                if (!string.IsNullOrEmpty(docid))
+                {
+                    _companyGroupService.DocSet = await _companyGroupService.GetDocSetComGroup(docid);
+                }
+                else
+                {
+                    _companyGroupService.DocSet = CompanyGroupService.NewTransaction();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var xx = ex.Message;
+        }
+    }
+
+    async void LoadData()
+    {
+        await CheckPermission();
+        BindData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async Task CheckPermission() 
+    {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "905");
+        menuCaption = menu.menu_name;
+        menuGroupCaption = UserService.GetMenuGroup(login.LogInInfo, menu.group_id).menu_name;
+    }
+
+    void BindData()
+    {
+        var h = _companyGroupService.DocSet.head;
+    }
+
+    #region Save
+
+    bool ValidData()
+    {
+        var h = _companyGroupService.DocSet.head;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        //if (companygroupid == "")
+        //{
+        //    Errmsg = "ระบุ รหัสชื่อกลุ่มหน่วยงาน !! ";
+        //    isvalid = false;
+        //}
+
+        if (h.name1 == "")
+        {
+            Errmsg = "ระบุ ชื่อหน่วยงาน !! ";
+            isvalid = false;
+        }
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    async void OnSave()
+    {
+        if (!ValidData())
+        {
+            return;
+        }
+
+        isLoading = true;
+        await Task.Run(Save);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async private Task Save()
+    {
+        var isnew = await Task.Run(() => PrepairDataSave());
+        //if (isnew)
+        //{
+        //    company_group_info check = await _companyGroupService.Checkduplicate(companygroupid);
+        //    if (check.company_groupid != null)
+        //    {
+        //        await Swal.FireAsync("", "!! รหัสกลุ่มหน่วยงานนี้ มีในระบบแล้ว", "error");
+        //        return;
+        //    }
+        //}
+
+        var h = _companyGroupService.DocSet.head;
+        string strPayload = JsonSerializer.Serialize(_companyGroupService.DocSet);
+        string url = $"api/ComGroup/SaveComGroup";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok")
+        {
+        }
+        else
+        {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail")
+            {
+                await Swal.FireAsync("", r.Message1, "error");
+            }
+            else
+            {
+                //_companyGroupService.DocSet = await _companyGroupService.GetDocSetComGroup(h.company_groupid);
+                //await sessionStorage.SetItemAsync(Globals.ActiveID_COMGROUPID, h.company_groupid);
+                //await Task.Run(LoadData);
+                //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "success",
+                        Text = $"บันทึกสำเร็จ",
+                        ShowCancelButton = false,
+                        Icon = "success",
+                        ConfirmButtonText = "ตกลง"
+                    });
+                if (string.IsNullOrEmpty(result.Value))
+                {
+                    return;
+                }
+                nav.NavigateTo($"Master/CompanyGroupList", false);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    protected async Task<bool> PrepairDataSave()
+    {
+        var user = login.LogInInfo.CurrentUser;
+        var h = _companyGroupService.DocSet.head;
+        bool isnew = h.company_groupid == "" ? true : false;
+
+        if (isnew)
+        {
+            if (string.IsNullOrEmpty(h.company_groupid))
+            {
+                List<string>? list_docid = await Task.Run(() => _iDRuunerService.GetNewIDV2("COMGROUP", "DPM", "", Convert.ToDateTime(h.created_date).Date, true, "th"));
+                h.company_groupid = list_docid[1];
+            }
+            h.created_by = user;
+        }
+        else
+        {
+            h.modified_by = user;
+        }
+        return isnew;
+    }
+
+    #endregion
+
+    //async void OnDelete()
+    //{
+    //    var h = _companyGroupService.DocSet.head;
+    //    var user = login.LogInInfo.CurrentUser;
+    //    SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+    //        {
+    //            Title = "Warning",
+    //            Text = $"ยืนยันการลบเอกสาร",
+    //            ShowCancelButton = true,
+    //            ConfirmButtonText = "Yes",
+    //            CancelButtonText = "No"
+    //        });
+    //    if (string.IsNullOrEmpty(result.Value))
+    //    {
+    //        return;
+    //    }
+
+    //    var rs = await _companyGroupService.DeleteDocComGroup(h.company_groupid,user);
+    //    isLoading = true;
+    //    if (rs.Result == "ok")
+    //    {
+    //        nav.NavigateTo($"Master/CompanyGroupList", false);
+    //        await InvokeAsync(StateHasChanged);
+    //    }
+    //    else
+    //    {
+    //        await Swal.FireAsync("", rs.Message1, "error");
+    //    }
+    //    isLoading = false;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    async void Back()
+    {
+        nav.NavigateTo($"Master/CompanyGroupList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void btnToList()
+    {
+        nav.NavigateTo($"Master/CompanyGroupList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,0 +1,109 @@
+﻿{
+   "CodeGenerationMode": 2,
+   "ContextClassName": "cimsContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "RYU",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "RobotWasm.Server",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[y_asset_doc_head]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_asset_doc_line]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_asset_info]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_master_type_head]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_master_type_line]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_trans_logs]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_user_in_group]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_user_info]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_usergroup_in_board]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_usergroup_in_menu]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_usergroup_info]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_usermenu]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_xfile_location]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[y_xfile_ref]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[vw_uim]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_user_in_group]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_usergroup_info]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vw_xfile_ref]",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": "YONDU.TFEDBF",
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": true,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoConstructor": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false,
+   "UseT4": false
+}

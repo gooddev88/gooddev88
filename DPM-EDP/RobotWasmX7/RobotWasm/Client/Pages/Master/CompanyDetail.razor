@@ -1,0 +1,301 @@
+﻿@page "/Master/CompanyDetail"
+
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .k-state-disabled, .k-disabled, .k-widget[disabled], .k-disabled {
+        background: #e9ecef !important;
+        opacity: 1;
+    }
+</style>
+
+@if (!isLoading)
+{
+        <div class="row pt-1">
+            <div class="col-md-8 col-12 mx-auto">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@Back" Class="w-100" FillMode="@(ThemeConstants.Button.FillMode.Solid)"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Base)">
+                    <span style="font-size: large;"><i class="fa-solid fa-circle-chevron-left"></i>&nbsp;&nbsp;&nbsp;@menuCaption</span>
+                </TelerikButton>
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>รหัสส่วนงาน</span>
+                <TelerikTextBox PlaceHolder="เอกสารใหม่" @bind-Value="@_companyService.DocSet.head.companyid" Enabled="false" />
+            </div>
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>ชื่อส่วนงาน</span>
+                <TelerikTextBox @bind-Value="@_companyService.DocSet.head.name1" />
+            </div>
+            <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>ชื่อย่อส่วนงาน</span>
+                <TelerikTextBox @bind-Value="@_companyService.DocSet.head.name2" />
+            </div>
+
+             <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>หน่วยงาน</span>
+                        <TelerikComboBox @bind-Value="@_companyService.DocSet.head.comgroupid"
+                         Data="@CboComGroup"
+                         ScrollMode="@DropDownScrollMode.Virtual"
+                         ValueField="@(nameof(company_group_info.company_groupid))"
+                         TextField="@(nameof(company_group_info.name1))"
+                         Width="100%" PageSize="50" ItemHeight="35"
+                         Filterable="true"
+                         FilterOperator="@StringFilterOperator.Contains">
+                <ComboBoxSettings>
+                    @*<ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>*@
+                </ComboBoxSettings>
+                <HeaderTemplate>
+                    <div class="fw-bold py-2">&nbsp;&nbsp; หน่วยงาน</div>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <span>@($"{context.name1}")</span>
+                </ItemTemplate>
+            </TelerikComboBox>
+            </div>
+
+                         <div class="col-md-8 col-12 mx-auto pt-2">
+                <span>จังหวัด</span>
+                        <TelerikComboBox @bind-Value="@_companyService.DocSet.head.province"
+                         Data="@CboProvince"
+                         ScrollMode="@DropDownScrollMode.Virtual"
+                         ValueField="@(nameof(mas_province.province_id))"
+                         TextField="@(nameof(mas_province.province_name))"
+                         Width="100%" PageSize="50" ItemHeight="35"
+                         Filterable="true"
+                         FilterOperator="@StringFilterOperator.Contains">
+                <ComboBoxSettings>
+                    @*<ComboBoxPopupSettings Width="400px" Height="300px"></ComboBoxPopupSettings>*@
+                </ComboBoxSettings>
+                <HeaderTemplate>
+                    <div class="fw-bold py-2">&nbsp;&nbsp; จังหวัด</div>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <span>@($"{context.province_name}")</span>
+                </ItemTemplate>
+            </TelerikComboBox>
+            </div>
+
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-8 col-12 mx-auto text-end">
+                <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@OnSave" Class="px-3"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                    <i class="fa-solid fa-floppy-disk"></i>&nbsp; บันทึกข้อมูล
+                </TelerikButton>&nbsp;&nbsp;&nbsp;&nbsp;
+            <TelerikButton Size="@(ThemeConstants.Button.Size.Large)"
+                       @onclick="@btnToList"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Error)">
+                <i class="fa-solid fa-circle-xmark"></i>&nbsp; ปิด
+            </TelerikButton>
+            </div>
+        </div> 
+}
+else
+{
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code {
+    bool isLoading = false;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    List<company_group_info> CboComGroup = new List<company_group_info>();
+    List<mas_province> CboProvince= new List<mas_province>();
+    //public bool isactive { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadDropDown);
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckIsRefresh()
+    {
+        try
+        {
+            if (_companyService.DocSet == null)
+            {
+                string docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_COMID);
+                if (!string.IsNullOrEmpty(docid))
+                {
+                    _companyService.DocSet = await _companyService.GetDocSet(docid);
+                }
+                else
+                {
+                    _companyService.DocSet = CompanyService.NewTransaction();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var xx = ex.Message;
+        }
+    }
+
+    async void LoadData()
+    {
+        await CheckPermission();
+        BindData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadDropDown()
+    {
+        CboComGroup = await _companyService.ListGroupCompany();
+        CboProvince = await _companyService.ListProvince();
+    }
+
+    async Task CheckPermission() 
+    {
+        var menu = UserService.GetMenuInfo(login.LogInInfo, "904");
+        menuCaption = menu.menu_name;
+        menuGroupCaption = UserService.GetMenuGroup(login.LogInInfo, menu.group_id).menu_name;
+    }
+
+    void BindData()
+    {
+        var h = _companyService.DocSet.head;
+    }
+
+    #region Save
+
+    bool ValidData()
+    {
+        var h = _companyService.DocSet.head;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+        if (h.name1 == "")
+        {
+            Errmsg = "ระบุ ชื่อส่วนงาน !! ";
+            isvalid = false;
+        }
+
+        if (!isvalid)
+        {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    async void OnSave()
+    {
+        if (!ValidData())
+        {
+            return;
+        }
+
+        isLoading = true;
+        await Task.Run(Save);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async private Task Save()
+    {
+        var isnew = await Task.Run(() => PrepairDataSave());
+        //if (isnew)
+        //{
+        //    company_info check = await _companyService.Checkduplicate(companyid);
+        //    if (check.companyid != null)
+        //    {
+        //        await Swal.FireAsync("", "!! รหัสหน่วยงานนี้ มีในระบบแล้ว", "error");
+        //        return;
+        //    }
+        //}
+
+        var h = _companyService.DocSet.head;
+        string strPayload = JsonSerializer.Serialize(_companyService.DocSet);
+        string url = $"api/Company/SaveCompany";
+        var response = await Http.PostAsJsonAsync(url, strPayload);
+        var status = response.StatusCode;
+        if (status.ToString().ToLower() != "ok")
+        {
+        }
+        else
+        {
+            var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+            if (r.Result == "fail")
+            {
+                await Swal.FireAsync("", r.Message1, "error");
+            }
+            else
+            {
+                //_companyService.DocSet = await _companyService.GetDocSet(h.companyid);
+                //await sessionStorage.SetItemAsync(Globals.ActiveID_COMID, h.companyid);
+                //await Task.Run(LoadData);
+                //await Swal.FireAsync("", "บันทึกสำเร็จ", "success");
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "success",
+                        Text = $"บันทึกสำเร็จ",
+                        ShowCancelButton = false,
+                        Icon = "success",
+                        ConfirmButtonText = "ตกลง"
+                    });
+                if (string.IsNullOrEmpty(result.Value))
+                {
+                    return;
+                }
+                nav.NavigateTo($"Master/CompanyList", false);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    protected async Task<bool> PrepairDataSave()
+    {
+        var user = login.LogInInfo.CurrentUser;
+        var h = _companyService.DocSet.head;
+        bool isnew = h.companyid == "" ? true : false;
+
+        if (isnew)
+        {
+            if (string.IsNullOrEmpty(h.companyid))
+            {
+                List<string>? list_docid = await Task.Run(()=> _iDRuunerService.GetNewIDV2("COMPANY", "DPM", "", Convert.ToDateTime(h.created_date).Date, true, "th"));
+                h.companyid = list_docid[1];
+            }
+            h.created_by = user;
+        }
+        else
+        {
+            h.modified_by = user;
+        }
+
+        return isnew;
+    }
+
+    #endregion
+
+    async void btnToList()
+    {
+        nav.NavigateTo($"Master/CompanyList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void Back()
+    {
+        nav.NavigateTo($"Master/CompanyList", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

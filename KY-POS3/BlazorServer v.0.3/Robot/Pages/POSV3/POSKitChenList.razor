@@ -1,0 +1,219 @@
+﻿@page "/POSV3/POSKitChenList"
+
+@using Robot.Data.DA.POSSY
+@using Robot.Data.DA
+@using Robot.Data.GADB.TT
+@using System.Threading;
+@using System.Threading.Tasks;
+@using Microsoft.EntityFrameworkCore
+@using static Robot.Data.DA.POSSY.ShipToService
+
+@inject POSSaleConverterService pOSSaleConverterService
+@inject POSService posService
+@inject LogInService login
+@inject IJSRuntime JsRuntime
+@inject NavigationManager nav
+@inject ShipToService shiptoService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<style>
+    .btn-DeepRose {
+        border-color: #c44569 !important;
+        background-color: #c44569 !important;
+        color: white !important;
+    }
+
+    .btn-Waterfall {
+        border-color: #38ada9 !important;
+        background-color: #38ada9 !important;
+        color: white !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+                  <div class="row pt-2">
+                      <div class="col-10 mx-auto">
+                          <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                          <CircleFade Color="orange" Size="100px" Center="true" />
+                      </div>
+                  </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-3 col-3 text-left">
+                                <a ID="btnback" class="" @onclick="@Back">
+                                    <img src="/SALE/assets/img/back.png" style="max-width:3rem;" />
+                                </a>&nbsp;
+                            </div>
+                            <div class="col-md-6 col-sm-9 col-9 pt-2 px-0 text-center">
+                                <strong style="font-size:2rem; color:crimson;">รายการสั่งอาหาร</strong>
+                            </div>
+                            <div class="col-md-3 col-sm-3 col-3">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (ListKitChen.Count() != 0)
+        {
+            <div class="row">
+                <div class="col-12">
+                    <RadzenDataList WrapItems="true" AllowPaging="true" Data="@ListKitChen" TItem="POSSaleConverterService.POS_SaleLineModel">
+                        <Template Context="l">
+                            <div class="card w-100 m-0 px-2 py-2 mt-2">
+                                <div class="card-body py-0 px-2" style="width: 100%;">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <a class="btn w-100 p-1" style="height: auto;" @onclick="@(() => GoToPOSSale(l))">
+                                                <div class="row">
+                                                    <div class="col-6 text-left">
+                                                        <span style="font-size: medium; color: lightseagreen;">@l.BillID</span>
+                                                        <br />
+                                                        <span style="font-size: small; color: #fa8231;">@l.ItemName</span><br />
+                                                    </div>
+                                                    <div class="col-6 text-right">
+                                                        <span style="font-size: medium; color: black;">@l.Qty.ToString("n0") @l.Unit</span><br />
+                                                        <span style="font-size:x-small">@l.BillDate.ToString("dd/MM/yyyy")</span>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-12 text-left">
+                                                        ราคา <strong style="font-size:small">@l.Price.ToString("n2") ฿</strong>&nbsp;
+                                                        รวมทั้งหมด <strong style="font-size:small">@l.TotalAmtIncVat.ToString("n2") ฿</strong>
+                                                    </div>
+                                                    </div>
+
+                                            </a>
+
+                                            <div class="row">
+                                                <div class="col-12 text-right">
+                                                    <a class="btn btn-Waterfall" @onclick="@(() => ClickAccept(l))">
+                                                        <span>ACCEPT</span>
+                                                    </a>&nbsp;
+                                                    <a class="btn btn-DeepRose" @onclick="@(() => ClickReject(l))">
+                                                        <span>REJECT</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </Template>
+                    </RadzenDataList>
+                    <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" Count="count" PageSize="@pageSize" PageNumbersCount="10" PageChanged="@PageChanged" />
+
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row pt-5">
+                <div class="col-12 text-center">
+                    <img src="/SALE/assets/img/filesearch.png" style="width:9rem;" /><br />
+                    <span class="font-weight-bold" style="color:gray;"> ไม่พบรายการ </span>
+                </div>
+            </div>
+        }
+
+    </ContentTemplate>
+</SpinLoader>
+
+
+
+
+@code {
+    bool isLoading = true;
+    private SizeMode ControlSizeMode = SizeMode.Medium;
+    public string SearchText { get; set; } = "";
+    DateTime? DateFr = DateTime.Now.Date;
+
+    string pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+    int pageSize = 50;
+    int count;
+
+    IEnumerable<POSSaleConverterService.POS_SaleLineModel> ListKitChen;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (login.LoginInfo== null)
+        {
+            login.LoginInfo= await Task.Run(login.GetLoginSessionLog);
+            if (login.LoginInfo== null)
+            {
+                nav.NavigateTo("Login");
+            }
+        }
+        await Task.Run(LoadData);
+
+    }
+
+    void SetVaue()
+    {
+        if (DateFr == null)
+        {
+            DateFr = DateTime.Now.Date.AddDays(-2);
+        }
+    }
+
+    void LoadData()
+    {
+        var xlogin = login.LoginInfo;
+        SetVaue();
+
+        ListKitChen = posService.ListDocKitChen(xlogin.CurrentRootCompany.RCompanyID, xlogin.CurrentCompany.CompanyID, 0, pageSize, Convert.ToDateTime(DateFr));
+        isLoading = false;
+    }
+
+    void PageChanged(PagerEventArgs args)
+    {
+        var xlogin = login.LoginInfo;
+        SetVaue();
+        ListKitChen = posService.ListDocKitChen(xlogin.CurrentRootCompany.RCompanyID, xlogin.CurrentCompany.CompanyID, args.Skip, args.Top, Convert.ToDateTime(DateFr));
+    }
+
+
+    async void GoToPOSSale(POSSaleConverterService.POS_SaleLineModel data)
+    {
+        posService.DocSet = await Task.Run(()=> posService.GetDocSet(data.BillID, data.RComID));
+        nav.NavigateTo($"POSV3/POSSaleDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void ClickAccept(POSSaleConverterService.POS_SaleLineModel data)
+    {
+        posService.UpdateStatus_SaleLine(data.ID, "K-ACCEPT");
+        LoadData();
+    }
+
+    void ClickReject(POSSaleConverterService.POS_SaleLineModel data)
+    {
+        posService.UpdateStatus_SaleLine(data.ID, "K-REJECT");
+        LoadData();
+    }
+
+    async void Back()
+    {
+        await Task.Run(() => login.SetLoginSessionLog(login.LoginInfo));
+        nav.NavigateTo($"Menu/MainMenu", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

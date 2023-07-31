@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="a89c18f66d824c0d80fb4f8b056b1ff6" Name="Diagram1" ZoomLevel="30">
+        <EntityTypeShape EntityType="OMS_Model.CustomerInfo" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="OMS_Model.ItemInfo" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="OMS_Model.OSOHead" Width="1.5" PointX="5.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.OSOLine" Width="1.5" PointX="7.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.OSOLot" Width="1.5" PointX="9.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.STKBal" Width="1.5" PointX="9.375" PointY="6.75" />
+        <EntityTypeShape EntityType="OMS_Model.STKItemBal" Width="1.5" PointX="11.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.STKMove" Width="1.5" PointX="11.375" PointY="5.75" />
+        <EntityTypeShape EntityType="OMS_Model.UserInfo" Width="1.5" PointX="9.375" PointY="12.75" />
+        <EntityTypeShape EntityType="OMS_Model.vw_OSOHead" Width="1.5" PointX="11.375" PointY="12.75" />
+        <EntityTypeShape EntityType="OMS_Model.vw_OSOLine" Width="1.5" PointX="13.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.vw_OSOLot" Width="1.5" PointX="15.375" PointY="0.75" />
+        <EntityTypeShape EntityType="OMS_Model.LocationInfo" Width="1.5" PointX="15.375" PointY="6.75" />
+        <EntityTypeShape EntityType="OMS_Model.UserInRCom" Width="1.5" PointX="15.375" PointY="11.75" />
+        <EntityTypeShape EntityType="OMS_Model.UserInGroup" Width="1.5" PointX="15.375" PointY="14.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

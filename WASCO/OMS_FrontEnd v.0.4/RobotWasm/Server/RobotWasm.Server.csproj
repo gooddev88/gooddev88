@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\Board\**" />
+    <Compile Remove="Controllers\Document\**" />
+    <Compile Remove="Controllers\LogTrans\**" />
+    <Compile Remove="Controllers\News\**" />
+    <Compile Remove="Controllers\POS\**" />
+    <Compile Remove="Data\DA\Board\**" />
+    <Compile Remove="Data\DA\DocHead\**" />
+    <Compile Remove="Data\DA\LogTran\**" />
+    <Compile Remove="Data\DA\POS\**" />
+    <Compile Remove="Service\Model\**" />
+    <Compile Remove="XFFKK\**" />
+    <Compile Remove="XXDDzx\**" />
+    <Compile Remove="XXEE\**" />
+    <Content Remove="Controllers\Board\**" />
+    <Content Remove="Controllers\Document\**" />
+    <Content Remove="Controllers\LogTrans\**" />
+    <Content Remove="Controllers\News\**" />
+    <Content Remove="Controllers\POS\**" />
+    <Content Remove="Data\DA\Board\**" />
+    <Content Remove="Data\DA\DocHead\**" />
+    <Content Remove="Data\DA\LogTran\**" />
+    <Content Remove="Data\DA\POS\**" />
+    <Content Remove="Service\Model\**" />
+    <Content Remove="XFFKK\**" />
+    <Content Remove="XXDDzx\**" />
+    <Content Remove="XXEE\**" />
+    <EmbeddedResource Remove="Controllers\Board\**" />
+    <EmbeddedResource Remove="Controllers\Document\**" />
+    <EmbeddedResource Remove="Controllers\LogTrans\**" />
+    <EmbeddedResource Remove="Controllers\News\**" />
+    <EmbeddedResource Remove="Controllers\POS\**" />
+    <EmbeddedResource Remove="Data\DA\Board\**" />
+    <EmbeddedResource Remove="Data\DA\DocHead\**" />
+    <EmbeddedResource Remove="Data\DA\LogTran\**" />
+    <EmbeddedResource Remove="Data\DA\POS\**" />
+    <EmbeddedResource Remove="Service\Model\**" />
+    <EmbeddedResource Remove="XFFKK\**" />
+    <EmbeddedResource Remove="XXDDzx\**" />
+    <EmbeddedResource Remove="XXEE\**" />
+    <None Remove="Controllers\Board\**" />
+    <None Remove="Controllers\Document\**" />
+    <None Remove="Controllers\LogTrans\**" />
+    <None Remove="Controllers\News\**" />
+    <None Remove="Controllers\POS\**" />
+    <None Remove="Data\DA\Board\**" />
+    <None Remove="Data\DA\DocHead\**" />
+    <None Remove="Data\DA\LogTran\**" />
+    <None Remove="Data\DA\POS\**" />
+    <None Remove="Service\Model\**" />
+    <None Remove="XFFKK\**" />
+    <None Remove="XXDDzx\**" />
+    <None Remove="XXEE\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\MasterType\ApiCateController.cs" />
+    <Compile Remove="Data\DA\Master\ApiCateService.cs" />
+    <Compile Remove="Data\DA\Master\NewsService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="1.0.6" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.0.6" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.7" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.5" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Client\RobotWasm.Client.csproj" />
+    <ProjectReference Include="..\Shared\RobotWasm.Shared.csproj" />
+  </ItemGroup>
+
+
+</Project>

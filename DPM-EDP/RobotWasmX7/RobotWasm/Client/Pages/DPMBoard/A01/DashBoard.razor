@@ -1,0 +1,733 @@
+﻿@page "/DPMBoard/A01/DashBoard/{option}"
+@page "/DPMBoard/A01/DashBoard"
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Client.Pages.DPMBoard.A01;
+
+@using RobotWasm.Client.Pages.DPMBoard.A01.Widgets
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using static RobotWasm.Shared.Data.ML.DPMBaord.Accident.AccidentParam
+
+@* sample styles for this example *@
+<style>
+    /*notification*/
+    .demo-notification {
+        position: absolute;
+    }
+
+        .demo-notification .k-notification {
+            width: 420px;
+        }
+
+    #demo-runner {
+        height: 400px;
+    }
+
+    .notification-parent {
+        position: relative;
+        height: 250px;
+    }
+
+    .k-badge {
+        margin-left: 5px;
+    }
+
+    .k-notification-container {
+        margin: 6px 0;
+    }
+
+    /*end notification*/
+
+    .small {
+        background-color: green;
+    }
+
+    .medium {
+        background-color: yellow;
+    }
+
+    .large {
+        background-color: red;
+    }
+
+    .k-card-image {
+        width: 285px;
+        height: 189px;
+    }
+
+    .k-card-body {
+        overflow: auto;
+    }
+
+    .image-center {
+        display: block;
+        margin: auto;
+    }
+
+    .myTileLayout.k-tilelayout .k-tilelayout-item-header {
+        background-color: white;
+        color: black;
+    }
+
+    .myTelerikCard {
+        background: white;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .myCardDetail {
+        font-weight: bold;
+        text-align: center;
+        font-size: 2rem;
+    }
+
+    .myAutoSize {
+        width: 100%;
+        height: 100%;
+        background: cyan;
+    }
+
+    .bdr-50{
+        border-radius:50%;
+    }
+
+    .k-menu-horizontal {
+    display: inline-block;
+}
+
+.d-ct{
+    display: contents;
+}
+
+.k-menu-link{
+    padding: 3px 7px;
+}
+
+.k-menu:not(.k-context-menu) {
+    border-radius: 4px;
+    background-color: #594ae2;
+}
+
+.k-menu:not(.k-context-menu) > .k-item, .k-menu:not(.k-context-menu) > .k-item:hover, .k-menu:not(.k-context-menu) > .k-item.k-hover {
+    color: white !important;
+}
+
+.btn:hover{
+    background-color: #594ae2;
+    color: white !important;
+}
+
+    .caption1 {
+        font-size: 1.6rem;
+        display: block;
+    }
+
+    .caption2 {
+        font-size: 1.4rem;
+        display: block;
+    }
+</style>
+
+<div class="text-center pb-3">
+    <span class="caption1">Executive Data Framework Portal</span>
+    <span class="caption2">กรมป้องกันและบรรเทาสาธารณภัย</span>
+</div>
+
+<ScrollMenu type="standard"></ScrollMenu>
+
+@if (!isLoading) {
+    @if (!isShowParam) {
+
+        <div Class="row">
+            <div class="col-12 text-end">
+                            @if (!isShowEditWidget) {
+                 <TelerikButton @onclick="@(() => SaveWidget(false))" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                     <i class="fa-solid fa-floppy-disk"></i>&nbsp;บันทึกข้อมูล
+                 </TelerikButton>
+            }
+            &nbsp;
+            @if (isShowEditWidget) {
+                <TelerikButton @onclick="@(()=>{isShowEditWidget=!isShowEditWidget;})" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">
+                     <i class="fa-solid fa-chart-column"></i>&nbsp;กลับหน้าบอร์ด
+                 </TelerikButton>
+            }
+            @if (!isShowEditWidget) {
+@*                <a class="nav-link dropdown-toggle" @onclick="()=>expandSubNav = !expandSubNav">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+                @if (expandSubNav)
+                {
+                    <div class="dropdown-menu dropdown-menu-end show py-1">
+                        <a class="dropdown-item" @onclick="@(()=>{isShowEditWidget=!isShowEditWidget;})">
+                            <span>เลือกวิดเจ็ต</span>
+                        </a>
+                        <a class="dropdown-item" @onclick="@(() => ReSetWidget())">
+                            <span>รีเซ็ตวิดเจ็ต</span>
+                        </a>
+                        <a class="dropdown-item" @onclick="@(() => SaveWidget(true))">
+                            <span>Save Default Board</span>
+                        </a>
+                    </div>
+                }*@
+                <div class="d-ct">
+                <TelerikMenu Data="@MenuItems" OnClick="@((MenuItem item) => OnClick(item))">
+    <ItemTemplate Context="item">
+        <i class="@(item.Icon)"></i>
+        <span class="k-menu-link">@item.Text</span>
+    </ItemTemplate>
+</TelerikMenu>
+</div>
+            }
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h6 Class="text-start font-weight-light">
+                    @FilterCaption2
+                </h6>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 col-12">
+                <span>
+                    @FilterCaption
+                    <a class="btn text-muted bdr-50" @onclick="@(()=>{isShowParam=!isShowParam;})">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </a>
+                    <a class="btn text-muted bdr-50" @onclick="@(() => RefreshData())">
+                        <i class="fa-solid fa-rotate"></i>
+                    </a>
+                </span>
+            </div>
+        </div>
+    }
+    @if (isShowParam) {
+        <div class="row">
+            <div class="col-md-9 col-12">
+                <div class="card">
+                    <div class="card-header">
+                            <h6>เลือกตัวกรอง</h6>
+                            <hr />
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 col-12">
+                                <span>ตัวเลือก</span>
+                                <TelerikDropDownList Data="@paramFiltertOption" OnChange="@MyOnChangeFilter" TextField="Value" ValueField="Description" @bind-Value="paramFiltertOptionSelect">
+                                </TelerikDropDownList>
+                            </div>
+                            @if (@paramFiltertOptionSelect != "ระบุวันที่") {
+                                <div class="col-md-6 col-12">
+                                    <span>ปี</span>
+                                    <TelerikDropDownList Data="@yearOption" TextField="Value" ValueField="Description" @bind-Value="yearOptionSelect">
+                                    </TelerikDropDownList>
+                                </div>
+                            }
+                        </div>
+                        <div class="row">
+                            @if (@paramFiltertOptionSelect == "ระบุวันที่") {
+                                <div class="col-md-6 col-12">
+                                    <span>วันที่</span>
+                                    <TelerikDatePicker @bind-Value="@DateBegin"
+                                           Format="dd/MM/yyyy">
+                                    </TelerikDatePicker>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <span>ถึงวันที่</span>
+                                    <TelerikDatePicker @bind-Value="@DateEnd"
+                                           Format="dd/MM/yyyy">
+                                    </TelerikDatePicker>
+                                </div>
+                            }
+                        </div>
+                        <div class="row pt-3">
+                            <div class="col-12">
+                                <TelerikButton @onclick="@(()=> SetParamCaption())" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)">
+                     <i class="fa-solid fa-floppy-disk"></i>&nbsp;ตกลง
+                 </TelerikButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    } else {
+        <div class="row">
+            <div class="col-12">
+                @if (isShowEditWidget) {
+                    <div class="k-card-list" style="background-color: #D3D3D3; border-left: 2px solid #BCBCBC; padding:10px;">
+                        @foreach (var item in widgets) {
+                            <TelerikCard ThemeColor="@(item.IsSelect? "secondary" : "light")">
+                                <CardHeader>
+                                    <CardTitle Class="Kanit">  @item.name</CardTitle>
+                                    <CardSubTitle Class="Kanit">@item.description</CardSubTitle>
+                                </CardHeader>
+
+                                <CardActions Layout="@CardActionsLayout.Stretched">
+                                    <TelerikButton Icon="plus" Enabled="!item.IsSelect" Class="k-flat Kanit" OnClick="@(() => AddWidget(item))">เพิ่มวิดเจ็ต</TelerikButton>
+                                </CardActions>
+                            </TelerikCard>
+                        }
+                    </div>
+                } else {
+                    <TelerikTileLayout @ref="@TileLayoutInstance"
+                           Columns="5"
+                           ColumnWidth="300px"
+                           RowHeight="120px"
+                           Reorderable="true"
+                           Resizable="true"
+                           OnResize="@ResizeCharts"
+                           Class="myTileLayout">
+                        <TileLayoutItems>
+                            @{
+                                foreach (var item in widgets.OrderBy(o => o.sort)) {
+                                    if (item.IsSelect) {
+                                        <TileLayoutItem @key="@item" Id="@item.widget_id" RowSpan="@item.rowspan" ColSpan="@item.colspan">
+                                            <HeaderTemplate>
+                                                <div class="k-hbox" style="justify-content: space-between;">
+                                                    <span style="font-size:medium">
+                                                        @item.name
+                                                    </span>
+                                                    <span onpointerdown="stopPropagation(event)">
+                                                    <a class="btn bdr-50 text-muted" @onclick="@(() => RemoveWidget(item))">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                                    </span>
+                                                </div>
+                                            </HeaderTemplate>
+                                            <Content>
+                                                <CascadingValue Value="@ResizeContext" IsFixed="true">
+                                                    <RobotWasm.Client.Pages.DPMBoard.A01.TileContentFactory TileID="@item.widget_id" DataSet="@_a01Data.doc">
+                                                    </RobotWasm.Client.Pages.DPMBoard.A01.TileContentFactory>
+
+                                                </CascadingValue>
+                                            </Content>
+                                        </TileLayoutItem>
+                                    }
+                                }
+                            }
+                        </TileLayoutItems>
+                    </TelerikTileLayout>
+                }
+            </div>
+        </div>
+
+            <TelerikNotification @ref="@Notification"
+                         Class="demo-notification"
+                         VerticalPosition="@VerticalPosition"
+                         HorizontalPosition="@HorizontalPosition">
+    </TelerikNotification>
+    }
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+<TelerikMediaQuery Media="@WindowBreakPoints.ExtraSmall" OnChange="@OnChangeExtraSmall"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Small" OnChange="@OnChangeSmall"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Medium" OnChange="@OnChangeMedium"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.Large" OnChange="@OnChangeLarge"></TelerikMediaQuery>
+<TelerikMediaQuery Media="@WindowBreakPoints.ExtraLarge" OnChange="@OnChangeExtraLarge"></TelerikMediaQuery>
+
+
+@code {
+    [Parameter] public string option { get; set; }
+
+    public List<MenuItem> MenuItems { get; set; }
+    public class MenuItem
+    {
+        public string Text { get; set; }
+        public string Icon { get; set; }
+        public string data { get; set; }
+        public List<MenuItem> Items { get; set; }
+    }
+
+    private bool expandSubNav;
+    protected TelerikTileLayout TileLayoutInstance { get; set; }
+    protected TileLayoutState SavedState { get; set; }
+
+    protected string boardID = "A01";
+
+    public List<vw_widget_in_user_select> widgets { get; set; }
+
+
+    #region for param
+    public string FilterCaption = "";
+    public string FilterCaption2 = "";
+    public bool isShowParam = false;
+    public string paramFiltertOptionSelect = "";
+    public List<SelectOption> paramFiltertOption = new List<SelectOption>();
+    public DateTime DateBegin = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    public DateTime DateEnd = DateTime.Now.Date;
+    public List<SelectOption> yearOption;
+    public string yearOptionSelect;
+    #endregion
+
+    private bool isLoading = false;
+    private bool isShowEditWidget = false;
+
+    private AccidentCountSetParam param { get; set; }
+
+    public string screenOrien = "";
+    //***********New *******/
+
+    public ResizeContext ResizeContext { get; set; } = new ResizeContext();
+
+    protected override void OnInitialized()
+    {
+        MenuItems = new List<MenuItem>()
+{
+            new MenuItem()
+            {
+                Text = "More",
+                Icon = "fa-solid fa-gear",
+                Items = new List<MenuItem>()
+        {
+                    new MenuItem()
+                    {
+                        Text = "เลือกวิดเจ็ต",
+                        data = "T"
+                    },
+                    new MenuItem()
+                    {
+                        Text = "รีเซ็ตวิดเจ็ต",
+                        data = "ReSetWidget"
+                    },
+                    new MenuItem()
+                    {
+                        Text = "Save Default Board",
+                        data = "SaveWidget"
+                    },
+                }
+            }
+        };
+
+        base.OnInitialized();
+    }
+
+    async void OnClick(MenuItem item)
+    {
+        if (item.data == "T") {
+            isShowEditWidget=!isShowEditWidget;
+        }
+        if (item.data == "ReSetWidget") {
+            await ReSetWidget();
+        }
+        if (item.data == "SaveWidget") {
+            await SaveWidget(true);
+        }
+    }
+
+    #region Notification
+    public TelerikNotification Notification { get; set; }
+    public NotificationHorizontalPosition HorizontalPosition { get; set; } = NotificationHorizontalPosition.Right;
+    public NotificationVerticalPosition VerticalPosition { get; set; } = NotificationVerticalPosition.Bottom;
+    public bool NotificationButtonEnabled { get; set; } = true;
+
+    #endregion
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+           await Task.Run(login.CheckLogin);
+        screenOrien = GetLayHorV();
+        await Task.Run(() => LoadWidget(false));
+        await Task.Run(() => LoadParamOtpion());
+        await Task.Run(() => LoadData());
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task RefreshData() {
+        await Task.Run(() => LoadData());
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task ReSetWidget() {
+        await Task.Run(() => LoadWidget(true));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //***********New *******/
+    void ResizeCharts() {
+        //ResizeContext.NotifyResizeInvoked();
+    }
+    private void RemoveWidget(vw_widget_in_user_select item) {
+        item.IsSelect = false;
+        int i = 1;
+        foreach (var t in widgets.OrderByDescending(o => o.IsSelect).ThenBy(o => o.sort)) {
+            t.sort = i;
+            i++;
+        }
+    }
+    private void AddWidget(vw_widget_in_user_select item) {
+        item.IsSelect = true;
+
+        var max_visible_order = widgets.Where(o => o.IsSelect).Max(o => o.sort);
+        item.sort = max_visible_order++;
+        int i = 1;
+        foreach (var t in widgets.OrderByDescending(o => o.IsSelect).ThenBy(o => o.sort)) {
+            t.sort = i;
+            i++;
+        }
+    }
+    //protected override async Task OnAfterRenderAsync(bool firstRender) {
+    //    //var state = await _localStorage.GetItemAsync<TileLayoutState>(layoutH);
+    //    //if (state != null && TileLayoutInstance != null) {
+    //    //    TileLayoutInstance.SetState(state);
+    //    //}
+    //}
+
+
+    //protected async Task LoadDefaultFilter() {
+    //    DateBegin = new DateTime(2022, 04, 11);
+    //    DateEnd = new DateTime(2022, 04, 16);
+    //    ProvincesSelect = Provinces;
+    //    SetParam();
+
+    //}
+    //private void SetParam() {
+    //    param = new AccidentCountSetParam();
+    //    param.DateBegin = DateBegin;
+    //    param.DateEnd = DateEnd;
+    //    param.Province = Provinces;
+    //}
+
+
+    protected async Task LoadData() {
+        isLoading = true;
+        param = new AccidentCountSetParam();
+        param.DateBegin = DateBegin;
+        param.DateEnd = DateEnd;
+        param.Province = new List<string>();
+        _a01Data.doc = await Task.Run(() => _a01Data.GetData(DateBegin, DateEnd, param.Province));
+        isLoading = false;
+    }
+
+    protected async Task LoadParamOtpion() {
+        paramFiltertOption = BoardService.ListParamFilterOption();
+        yearOption = BoardService.ListYearOption();
+        paramFiltertOptionSelect = "ทั้งปี";
+        yearOptionSelect = BoardService.GetThisYear();
+        await Task.Run(() => SetParamCaption());
+    }
+    async public Task MyOnChangeFilter(object theUserInput) {
+        //var filter = (theUserInput as string);
+        await InvokeAsync(StateHasChanged);
+
+    }
+    protected async Task SetParamCaption() {
+        switch (paramFiltertOptionSelect) {
+                   case "ทั้งปี":
+                FilterCaption2 = "อุบัติเหตุในปี " + yearOptionSelect;
+                FilterCaption = "ช่วงวันที่ " + BoardService.ConvertDateThai(DateBegin) + " ถึงวันที่ " + BoardService.ConvertDateThai(DateEnd);
+                DateBegin = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect)), 1, 1);
+                DateEnd = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect)), 12, 31);
+                break;
+            case "สงกรานต์":
+                FilterCaption2 = "อุบัติเหตุในช่วงสงกรานต์ ปี " + yearOptionSelect;
+                FilterCaption = "ช่วงวันที่ " + BoardService.ConvertDateThai(DateBegin) + " ถึงวันที่ " + BoardService.ConvertDateThai(DateEnd);
+                DateBegin = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect)), 4, 12);
+                DateEnd = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect)), 4, 17);
+                break;
+            case "ปีใหม่":
+                FilterCaption2 = "อุบัติเหตุในช่วงปีใหม่ ปี " + yearOptionSelect;
+                FilterCaption = "ช่วงวันที่ " + BoardService.ConvertDateThai(DateBegin) + " ถึงวันที่ " + BoardService.ConvertDateThai(DateEnd);
+                DateBegin = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect)), 12, 25);
+                DateEnd = new DateTime(BoardService.Convert2EngYear(Convert.ToInt32(yearOptionSelect) + 1), 11, 3);
+
+                break;
+            case "ระบุวันที่":
+                FilterCaption2 = "แสดงแบบระบุวันที่ ";
+                FilterCaption = "อุบัติเหตุในช่วงวันที่ " + BoardService.ConvertDateThai(DateBegin) + " ถึงวันที่ " + BoardService.ConvertDateThai(DateEnd);
+                break;
+            default:
+                break;
+        }
+        isShowParam = false;
+        await Task.Run(() => LoadData());
+    }
+
+
+
+    //async private Task LoadProvince() {
+    //    var response = await _clientService.GetAllAsync<List<string>>($"{Globals.BaseURL}/api/cims/master/GetProvince");
+    //    Provinces = (List<string>)response.Result;
+    //    ProvincesSelect = new List<string>(Provinces);
+    //}
+
+
+    #region  State Control
+    //private void ShowScreenSize() {
+    //    screenSize = GetLayHorV();
+
+    //}
+
+    async private Task OnChangeExtraSmall(bool doesMatch) {
+        isExtraSmall = doesMatch;
+        await CheckOrienChange();
+
+    }
+    async private Task OnChangeSmall(bool doesMatch) {
+        isSmall = doesMatch;
+        await CheckOrienChange();
+
+    }
+    async private Task OnChangeMedium(bool doesMatch) {
+        isMedium = doesMatch;
+        await CheckOrienChange();
+
+    }
+    async private Task OnChangeLarge(bool doesMatch) {
+        isLarge = doesMatch;
+        await CheckOrienChange();
+
+    }
+    async private Task OnChangeExtraLarge(bool doesMatch) {
+        isExtraLarge = doesMatch;
+        CheckOrienChange();
+        //  ShowScreenSize();
+
+    }
+
+    #endregion
+    async private Task CheckOrienChange() {
+        var new_screenorien = GetLayHorV();
+        if (new_screenorien != screenOrien) {
+            screenOrien = new_screenorien;
+            await Task.Run(() => LoadWidget(false));
+        }
+    }
+
+
+
+
+
+    #region widget management
+    async Task LoadWidget(bool isLoadForDefault) {
+        var orien = GetLayHorV();
+
+        //var user = await _localStorage.GetItemAsync<string>(Globals.AuthUsername);
+        var user = login.LogInInfo.CurrentUser;
+        if (isLoadForDefault) {
+            user = "DEFAULT_LAYOUT";
+        }
+        var res = await Http.GetAsync($"api/Board/GetUserInWidget?user={user}&board={boardID}&orientation={orien}");
+
+        widgets = JsonSerializer.Deserialize<List<vw_widget_in_user_select>>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+    }
+
+    async Task SaveWidget(bool isSaveForDefault) {
+
+        try {
+            var user =login.LogInInfo.CurrentUser;
+            var orien = GetLayHorV();
+            await GetLayoutState();
+
+
+            List<vw_widget_in_user_select> savewidg = new List<vw_widget_in_user_select>();
+            var user_in_board = user;
+            if (isSaveForDefault) {
+                user_in_board = "DEFAULT_LAYOUT";
+            }
+            foreach (var w in widgets) {
+                w.username = user_in_board;
+            }
+            string strPayload = JsonSerializer.Serialize(widgets);
+            string url = $"api/Board/SaveWidget";
+            var response = await Http.PostAsJsonAsync(url, strPayload);
+            var status = response.StatusCode;
+             NotificationButtonEnabled = false;
+            if (status.ToString().ToLower() != "ok") {
+                //ShowAlert(status.ToString(), false);
+            } else {
+                var r = response.Content.ReadFromJsonAsync<I_BasicResult>().Result;
+                if (r.Result == "fail") {
+                    //ShowAlert(r.Message1, false);
+                    Notification.Show(new NotificationModel() {
+                            Text = r.Message1,
+                            ThemeColor = ThemeConstants.Notification.ThemeColor.Error
+                        });
+                } else {
+                    Notification.Show(new NotificationModel() {
+                            Text = "บันทึกสำเร็จ",
+                            ThemeColor = ThemeConstants.Notification.ThemeColor.Success
+                        });
+                    //ShowAlert("บันทึกสำเร็จ", true);
+                }
+            }
+
+
+
+        } catch (Exception ex) {
+            //ShowAlert(ex.Message, false);
+        }
+
+
+
+    }
+    public void ShowAlert(string msg, bool isSuccess) {
+        //if (isSuccess) {
+           
+        //      snackbar.Add(msg, Severity.Success);
+        //} else {
+        //    snackbar.Add(msg, Severity.Error);
+        //}
+    }
+
+    protected async Task GetLayoutState() {
+        var orien = GetLayHorV();
+        var state = TileLayoutInstance.GetState();
+        foreach (var s in state.ItemStates) {
+            var getT = widgets.Where(o => o.widget_id == s.Id).FirstOrDefault();
+            if (getT != null) {
+                getT.colspan = s.ColSpan;
+                getT.rowspan = s.RowSpan;
+                getT.sort = s.Order;
+                getT.orientation = orien;
+            }
+        }
+    }
+    #endregion
+
+
+
+
+    #region  Media query
+    // you can move this static class to a common place in your app to reuse across the board
+    // this is a sample list of a few of the most common media queries this example uses to create some sample logic
+    public static class WindowBreakPoints {
+        public static string ExtraSmall => "(max-width: 480px)";
+        public static string Small => "(max-width: 767px)";
+        public static string Medium => "(max-width: 1023px)";
+        public static string Large => "(max-width: 1199px)";
+        public static string ExtraLarge => "(min-width: 1200px)";
+    }
+    bool isExtraSmall { get; set; }
+    bool isSmall { get; set; }
+    bool isMedium { get; set; }
+    bool isLarge { get; set; }
+    bool isExtraLarge { get; set; }
+    string GetClassFromWindowSize() {
+        if (isExtraSmall || isSmall) return "small";
+        if (isMedium) return "medium";
+        if (isLarge || isExtraLarge) return "large";
+        return "";
+    }
+    string GetLayHorV() {
+        if (isExtraSmall || isSmall) return "V";
+        if (isMedium) return "V";
+        if (isLarge || isExtraLarge) return "H";
+        return "";
+    }
+    #endregion
+
+}

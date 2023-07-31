@@ -1,0 +1,215 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.DpmPortal
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+    .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay {
+        position: fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom: 0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <h4>DPM0010</h4>
+        <h5>รายชื่อพื้นที่ จำนวนหมู่บ้าน เกิดสถานการณ์ย้อนหลัง 24 ชั่วโมง</h5>
+    </div>
+</div>
+<hr />
+
+<TelerikLoaderContainer Visible="@isLoading">
+    <Template>
+        <div class="lds-dual-ring"></div>
+    </Template>
+</TelerikLoaderContainer>
+
+<div class="row">
+
+    <div class="col-12 text-end">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+    </div>
+</div>
+<div class="row pt-2">
+    <div class="col-md-12">
+        @if (!isShowErrorAPI) {
+
+            <TelerikGrid Data="@ndata"
+                     Pageable="true" Sortable="true" Resizable="true" Reorderable="true" Groupable="false">
+                <GridToolBar>
+                    <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                    <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                    <GridSearchBox />
+                </GridToolBar>
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.ANNOUNCECODE))" Title="ANNOUNCECODE" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.STARTDATE))" Title="STARTDATE" DisplayFormat="{0:dd/MM/yyyy}" Width="150" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.PROVINCE_ID))" Title="PROVINCE_ID" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.PROVINCE_NAME))" Title="PROVINCE_NAME" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.AMPHUR_ID))" Title="AMPHUR_ID" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.AMPHUR_NAME))" Title="AMPHUR_NAME" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.TAMBOL_ID))" Title="TAMBOL_ID" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.TAMBOL_NAME))" Title="TAMBOL_NAME" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.STATUS_DATA))" Title="STATUS_DATA" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.STATUS_NAME))" Title="STATUS_NAME" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.ANNOUNCEDATE))" Title="ANNOUNCEDATE" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.HELPANNOUNCEDATE))" Title="HELPANNOUNCEDATE" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.ENDDATE))" Title="ENDDATE" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.CHK_UNWIND))" Title="CHK_UNWIND" />
+                    <GridColumn Field="@(nameof(DPM010DataSet.DataRow.VILLAGE_AMT))" Title="VILLAGE_AMT" />
+                </GridColumns>
+            </TelerikGrid>
+        } else {
+            <div class="text-center" style="color:slategray">
+                <i class="fa-solid fa-circle-exclamation fa-4x"></i>
+                <br />
+                <h3>No data or api error.</h3>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+    bool isShowErrorAPI = false;
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public DPM010DataSet.DocSet data_set { get; set; }
+    public List<DPM010DataSet.DataRow> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input) {
+        if (data_set != null) {
+            ndata = data_set.rows.Where(o =>
+         (
+            o.ANNOUNCECODE.ToLower().Contains(search)
+            || o.PROVINCE_NAME.ToLower().Contains(search)
+            || o.AMPHUR_NAME.ToLower().Contains(search)
+            || o.TAMBOL_NAME.ToLower().Contains(search)
+            || o.STATUS_NAME.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData() {
+        try {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=dpm010");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?search={search}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<DPM010DataSet.DocSet>(url));
+            if (query.StatusCode != "OK") {
+                isShowErrorAPI = true;
+                isLoading = false;
+                return;
+            }
+            data_set = (DPM010DataSet.DocSet)query.Result;
+            ndata = data_set.rows;
+            #region show unshow api
+            isShowErrorAPI = false;
+            if (ndata == null) {
+                isShowErrorAPI = true;
+            } else {
+                if (ndata.Count == 0) {
+                    isShowErrorAPI = true;
+                }
+            }
+            #endregion
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        } catch (Exception ex) {
+            var rr = ex.Message;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+
+    async void BtnLoad() {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args) {
+        if (ExportColumns.Any()) {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

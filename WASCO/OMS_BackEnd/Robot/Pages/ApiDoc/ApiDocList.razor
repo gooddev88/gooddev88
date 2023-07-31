@@ -1,0 +1,223 @@
+﻿@page "/ApiDoc/ApiDocList"
+
+@using Robot.Data.CIMSDB;
+@using Robot.Data.DA.Cims
+@inject ApiMasterService apimasterService
+
+<style>
+    .k-button-lg {
+        padding: 13px 8px;
+    }
+
+    .k-listview-content {
+        background-color: #F5F5F5;
+    }
+
+    .card-body:hover.cate {
+        border-color: #696cff;
+        color: white;
+        background-color: #696cff;
+    }
+
+    .active {
+        border-color: #696cff;
+        color: white;
+        background-color: #696cff;
+    }
+
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+ 
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+
+        @*<div class="row pt-4">
+            <div class="col-md-10 col-sm-11 col-12 mx-auto">
+                <h4>กรมป้องกันและบรรเทาสาธารณภัย</h4>
+            </div>
+        </div>*@
+
+        <div class="row pt-2">
+            <div class="col-md-10 col-sm-11 col-12 mx-auto">
+           
+                               <TelerikNumericTextBox  OnChange="@OnTextChanged"
+                                                                Class="w-100" @bind-Value="search_text"></TelerikNumericTextBox>
+                
+ 
+            </div>
+        </div>
+
+        <div class="row pt-3">
+            <div class="col-md-10 col-sm-11 col-12 mx-auto">
+                <div class="row">
+                    <div class="col-md-4 col-sm-5 col-12">
+                        <div class="row pb-3 pt-2">
+                            <div class="col-12">
+                                <h5>กลุ่มข้อมูล</h5>
+                            </div>
+                        </div>
+                        <TelerikListView Data=@DocListCate
+                                         Pageable="false"
+                                         PageSize="30">
+                            <HeaderTemplate>
+                            </HeaderTemplate>
+                            <Template>
+                                <a class="btn p-0 text-decoration-none w-100" onclick="@(() =>CateSelect(context.cate_id))">
+                                    <div class="card mb-1 @(context.IsVisible ? "active" : "")">
+                                        <div class="card-body cate">
+                                            <label style="font-size:large;">@context.cate_name (@context.Count)</label>
+                                        </div>
+                                    </div>
+                                </a>
+                            </Template>
+                        </TelerikListView>
+                    </div>
+                    <div class="col-md-8 col-sm-7 col-12">
+                        <div class="row pb-3 pt-2">
+                            <div class="col-12">
+                                <h5>พบ @count_result_search รายการ</h5>
+                            </div>
+                        </div>
+
+                        @if (DocList?.Count() > 0) {
+                            <TelerikListView Data=@DocList
+                                         Pageable="false"
+                                         PageSize="30">
+                                <HeaderTemplate>
+                                </HeaderTemplate>
+                                <Template>
+                                    <div class="card mb-2">
+                                        <div class="card-body">
+                                            <a class="text-decoration-none" onclick="@(() =>ToApiDetail(context.api_id))">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <label style="font-size:large;">
+
+                                                            <span style="font-size:large;color:#0366d6;">@context.api_id</span>
+
+                                                        </label>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label style="font-size:smaller;">
+                                                            @context.api_name
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                            </a>
+                                        </div>
+                                    </div>
+                                </Template>
+                            </TelerikListView>
+                        } else {
+                            <div class="row pt-5">
+                                <div class="col-12 text-center">
+                                    @if (@search_text == "") {
+                                        <h5>ไม่พบข้อมูล   </h5>
+                                    } else {
+                                        <h5>ไม่พบข้อมูล  @search_text </h5>
+
+                                    }
+
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    bool ExportAllPages { get; set; } = true;
+
+    public string search_text { get; set; }  
+    string cate_select = "";
+    string count_result_search = "0";
+
+    bool ShowFilterRow = false;
+    IEnumerable<ApiMasterService.ApiCate> DocListCate;
+    IEnumerable<api_master> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        //await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+         
+        DocListCate = ApiMasterService.ListApi_Cates();
+        if (cate_select == "" && search_text == "") {
+            DocListCate.ToList().ForEach(o => o.IsVisible = false);
+            var cate_sel = DocListCate.FirstOrDefault();
+            cate_select = cate_sel.cate_id;
+
+            cate_sel.IsVisible = true;
+        }
+        DocList = ApiMasterService.ListApi_BySearch(search_text, cate_select);
+        count_result_search = DocList.Count().ToString("n0");
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetDefaultFilter() {
+
+    }
+
+  
+ 
+
+    async void ToApiDetail(string apiid) {
+        await sessionStorage.SetItemAsync(ApiMasterService.sessionActiveId, apiid);
+        apimasterService.DocSet = apimasterService.GetDocSet(apiid);
+        nav.NavigateTo($"ApiDoc/ApiDocDetail", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void CateSelect(string cateid) {
+
+        cate_select = cateid;
+        await Task.Run(LoadData);
+        DocListCate.ToList().ForEach(o => o.IsVisible = false);
+        var cate_sel = DocListCate.Where(o => o.cate_id == cateid).FirstOrDefault();
+        cate_sel.IsVisible = true; 
+        await InvokeAsync(StateHasChanged);
+    }
+     
+    //async void OnTextChanged(string newValue) {
+    //    search_text = newValue;
+    //    await Task.Run(LoadData);
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+            public async void OnTextChanged(object newValue) {
+              search_text = newValue.ToString();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+            }
+        }
+
+}

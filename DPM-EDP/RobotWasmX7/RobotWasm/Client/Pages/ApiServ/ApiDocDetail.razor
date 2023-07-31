@@ -1,0 +1,341 @@
+﻿@page "/ApiServ/ApiDocDetail"
+
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.ApiServ.ShowSampleDataComponent
+@using RobotWasm.Client.Pages.DPMBoard.ML
+ 
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+
+<style>
+    .k-button-lg {
+        padding: 13px 8px;
+    }
+
+    .k-listview-content {
+        background-color: #F5F5F5;
+    }
+
+    .card-body:hover.cate {
+        border-color: #696cff;
+        color: white;
+        background-color: #696cff;
+    }
+
+    .active {
+        border-color: #696cff;
+        color: white;
+        background-color: #696cff;
+    }
+
+    .breadcrumb-wrapper {
+        max-width: calc(390px + 6em) !important;
+    }
+
+    .k-breadcrumb {
+        font-size: 1.3rem;
+        background-color: #efefef;
+    }
+
+    .k-editor-toolbar, .k-editor > .k-toolbar {
+        display: none;
+    }
+
+
+</style>
+
+<div class="row pt-1">
+    <div class="col-12">
+        <TelerikBreadcrumb Data="@Itemsbreadcrumb" Class="13rem"></TelerikBreadcrumb>
+    </div>
+</div>
+
+@if (!isLoading) {
+
+    @*<div class="row pt-4">
+        <div class="col-12">
+            <h5>@ApiSet.Head.api_name</h5>
+        </div>
+    </div>*@
+
+    <div class="row pt-3 pb-2">
+            <div class="col-12">
+                <TelerikTabStrip TabPosition=@(Telerik.Blazor.TabPosition.Top)>
+                    <TabStripTab Title="อธิบายการใช้งาน">
+                        <div class="row pt-3">
+                            <div class="col-3">
+                                <b>Api Code</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.api_id</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>Description</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.api_desc</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>api-url</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.api_url_external</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>Method</b>
+                            </div>
+                            <div class="col-9">
+                                @if (ApiSet.Head.method == "GET") {
+                                    <p style="background-color: #00ba19 !important;font-size:small;" class="badge rounded-pill bg-success">@ApiSet.Head.method</p>
+                                } else {
+                                    <p style="font-size:small;" class="badge rounded-pill bg-warning text-dark">@ApiSet.Head.method</p>
+                                }
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>Authen type</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.authen</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>Update frequency</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.update_frequency</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-3">
+                                <b>ติดต่อผู้ดูแล</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.contact</p>
+                            </div>
+                        </div>
+                           <div class="row pt-2">
+                            <div class="col-3">
+                                <b>หมายเหตุ</b>
+                            </div>
+                            <div class="col-9">
+                                <p>@ApiSet.Head.remark</p>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <div class="accordion" id="accordioninput">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingOne">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseinput" aria-expanded="true" aria-controls="collapseinput">
+                                                Field description (Input)
+                                            </button>
+                                        </h2>
+                                        <div id="collapseinput" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordioninput">
+                                            <div class="accordion-body">
+                                                <table class="table table-bordered table-responsive">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th scope="col">Field ID</th>
+                                                            <th scope="col">Data Type</th>
+                                                             <th scope="col">Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var l in ApiSet.paramLine.Where(o => o.param_type == "INPUT")) {
+                                                            <tr>
+                                                                <td scope="col">@l.field_id</td>
+                                                                <td scope="col">@l.data_type</td>
+                                                                <td scope="col">@l.description</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row pt-2">
+                            <div class="col-12">
+                                <div class="accordion" id="accordionoutput">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingoutput">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseoutput" aria-expanded="true" aria-controls="collapseoutput">
+                                                Field description (Output)
+                                            </button>
+                                        </h2>
+                                        <div id="collapseoutput" class="accordion-collapse collapse show" aria-labelledby="headingoutput" data-bs-parent="#collapseoutput">
+                                            <div class="accordion-body">
+                                                <table class="table table-bordered table-responsive">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th scope="col">Field ID</th>
+                                                            <th scope="col">Data Type</th>
+                                                            <th scope="col">Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var l in ApiSet.paramLine.Where(o => o.param_type == "OUTPUT")) {
+                                                            <tr>
+                                                                <td scope="col">@l.field_id</td>
+                                                                <td scope="col">@l.data_type</td>
+                                                                <td scope="col">@l.description</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ApiSet.Head.parameter_sample)) {
+                            <div class="row pt-2">
+                                <div class="col-12">
+                                    <div class="accordion" id="accordionusage">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingusage">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseusage" aria-expanded="true" aria-controls="collapseusage">
+                                                    ตัวอย่างการใช้งาน API
+                                                </button>
+                                            </h2>
+                                            <div id="collapseusage" class="accordion-collapse collapse show" aria-labelledby="headingusage" data-bs-parent="#collapseusage">
+                                                <div class="accordion-body">
+
+                                                    <div class="row">
+                                                        <div class="col-12 px-2">
+                                                            <strong>ตัวอย่างเรียกใช้ (Request) &nbsp;&nbsp;</strong>
+                                                                <label style="font-size:small;" class="badge rounded-pill bg-warning text-dark">@ApiSet.Head.method</label>
+                                                                <br /><br />
+                                                                   @show_json_input
+                                                              @*  <TelerikEditor @bind-Value="@ApiSet.Head.parameter_sample"
+                                                                       Tools="@Tools"
+                                                                      EditMode="@EditorEditMode.Div"
+                                                                       Height="300px">
+                                                                </TelerikEditor>*@
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <div class="row pt-4">
+                                                        <div class="col-12 px-2">
+                                                            <strong>ตัวอย่างผลลัพธ์ (Responds)</strong>
+
+                                                                 @show_json_respon
+
+@*
+                                                            <TelerikEditor @bind-Value="@ApiSet.Head.output_sample"
+                                                                       Tools="@Tools"
+                                                                      EditMode="@EditorEditMode.Div"
+                                                                       Height="600px">
+                                                            </TelerikEditor>*@
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                    </TabStripTab>
+                    <TabStripTab Title="แสดงข้อมูลตัวอย่าง">
+                        <div class="row" style="height:600px">
+                            <div class="col-12">
+                                <FactoryShowSampleData apiID="@ApiSet.Head.api_id"></FactoryShowSampleData>
+                            </div>
+                        </div>
+                    </TabStripTab>
+                </TelerikTabStrip>
+            </div>
+        </div>
+
+    
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+ 
+@code {
+    private MarkupString show_json_input;   
+    private MarkupString show_json_respon;       
+    private bool isLoading = false;
+    bool collapse1Visible = true;
+
+    public I_ApiMasterSet? ApiSet { get; set; }
+    public List<api_master> DocList { get; set; }
+        public List<IEditorTool> Tools { get; set; } =    new List<IEditorTool>() {  };
+
+    //set breadcrumb
+    public IEnumerable<BreadcrumbItem> Itemsbreadcrumb = new List<BreadcrumbItem>();
+
+    public class BreadcrumbItem {
+        public string Icon { get; set; }
+        public string Text { get; set; }
+        public string Url { get; set; }
+    }
+    //set breadcrumb
+    protected override void OnInitialized() {
+        Itemsbreadcrumb = new List<BreadcrumbItem>
+                {
+            //new BreadcrumbItem {  Url = $"{baseUrl}", Icon = "home" },
+            new BreadcrumbItem { Text = "รายการ API", Url = $"ApiServ/ApiDocList" },
+            new BreadcrumbItem { Text = "ข้อมูล API", Url = $"ApiServ/ApiDocDetail" },
+        };
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => CheckIsRefresh());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+        async Task CheckIsRefresh() {
+
+        if (ApiSet == null) {
+            var docid = await sessionStorage.GetItemAsync<string>(Globals.ActiveID_ApiMaster);
+            if (!string.IsNullOrEmpty(docid)) {
+                var res = await Http.GetAsync($"api/ApiMaster/GetDocSet?docid={docid}");
+                ApiSet = JsonSerializer.Deserialize<I_ApiMasterSet>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                ReferenceHandler = ReferenceHandler.Preserve
+            }); 
+            } else {
+                nav.NavigateTo($"ApiServ/ApiDocList", false);
+            }
+        }
+    }
+
+    protected async Task LoadData() {
+        if (ApiSet!=null) {
+                   var html_input= Markdig.Markdown.ToHtml(ApiSet.Head.parameter_sample ?? "");
+                show_json_input = (MarkupString)html_input; // or new MarkupString(html)
+               var html_res = Markdig.Markdown.ToHtml(ApiSet.Head.output_sample ?? "");
+                show_json_respon = (MarkupString)html_res; // or new MarkupString(html)
+
+        }
+    }
+
+}

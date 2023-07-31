@@ -1,0 +1,124 @@
+﻿ 
+@page "/Dashboard/QuestionBoard"
+ 
+@using RobotWasm.Client.Data.DA.Board
+@using RobotWasm.Client.Pages.DPMBoard.ML
+@using System.Text.Json
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.BoardData
+@using System.Text
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+
+<style>
+    .box-sd-inputsearch {
+        box-shadow: 0 0 0 0.13rem rgb(13 110 253 / 25%);
+    }
+
+    .shadow {
+        border-radius: 10px;
+    }
+</style>
+
+<div class="text-center pb-3 pt-2">
+    <h4 class="fw-bold">แบบสอบถาม</h4>
+</div>
+
+@if (!isLoading) {
+
+    @if (DocList.Count() > 0) { 
+        <div class="row">
+            @foreach (var l in DocList) {
+                <div class="col-md-6 col-sm-6 col-12">
+                    <div class="card mb-2 shadow">
+                        <div class="card-body">
+                            <a class="text-decoration-none text-dark" style="cursor: pointer" onclick="@(() =>ToDetail(l.group_id))">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label style="font-size:large;">
+                                            <span style="font-size:large;">@l.group_name</span>
+                                        </label>
+                                    </div>
+                                   
+                                    <div class="col-12">
+                                        <label style="font-size:smaller;">
+                                            @l.group_description
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    } else {
+        <div class="row pt-5">
+            <div class="col-12 text-center" style="color:darkgray;">
+                <i class="fa-solid fa-note-sticky fa-3x"></i> <br />
+                <h5>!! ไม่พบข้อมูล ...</h5>
+            </div>
+        </div>
+    }
+
+} else {
+    <div class="loader-container">
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+
+@code {
+
+
+    private bool isLoading = false;
+
+    public List<ApiCate> menucate { get; set; }
+    public List<q_group_master> DocList { get; set; }
+    string count_result_search = "0";
+    string select_cate = "";
+    string SearchText = "";
+
+    protected override void OnInitialized() {
+
+    }
+
+    protected override async Task OnInitializedAsync() {
+        isLoading = true;
+        await Task.Run(() => LoadCate());
+        await Task.Run(() => LoadData());
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadCate() {
+        menucate = await _apiMasterService.ListApiCates();
+    }
+
+    async Task LoadData() {
+        DocList = await _qService.ListGroupMaster();
+        count_result_search = DocList.Count().ToString("n0");
+    }
+
+    async void SelectApiCate(string cateid) {
+        select_cate = cateid; 
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void ToDetail(string group_id) {
+        await sessionStorage.SetItemAsync(Globals.ActiveID_QGroup, group_id);
+        nav.NavigateTo($"Q/QFlood/{group_id}", false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void OnTextChanged_Apimaster(object Search) {
+        if (Search != null) {
+            SearchText = Search.ToString();
+            await Task.Run(LoadData);
+            await InvokeAsync(StateHasChanged); 
+        }
+    }
+
+}

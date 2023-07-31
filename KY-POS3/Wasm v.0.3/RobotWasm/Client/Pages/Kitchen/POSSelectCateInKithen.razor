@@ -1,0 +1,130 @@
+﻿@page "/Kitchen/POSSelectCateInKithen"
+
+@using RobotWasm.Client.Data.DA.POS
+@using System.Text.Json
+@using System.Text
+@using RobotWasm.Shared.Data.DA;
+@using RobotWasm.Shared.Data.ML.Master.Company;
+@using RobotWasm.Shared.Data.ML.Shared
+@using Blazorise
+@using RobotWasm.Shared.Data.GaDB
+
+<style>
+</style>
+
+<div class="row card-top-menu">
+    <a class="p-0 text-decoration-none text-dark" @onclick="@GoBack">
+        <div class="text-center">
+            <div class="d-inline-block float-start"><i class="fa-solid fa-circle-chevron-left fa-2x"></i></div>
+            <div class="d-inline-block"><span class="fw-bold" style="font-size:large;">ตั้งค่าหมวด</span></div>
+        </div>
+    </a>
+</div>
+         
+<div class="row pt-1">
+    <div class="col-12 px-0">
+
+        <div class="card">
+            <div class="card-body">
+                <TelerikListView Data=@ListCates
+                                 Pageable="false"
+                                 PageSize="100">
+                    <HeaderTemplate>
+                    </HeaderTemplate>
+                    <Template>
+                        <a class="p-0 text-decoration-none text-dark" @onclick="@(() => GoToKitchen(context))">
+                            <div class="row">
+                                <div class="col-10 pt-1 text-start">
+                                    <span style="font-size: 1.5rem;">@context.Description1 &nbsp;</span>
+                                </div>
+                                <div class="col-2 text-end pt-1">
+                                    @if (context.IsSysData == true) {
+                                        <img class="m-auto w-100" src="/img/checkbill_logo.png" onerror="this.onerror=null; this.src='/img/no_image.png'"
+                                         style="object-fit: cover;height:auto; aspect-ratio: 14 / 14;" />
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                        <hr class="mb-2" />
+                    </Template>
+                </TelerikListView>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <div class="row py-3">
+        <div class="col-12">
+        <TelerikButton Class="w-100 rounded-pill" ThemeColor="@(ThemeConstants.Button.ThemeColor.Success)" @onclick="@OnConfirmCateKitchen"
+                       Size="@(ThemeConstants.Button.Size.Large)">
+                ตกลง
+            </TelerikButton>
+        </div>
+    </div>
+
+
+    <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+
+@code {
+    bool isLoading = false;
+
+    KitchenStatusParam Filter = POSFuncService.NewFilterKitchen();
+    List<MasterTypeLine> ListCates = new List<MasterTypeLine>();
+
+    protected override async Task OnInitializedAsync() {
+        Filter = await Task.Run(() => _posService.GetLocalStorageFiterKitchen());
+        isLoading = true;
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void SetDefaultFilter() {
+        _posService.SetLocalStorageFiterKitchen(Filter);
+    }
+
+    async void LoadData() {
+        string rcom = await _localStorage.GetItemAsync<string>(Globals.localStorageRcomID) ?? "";
+
+        SetDefaultFilter();
+        ListCates = await Task.Run(() => _posService.ListItemCate(rcom));
+        if (Filter.cates.Count > 0) {
+            List<string> FiterSelectCate = ListCates.Where(o => Filter.cates.Contains(o.ValueTXT)).Select(o => o.ValueTXT).ToList();
+            foreach (var l in ListCates.Where(o => FiterSelectCate.Contains(o.ValueTXT))) {
+                l.IsSysData = true;
+            }
+        }       
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void GoToKitchen(MasterTypeLine data) {
+        var checkdup_cate = Filter.cates.FirstOrDefault(o => o == data.ValueTXT);
+        if (checkdup_cate == null) {
+            data.IsSysData = true;
+            Filter.cates.Add(data.ValueTXT);
+        } else {
+            Filter.cates.Remove(data.ValueTXT);
+            data.IsSysData = false;
+        }
+
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnConfirmCateKitchen() {
+        SetDefaultFilter();
+        nav.NavigateTo("Kitchen/POSOrderForKithenList");
+        await InvokeAsync(StateHasChanged);
+    }  
+
+    void GoBack() {
+        nav.NavigateTo("Kitchen/POSOrderForKithenList");
+    }
+}

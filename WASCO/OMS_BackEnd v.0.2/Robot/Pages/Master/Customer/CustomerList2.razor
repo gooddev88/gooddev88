@@ -1,0 +1,234 @@
+﻿@page "/Master/Customer/CustomerList2"
+@inject CustomerService customerService
+<style>
+    .custom-ellipsis {
+        overflow: hidden;
+        max-height: 60px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .RefillValuesRowFormatting {
+        background-color: red !important;
+        color: white !important;
+    }
+
+        .RefillValuesRowFormatting .fa-solid.fa-folder-open {
+            color: white !important;
+        }
+
+    .custom-row-colors .k-grid-table .k-master-row {
+        background-color: white;
+        color: black;
+    }
+
+        .custom-row-colors .k-grid-table .k-master-row:hover {
+            background-color: gray;
+            color: black;
+        }
+
+        .custom-row-colors .k-grid-table .k-master-row.k-alt {
+            background-color: white;
+            color: black;
+        }
+
+            .custom-row-colors .k-grid-table .k-master-row.k-alt:hover {
+                background-color: gray;
+                color: black;
+            }
+</style>
+
+@if (!isLoading) {
+
+
+    
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>
+                        <a @onclick="@Back">
+                            <i class="fas fa-reply-all"></i>&nbsp;
+                            @menuCaption
+                        </a>
+                    </h4>
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (isShowNew) {
+                        <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                            <i class="fas fa-plus-circle"></i>&nbsp;
+                            เพิ่มใหม่
+                        </Button>
+                    }
+                </div>
+            </div>
+       
+
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-4">
+                    <div class="input-group">
+                        <TextEdit @bind-Text="@Filter.SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                        <div class="input-group-append">
+                            <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 ">
+                    <TelerikCheckBox Id="chkIsActive" @bind-Value="@Filter.ShowIsActive" />
+                    <label for="chkIsActive">แสดงที่ยกเลิก</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row pt-3">
+        <div class="col-md-12">
+            <TelerikGrid Data=@DocList Class="custom-row-colors"
+                     ScrollMode="@GridScrollMode.Virtual"
+                     Height="600px" RowHeight="40" PageSize="30"
+                     Resizable=true
+                     Groupable=false
+                     Reorderable=true
+                     Navigable=true
+                     OnRowRender="@OnRowRenderColor"
+                     Sortable="true" FilterMode="@GridFilterMode.FilterMenu">
+                <GridToolBarTemplate>
+                    <GridCommandButton Command="ExcelExport" Icon="@FontIcon.FileExcel">Export to Excel</GridCommandButton>
+                    <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                </GridToolBarTemplate>
+
+                <GridExport>
+                    <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                </GridExport>
+                <GridColumns>
+                    <GridColumn Field="@nameof(vw_CustomerInfo.CustomerID)" Title="เปิด" Editable="false" Width="80px">
+                        <Template>
+                            @{
+                                var data = context as vw_CustomerInfo;
+                                <button class="btn btn-sm" @onclick="@(() => Edit(data))">
+                                    <i class="fa-solid fa-folder-open" style="font-size:20px"></i>
+                                </button>
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field="@nameof(vw_CustomerInfo.CustomerID)" Title="รหัสลูกค้า" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.TypeID)" Title="ประเภท" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.BrnDesc)" Title="ประเภทบริษัท" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.NameTh1)" Title="ชื่อ1" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.NameTh2)" Title="ชื่อ2" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.GroupID)" Title="กลุ่ม" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.ContactPerson)" Title="ผู้ติดต่อ" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.AddrPostCode)" Title="รหัสไปรษณีย์" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.BillAddr1)" Title="ที่อยู่เปิดบิล 1" Width="220px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.BillAddr2)" Title="ที่อยู่เปิดบิล 2" Width="220px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.Tel1)" Title="เบอรโทร์" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.SalePersonID)" Title="รหัสเซลล์" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.AreaID)" Title="พื้นที่" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.Status)" Title="สถานะ" Width="130px" />
+                    <GridColumn Field=@nameof(vw_CustomerInfo.CreatedDate) Title="วันทีสร้างเอกสาร" Width="150px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                    <GridColumn Field=@nameof(vw_CustomerInfo.CreatedBy) Title="สร้างโดย" Width="150px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.ModifiedBy)" Title="แก้ไขโดย" Width="130px" />
+                    <GridColumn Field="@nameof(vw_CustomerInfo.ModifiedDate)" Title="วันที่แก้ไขเอกสาร" Width="130px" DisplayFormat="{0:dd/MM/yyyy HH:mm}" />
+                </GridColumns>
+            </TelerikGrid>
+
+        </div>
+    </div>
+} else {
+    <div class="demo-container">
+        <TelerikLoaderContainer Size="@ThemeConstants.Loader.Size.Large"
+                            Text="ระบบกำลังประมวลผล ....."
+                            Visible="@isLoading"
+                            LoaderPosition="@LoaderPosition.End"></TelerikLoaderContainer>
+    </div>
+}
+
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+
+    public string SearchText { get; set; } = "";
+    bool ExportAllPages { get; set; } = true;
+    CustomerService.I_FiterSet Filter = CustomerService.NewFilterSet();
+
+    IEnumerable<vw_CustomerInfo> DocList;
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    protected override void OnInitialized() {
+
+    }
+
+    async void LoadData() {
+
+        DocList = CustomerService.ListViewCustomer(Filter, true, login.LoginInfo);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "141");
+        menuCaption = menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "141")) {//141 ลูกค้า
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "141")) {
+            isShowNew = false;
+        }
+    }
+
+    async void Edit(vw_CustomerInfo select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(CustomerService.sessionActiveId, select_data.CustomerID);
+        customerService.DocSet = customerService.GetDocSet(select_data.CustomerID, login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentCompany.CompanyID);
+        nav.NavigateTo($"Master/Customer/CustomerDetail2", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void NewDoc() {
+        var u = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(CustomerService.sessionActiveId);
+        customerService.DocSet = CustomerService.NewTransaction(u.CurrentRootCompany.CompanyID, u.CurrentCompany.CompanyID);
+        customerService.DocSet.Info.CreatedBy = u.CurrentUser;
+        nav.NavigateTo($"Master/Customer/CustomerDetail2");
+    }
+
+    public void Back() {
+        //nav.NavigateTo("Menu/MenuMaster/MASTER");
+        nav.NavigateTo("Dashboard/StartBoard");
+    }
+    void OnRowRenderColor(GridRowRenderEventArgs args) {
+        vw_CustomerInfo item = args.Item as vw_CustomerInfo;
+        args.Class = item.IsActive == false ? "RefillValuesRowFormatting" : "";
+    }
+    void OnCellRenderHandler(GridCellRenderEventArgs args) {
+        args.Class = "custom-ellipsis";
+    }
+}

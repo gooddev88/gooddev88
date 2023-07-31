@@ -1,0 +1,232 @@
+﻿@using Microsoft.Extensions.Configuration
+@using RobotWasm.Shared.Data.ML.ApiMaster
+@using RobotWasm.Shared.Data.ML.DPMBaord.CIMS
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+
+<style>
+    .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+    }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+    @@keyframes lds-dual-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .k-loader-container, .k-loader-container-overlay {
+        position: fixed !important;
+    }
+
+    .demo-container {
+        /*position: relative;*/
+        height: 300px;
+        width: 75%;
+        margin: 0 auto;
+    }
+
+    .loader-container-heading {
+        padding-top: 25px;
+    }
+
+    .order-summary-row {
+        line-height: 2;
+    }
+
+    .kd-demo-heading {
+        text-transform: none;
+        width: 200px;
+        margin: 0 auto;
+        font-size: 17px;
+        color: #555;
+        padding-bottom: 0.5em;
+    }
+
+    .k-loader-container {
+        z-index: 1;
+    }
+</style>
+<div class="row">
+    <div class="col-6">
+        <h4>Contact</h4>
+        <h5>ข้อมูลการติดต่อ Contact Information.</h5>
+    </div>
+    <div class="col-6 text-end pt-3">
+        <TelerikButton Size="@(ThemeConstants.Button.Size.Medium)"
+                       @onclick="@BtnLoad"
+                       ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">โหลดข้อมูล</TelerikButton>
+    </div>
+</div>
+<TelerikLoaderContainer Visible="@isLoading">
+    <Template>
+        <div class="lds-dual-ring"></div>
+    </Template>
+</TelerikLoaderContainer>
+<div class="row">
+    <div class="col-md-12">
+        <TelerikGrid Data="@ndata"
+                     Pageable="true"
+                     Groupable="false"
+                     Sortable="true"
+                     Resizable="true"
+                     Reorderable="true"
+                     PageSize="9"
+                     Navigable="true">
+            <GridToolBar>
+                <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" /> Export All Pages</label>
+                <span class="k-toolbar-spacer"></span> @* add this spacer to keep the searchbox on the right *@
+                <GridSearchBox />
+            </GridToolBar>
+            <GridExport>
+                <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" OnBeforeExport="@OnBeforeExcelExport" />
+            </GridExport>
+            <GridColumns>
+                <GridColumn Field="@(nameof(Contact.address))" Title="address" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.agency_admins))" Title="agency_admins" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.agency_loc))" Title="agency_loc" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.agency_name))" Title="agency_name" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.amphoe))" Title="amphoe" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.contact_email))" Title="contact_email" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.contact_mobile))" Title="contact_mobile" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.contact_remove))" Title="contact_remove" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.contact_tel))" Title="contact_tel" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.dataid))" Title="dataid" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.entrydate))" Title="entrydate" Width="180px" />
+                <GridColumn Field="@(nameof(Contact.incidentid))" Title="incidentid" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.label))" Title="label" Width="350px" />
+                <GridColumn Field="@(nameof(Contact.latitude))" Title="latitude" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.longitude))" Title="longitude" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.map_label))" Title="map_label" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.ops_type))" Title="originator_incident_name" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.originator_position))" Title="originator_position" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos01))" Title="pos01" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos02))" Title="pos02" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos03))" Title="pos03" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos04))" Title="pos04" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos05))" Title="pos05" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos06))" Title="pos06" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos07))" Title="pos07" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos08))" Title="pos08" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos09))" Title="pos09" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos10))" Title="pos10" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos11))" Title="pos11" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos12))" Title="pos12" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos13))" Title="pos13" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos14))" Title="pos14" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos15))" Title="pos15" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos16))" Title="pos16" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos17))" Title="pos17" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.pos18))" Title="pos18" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.position_name))" Title="position_name" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.postal))" Title="postal" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.province))" Title="province" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.prv_exec))" Title="prv_exec" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.subscribername))" Title="subscribername" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.tambol))" Title="tambol" Width="150px" />
+                <GridColumn Field="@(nameof(Contact.team_name))" Title="team_name" Width="150px" />
+            </GridColumns>
+        </TelerikGrid>
+    </div>
+</div>
+
+@code {
+    [Inject] public IJSRuntime JsInterop { get; set; }
+    [Inject] public IConfiguration config { get; set; }
+
+    bool ExportAllPages { get; set; } = true;
+    public List<string> ExportColumns { get; set; } = new List<string>();
+    public bool CancelExport { get; set; }
+    public string search { get; set; } = "";
+    public Contact data_set { get; set; }
+    public List<Contact> ndata { get; set; }
+    bool isLoading = false;
+
+    //bool VisibleLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await LoadData();
+    }
+
+    private void OnSearch(object input)
+    {
+        if (ndata != null)
+        {
+            ndata = ndata.Where(o =>
+         (
+            o.label.ToLower().Contains(search)
+            || o.amphoe.ToLower().Contains(search)
+             || search == ""
+         )
+     ).ToList();
+        }
+    }
+
+    async private Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            var res = await Http.GetAsync($"api/ApiMaster/GetApiInfo?apiid=Contact");
+            var conn = JsonSerializer.Deserialize<vw_api_master>(await res.Content.ReadAsStringAsync(), new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+            string url = $"{conn.base_url}{conn.api_url}?province={11}";
+            var query = await Task.Run(() => _clientService.GetAllAsync<List<Contact>>(url));
+            if (query.StatusCode != "OK")
+            {
+                return;
+            }
+            ndata = (List<Contact>)query.Result;
+            ndata = ndata.Take(100).ToList();
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            var rr = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async void BtnLoad()
+    {
+        await LoadData();
+    }
+
+    public void OnBeforeExcelExport(GridBeforeExcelExportEventArgs args)
+    {
+        if (ExportColumns.Any())
+        {
+            args.Columns = args.Columns.Where(col => ExportColumns.Contains(col.Field)).ToList();
+        }
+
+        args.IsCancelled = CancelExport;
+    }
+
+}

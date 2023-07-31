@@ -1,0 +1,276 @@
+﻿@page "/Leave/QuotaInJobPosition"
+@using Robot.Data.DA.Leave
+
+ 
+@inject LeaveService leaveService
+
+
+<style>
+    thead tr {
+        background-color: #f3f3f3 !important;
+        color: black !important;
+        text-align: left !important;
+    }
+
+    th, td {
+        padding: 12px 15px !important;
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: #f3f3f3 !important;
+    }
+
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #08a1a1 !important;
+    }
+
+    .table-active.bg-primary {
+        background-color: #08a1a1 !important;
+        color: #ffffff !important;
+    }
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" />
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+        <div class="row">
+            <div class="col-9 mx-auto">
+                <a class="btn btn-dark w-100" @onclick="@btnback">
+                    <i class="fa fa-chevron-circle-left fa-2x"></i>&nbsp;
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <div class="row pt-5">
+            <div class="col-9 mx-auto">
+
+                <div class="row">
+                    <div class="col-6">
+                        <h4 class="fw-bold">เพิ่มโควต้าวันลา</h4>
+                    </div>
+                </div>
+
+                @if (login.CanEdit(login.LoginInfo, "173")) {
+                    <div class="row pt-3">
+                        <div class="col-md-3 col-sm-12 col-12">
+                            <span>ประเภทการลา</span>
+                
+                              <TelerikComboBox @bind-Value="@SelectLEAVETYPE"
+                                                                                 Data="@ListLEAVETYPE"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                        </div>
+                        <div class="col-md-3 col-sm-12 col-12">
+                            <label>ตำแหน่ง</label>
+                            
+                              <TelerikComboBox @bind-Value="@SelectPosition"
+                                                                                 Data="@ListPosition"
+                                                                                 TextField="@nameof(MasterTypeLine.Description1)"
+                                                                                 ValueField="@nameof(MasterTypeLine.ValueTXT)"
+                                                                                 Filterable="true"
+                                                                                 Width="100%">
+                                                                </TelerikComboBox>
+                          
+                        </div>
+
+                        <div class="col-md-2 col-sm-12 col-12">
+                            <label>จำนวนวัน</label>
+                         
+                              <TelerikTextBox PlaceHolder="" @bind-Value="@txtQuotaInDay"    />
+                        </div>
+
+                        <div class="col-md-2 col-sm-12 col-12 text-start">
+                            <label>&nbsp;</label>
+                            <a @onclick="@btnAdd" class="btn btn-success text-white w-100">
+                                <i class="fas fa-plus-circle fa-lg"></i>&nbsp;
+                                เพิ่ม
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                <div class="row pt-3">
+                    <div class="col-12">
+                        <div style="overflow-x: auto; width: 100%">
+                             
+
+                           <TelerikGrid Data=@DocList
+                                                                     Pageable="true"
+                                                                     Groupable="false"
+                                                                     Sortable="true"
+                                                                     Resizable="true"
+                                                                     Reorderable="true"
+                                                                     PageSize="20"
+                                                                     @ref="@dxDataGrid"
+                                                                     Navigable="true">
+                                                           
+                                                            <GridColumns>
+                                                          
+                                                                <GridColumn Field=@nameof(HRLeaveQuotaInJobPosition.LeaveTypeDesc) Title="ประเภาการลา" Width="130px" /> 
+                                                                       <GridColumn Field=@nameof(HRLeaveQuotaInJobPosition.PositionName) Title="ตำแหน่ง" Width="130px" /> 
+                                                                          <GridColumn Field=@nameof(HRLeaveQuotaInJobPosition.QuotaInDay) Title="จำนวนวัน" Width="130px" DisplayFormat="{0:N0}" /> 
+                                                                <GridColumn Title="ลบ" Editable="false" Width="75px">
+                                                                    <Template>
+                                                                        @{
+                                                                            var data = context as HRLeaveQuotaInJobPosition;
+                                                                            <button class="btn btn-sm" @onclick="@(() => GoDeleteLine(data))"><i class="fa-solid fa-trash" style="font-size:20px"></i>  </button>
+                                                                        }
+                                                                    </Template>
+                                                                </GridColumn>
+                                                            </GridColumns>
+                                                        </TelerikGrid>
+
+
+
+ 
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool collapse1Visible = true;
+     public TelerikGrid<HRLeaveQuotaInJobPosition> dxDataGrid { get; set; }
+    LeaveService.I_LeaveFiterSet Filter = LeaveService.NewFilterSet();
+    bool ShowFilterRow = false;
+
+    public string txtQuotaInDay { get; set; } = "1";  
+    List<HRLeaveQuotaInJobPosition> DocList = new List<HRLeaveQuotaInJobPosition>();
+
+    List<MasterTypeLine> ListPosition = new List<MasterTypeLine>();
+    public string SelectPosition { get; set; } = "";
+
+    public List<MasterTypeLine> ListLEAVETYPE = new List<MasterTypeLine>();
+    public string SelectLEAVETYPE { get; set; } = "";
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        LoadDropDownList();
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void LoadData() {
+        DocList = LeaveService.ListDocQuotaInJobPosition();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void LoadDropDownList() {
+        ListLEAVETYPE = MasterTypeService.ListType("", "LEAVE TYPE", true);
+        ListPosition = MasterTypeService.ListType("", "JOB POSITION", true);
+    }
+
+    bool ValidLineData() {
+        var h = leaveService.DocSet.info;
+
+        bool isvalid = true;
+        string Errmsg = "";
+
+
+        if (string.IsNullOrEmpty(SelectLEAVETYPE)) {
+            Errmsg = "ระบุ ประเภทการลา";
+            isvalid = false;
+        }
+
+        if (string.IsNullOrEmpty(SelectPosition)) {
+            Errmsg = "ระบุ ตำแหน่ง";
+            isvalid = false;
+        }
+
+        if (!isvalid) {
+            Swal.FireAsync("", Errmsg, "error");
+        }
+        return isvalid;
+    }
+
+    void btnAdd() {
+        if (!ValidLineData()) {
+            return;
+        }
+
+        HRLeaveQuotaInJobPosition leaveQuota = LeaveService.NewQuotaIn();
+
+        leaveQuota.PositionID = SelectPosition;
+        if (leaveQuota.PositionID != "") {
+            var leavetype = MasterTypeService.GetType("JOB POSITION", leaveQuota.PositionID);
+            leaveQuota.PositionName = leavetype.Description1;
+        }
+        leaveQuota.LeaveType = SelectLEAVETYPE;
+        if (leaveQuota.LeaveType != "") {
+            var leavetype = MasterTypeService.GetType("LEAVE TYPE", leaveQuota.LeaveType);
+            leaveQuota.LeaveTypeDesc = leavetype.Description1;
+        }
+
+        int xQuotaInDay = 0;
+        int.TryParse(txtQuotaInDay, out xQuotaInDay);
+        leaveQuota.QuotaInDay = xQuotaInDay;
+
+        leaveQuota.CreatedBy = login.LoginInfo.CurrentUser;
+
+        var rs = LeaveService.AddQuota(leaveQuota);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            ResetControl();
+            ListGrd();
+            Swal.FireAsync("", "เพิ่มสำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async void ListGrd() {
+        DocList = LeaveService.ListDocQuotaInJobPosition();
+    }
+
+    private void ResetControl() {
+        SelectLEAVETYPE = "";
+        SelectPosition = "";
+        txtQuotaInDay = "1";
+    }
+
+    void GoDeleteLine(HRLeaveQuotaInJobPosition data) {
+        var rs = LeaveService.DeleteLineQuota(data.ID);
+        if (rs.Result != "ok") {
+            Swal.FireAsync("", rs.Message1, "error");
+            return;
+        } else {
+            ListGrd();
+                    dxDataGrid?.Rebind();
+            Swal.FireAsync("", "ลบรายการ สำเร็จ", "success");
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    
+
+    async void btnback() {
+        nav.NavigateTo($"Leave/UserLeaveList", false);
+    }
+
+}
