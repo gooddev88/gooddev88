@@ -189,6 +189,9 @@
     <Content Update="Pages\Login\_Imports.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <Content Update="Pages\POS\POSOrderList.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

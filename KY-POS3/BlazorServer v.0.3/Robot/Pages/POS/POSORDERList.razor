@@ -1,0 +1,218 @@
+﻿@page "/POS/POSOrderList"
+
+<style>
+
+</style>
+
+<SpinLoader IsLoading="isLoading">
+    <LoadingTemplate>
+        <div class="col-12 text-center" style="background-color: transparent; height: 100%; vertical-align: middle;">
+            <br /><br />
+            <div class="row pt-2">
+                <div class="col-10 mx-auto">
+                    <label style="color:orange; font-size:x-large;">... รอโหลดสักครู่ ...</label><br /><br /><br /><br />
+                    <CircleFade Color="orange" Size="100px" Center="true" /> 
+                </div>
+            </div>
+        </div>
+    </LoadingTemplate>
+    <ContentTemplate>
+
+
+        <div class="row pt-3">
+            <div class="col-md-12 col-sm-12 col-12">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>
+                                    <a @onclick="Back">
+                                        <i class="fas fa-reply-all"></i>&nbsp;@menuCaption
+
+                                    </a>
+                                </h4>
+                            </div>
+
+                            @if (isShowNew) {
+  
+                                <div class="col-6" style="text-align:right;">
+                                    <Button style="color:darkslategrey;" @onclick="@NewDoc">
+                                        <i class="fas fa-plus-circle"></i>&nbsp;
+                                        เพิ่มใหม่
+                                    </Button>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 col-12">
+                                <div class="input-group">
+                                    <TextEdit @bind-Text="@SearchText" PlaceHolder="คำค้นหา" Size="Size.Small" />
+                                    <div class="input-group-append">
+                                        <TelerikButton @onclick="@SearchAction" ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">ค้นหา</TelerikButton>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="row pt-3">
+            <div class="col-md-12">
+                <div class="card">
+
+                 
+
+                      <TelerikGrid Data=@DocList
+                             Pageable="true"
+                             Groupable="false"
+                             Sortable="true"
+                             Resizable="true"
+                             Reorderable="true"
+                             PageSize="30"
+                             Navigable="true">
+                    <GridToolBar>
+                        <GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>
+                        <label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>
+                    </GridToolBar>
+
+                    <GridExport>
+                        <GridExcelExport FileName="telerik-grid-export" AllPages="@ExportAllPages" />
+                    </GridExport>
+                    <GridColumns>
+                        <GridColumn Field="@nameof(vw_CompanyInfo.CompanyID)" Title="แก้ไข" Editable="false" Width="80px">
+                            <Template>
+                                @{
+                                    var data = context as vw_CompanyInfo;
+                                    <button class="btn btn-sm" @onclick="@(() => Edit(data))"><i class="fa fa-edit" style="font-size:20px"></i></button>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(vw_CustomerInfo.CompanyID)" Title="รหัส" Width="130px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.Name1)" Title="ชื่อ1" Width="200px" />
+                         <GridColumn Field="@nameof(vw_CompanyInfo.Name2)" Title="ชื่อ2" Width="200px" />
+                        <GridColumn Field="@nameof(vw_CompanyInfo.ShortCode)" Title="ชื่อย่อ" Width="150px" /> 
+                   <GridColumn Field="@nameof(vw_CompanyInfo.BrnCode)" Title="เลขสาขา" Width="150px" />
+                       <GridColumn Field="@nameof(vw_CompanyInfo.RCompanyID)" Title="ต้นสังกัด" Width="150px" /> 
+                           <GridColumn Field="@nameof(vw_CompanyInfo.IsWH)" Title="เป็นครัวกลาง" Width="150px" /> 
+                    </GridColumns>
+                </TelerikGrid>
+                </div>
+
+            </div>
+        </div>
+
+
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    bool isLoading = true;
+    bool isShowNew = true;
+    bool isShowDelete = true;
+    bool collapse1Visible = true;
+    string menuCaption = "";
+    string menuGroupCaption = "";
+    public string SearchText { get; set; } = "";
+
+    bool ShowFilterRow = false; 
+           public TelerikGrid<vw_CompanyInfo> dxDataGrid { get; set; } 
+               bool ExportAllPages { get; set; } = true; 
+
+    IEnumerable<vw_CompanyInfo> DocList;
+
+
+    protected override async Task OnInitializedAsync() {
+        pageHistory.AddPageToHistory(nav.Uri);
+        await Task.Run(() => login.CheckLogin());
+        await Task.Run(LoadData);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    protected override void OnInitialized() {
+
+    }
+
+    async void LoadData() { 
+        DocList = CompanyService.ListCom(SearchText, login.LoginInfo.CurrentRootCompany.CompanyID, true);
+        isLoading = false;
+        await SetActiveControl();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetActiveControl() {
+        await  CheckPermission();
+    }
+    async Task CheckPermission() {
+        var menu = LogInService.GetMenuInfo(login.LoginInfo, "9201");
+        menuCaption =menu.Name;
+        menuGroupCaption = LogInService.GetMenuGroup(login.LoginInfo, menu.GroupID).Name;
+        if (!login.CanOpen(login.LoginInfo, "9201")) {//9201 บริษัทและสาขา
+            nav.NavigateTo("NoPermissionPage");
+        }
+        if (!login.CanCreate(login.LoginInfo, "9201")) {//9201 บริษัทและสาขา
+            isShowNew = false;
+        }
+    }
+    async void Edit(vw_CompanyInfo select_data) {
+        isLoading = true;
+        await sessionStorage.SetItemAsync(CompanyService.sessionActiveId, select_data.CompanyID);
+        companyService.DocSet = companyService.GetDocSet(select_data.CompanyID, login.LoginInfo.CurrentRootCompany.CompanyID);
+        companyService.PreviousPageUrl = nav.Uri;
+        nav.NavigateTo($"Master/CompanyDetail/{pagecomefrom}", false);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void SearchAction() {
+        isLoading = true;
+        await Task.Run(LoadData);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+   
+    async void NewDoc() {
+        var u = login.LoginInfo;
+        await sessionStorage.RemoveItemAsync(CompanyService.sessionActiveId);
+        companyService.DocSet = companyService.NewTransaction(u.CurrentRootCompany.CompanyID);
+        companyService.DocSet.ComInfo.CreatedBy = u.CurrentUser;
+        companyService.PreviousPageUrl = nav.Uri;
+        nav.NavigateTo($"Master/CompanyDetail/{pagecomefrom}", false);
+    }
+
+
+
+    async void Back() {
+        if (string.IsNullOrEmpty(pagecomefrom)) {
+            pagecomefrom = "web2";
+        }
+
+        string forwardurl = "";
+        switch (pagecomefrom) {
+            case "web1":
+                var reqInfo = LogInCrossAppService.CreateReqInfo("KYPOS", login.LoginInfo.CurrentRootCompany.CompanyID, login.LoginInfo.CurrentUser, forwardurl);
+                string rootappurl = login.GetRootApp($"/Account/MyLogin/LoginFromApp?reqid={reqInfo.ReqID}");
+                nav.NavigateTo(rootappurl);
+                break;
+            case "web2":
+                var url = @"Menu/MenuMaster/SETUP";
+                nav.NavigateTo("Dashboard/StartBoard");
+                await InvokeAsync(StateHasChanged);
+                break;
+
+        }
+    }
+
+}
